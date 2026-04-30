@@ -186,7 +186,7 @@ function renderAlertsPanel() {
     `;
   }
 
-  let html = '<div class="alerts-header"><i data-lucide="bell-ring" style="width:15px;height:15px;"></i> Pendientes programados (v23)</div>';
+  let html = '<div class="alerts-header"><i data-lucide="bell-ring" style="width:15px;height:15px;"></i> Pendientes programados</div>';
 
   if (overdue.length > 0) {
     html += `<div class="alerts-group-label alerts-overdue-label">⚠️ Vencidos (${overdue.length})</div>`;
