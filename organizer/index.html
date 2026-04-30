@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>CRMeli – Tu Centro de Mando</title>
+  <meta name="description" content="App de organización personal para web dev, marketing, máster, Pandín y vida personal." />
+  <meta name="theme-color" content="#0d0d1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CRMeli" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=2.1" />
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-bolt"><i data-lucide="zap"></i></span>
+      <span class="logo-text">CRMeli</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard" onclick="showView('dashboard')">
+        <i data-lucide="layout-dashboard" class="nav-icon"></i><span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-view="webdev" onclick="showView('webdev')">
+        <i data-lucide="code-2" class="nav-icon"></i><span>Dev</span>
+      </button>
+      <button class="nav-item" data-view="marketing" onclick="showView('marketing')">
+        <i data-lucide="megaphone" class="nav-icon"></i><span>Marketing</span>
+      </button>
+      <button class="nav-item" data-view="master" onclick="showView('master')">
+        <i data-lucide="graduation-cap" class="nav-icon"></i><span>Máster</span>
+      </button>
+      <button class="nav-item" data-view="pandin" onclick="showView('pandin')">
+        <i data-lucide="baby" class="nav-icon"></i><span>Pandín</span>
+      </button>
+      <button class="nav-item" data-view="personal" onclick="showView('personal')">
+        <i data-lucide="heart" class="nav-icon"></i><span>Personal</span>
+      </button>
+      <button class="nav-item" data-view="otra" onclick="showView('otra')">
+        <i data-lucide="folder-open" class="nav-icon"></i><span>Otra</span>
+      </button>
+      <button class="nav-item" data-view="notas" onclick="showView('notas')">
+        <i data-lucide="sticky-note" class="nav-icon"></i><span>Notas Rápidas</span>
+      </button>
+    </nav>
+    <div class="sidebar-date" id="sidebar-date"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <!-- HEADER -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="page-title">CRMeli</h1>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-add" id="btn-add-global" onclick="openModal()">
+          <i data-lucide="plus" style="width:16px;height:16px;"></i> Nueva Tarea
+        </button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD VIEW -->
+    <section class="view active" id="view-dashboard">
+      <div class="stats-row">
+        <!-- Stats cards remain the same -->
+        <div class="stat-card"><div class="stat-icon" style="background:#6c63ff22;"><i data-lucide="code-2" class="stat-lucide" style="color:#a89dff;"></i></div><div class="stat-info"><span class="stat-label">Dev</span><span class="stat-value" id="stat-webdev">0</span></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#f093fb22;"><i data-lucide="megaphone" class="stat-lucide" style="color:#e080f5;"></i></div><div class="stat-info"><span class="stat-label">Marketing</span><span class="stat-value" id="stat-marketing">0</span></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#4facfe22;"><i data-lucide="graduation-cap" class="stat-lucide" style="color:#7ec8fd;"></i></div><div class="stat-info"><span class="stat-label">Máster</span><span class="stat-value" id="stat-master">0</span></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#ff9a3c22;"><i data-lucide="baby" class="stat-lucide" style="color:#ffb86c;"></i></div><div class="stat-info"><span class="stat-label">Pandín</span><span class="stat-value" id="stat-pandin">0</span></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#43e97b22;"><i data-lucide="heart" class="stat-lucide" style="color:#4fe99b;"></i></div><div class="stat-info"><span class="stat-label">Personal</span><span class="stat-value" id="stat-personal">0</span></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#ffd16622;"><i data-lucide="folder-open" class="stat-lucide" style="color:#ffd166;"></i></div><div class="stat-info"><span class="stat-label">Otra</span><span class="stat-value" id="stat-otra">0</span></div></div>
+      </div>
+
+      <div class="dashboard-cols">
+        <div class="dashboard-col col-rojo">
+          <h2 class="section-title"><span class="sema-inline dot-urgente"></span> Urgente</h2>
+          <div class="task-list" id="dash-urgente"></div>
+        </div>
+        <div class="dashboard-col col-amarillo">
+          <h2 class="section-title"><span class="sema-inline dot-medio"></span> En progreso</h2>
+          <div class="task-list" id="dash-medio"></div>
+        </div>
+        <div class="dashboard-col col-verde">
+          <h2 class="section-title"><span class="sema-inline dot-bajo"></span> Pendiente</h2>
+          <div class="task-list" id="dash-bajo"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OTHER VIEWS -->
+    <section class="view" id="view-webdev"><div class="task-list full-list" id="list-webdev"></div></section>
+    <section class="view" id="view-marketing">
+      <div style="justify-content: space-between; display: flex; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <p class="view-sub" style="margin: 0;">Planificación y tareas de Marketing.</p>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-add" onclick="openMarketingExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
+          </button>
+          <button class="btn-add" onclick="changeMarketingExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+        </div>
+      </div>
+      <div class="task-list full-list" id="list-marketing"></div>
+    </section>
+    <section class="view" id="view-master">
+      <div style="justify-content: space-between; display: flex; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <p class="view-sub" style="margin: 0;">Organización de tu Máster y TFM.</p>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-add" onclick="openMasterWhatsapp()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="message-circle" style="width:16px;height:16px;"></i> Grupo WhatsApp TFM
+          </button>
+          <button class="btn-add" onclick="changeMasterWhatsapp()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Grupo
+          </button>
+        </div>
+      </div>
+      <div class="task-list full-list" id="list-master"></div>
+    </section>
+    <section class="view" id="view-pandin">
+      <div class="task-list full-list" id="list-pandin"></div>
+    </section>
+    <section class="view" id="view-personal">
+      <div style="justify-content: space-between; display: flex; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <p class="view-sub" style="margin: 0;">Tus tareas y organización personal.</p>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-add" onclick="openPersonalExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
+          </button>
+          <button class="btn-add" onclick="changePersonalExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+        </div>
+      </div>
+      <div class="task-list full-list" id="list-personal"></div>
+    </section>
+    <section class="view" id="view-otra"><div class="task-list full-list" id="list-otra"></div></section>
+    <section class="view" id="view-notas">
+      <p class="view-sub">Captura ideas ahora, organízalas después.</p>
+      <div class="nota-input-area">
+        <textarea id="nota-input" placeholder="Escribe tu idea aquí..." rows="3"></textarea>
+        <button class="btn-add" onclick="addNota()"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar Nota</button>
+      </div>
+      <div class="notas-grid" id="notas-grid"></div>
+    </section>
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModalDirect()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <input type="hidden" id="editing-task-id" value="">
+      <h2 class="modal-title" id="modal-title-text">Nueva Tarea</h2>
+      <div class="form-group"><label>Título *</label><input type="text" id="task-title" placeholder="¿Qué necesitas hacer?" /></div>
+      <div class="form-group"><label>Descripción</label><textarea id="task-desc" placeholder="Detalles..." rows="2"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Categoría</label><select id="task-cat"><option value="webdev">Dev</option><option value="marketing">Marketing</option><option value="master">Máster</option><option value="pandin">Pandín</option><option value="personal">Personal</option><option value="otra">Otra</option></select></div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="task-date" /></div>
+        <div class="form-group"><label>Hora</label><input type="time" id="task-time" /></div>
+      </div>
+      <div class="form-group">
+        <label>Prioridad (Semáforo)</label>
+        <div class="semaforo-selector">
+          <button class="sema-btn rojo active-sema" data-prio="urgente" onclick="selectPrio('urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+          <button class="sema-btn amarillo" data-prio="medio" onclick="selectPrio('medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+          <button class="sema-btn verde" data-prio="bajo" onclick="selectPrio('bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+        </div>
+      </div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="closeModalDirect()">Cancelar</button><button class="btn-save" onclick="saveTask()">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="app-v2.js?v=2.2"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js?v=4.2').then(reg => reg.update());
+      });
+    }
+  </script>
+</body>
+</html>

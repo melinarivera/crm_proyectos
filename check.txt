@@ -1,0 +1,3 @@
+Version: Firebase-Cloud-v1
+Status: Deploying from crm_proyectos
+Timestamp: 2026-04-24
