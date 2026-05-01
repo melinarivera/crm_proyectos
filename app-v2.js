@@ -491,6 +491,13 @@ function buildTaskCard(task) {
           <div class="task-name${task.done ? ' done' : ''}">${task.title}</div>
         </div>
       </div>
+    </div>
+    ${task.desc ? `<div class="task-desc-text">${task.desc}</div>` : ''}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; gap: 10px; flex-wrap: wrap;">
+      <div class="task-meta" style="margin-top: 0;">
+        <span class="task-tag tag-${task.cat}">${tagLabels[task.cat] || task.cat}</span>
+        ${dateStr || timeStr ? `<span class="task-date">${dateStr}${timeStr}</span>` : ''}
+      </div>
       <div class="task-actions">
         <button class="task-btn" onclick="toggleDone('${task.id}')" title="Completar">
           <i data-lucide="${task.done ? 'rotate-ccw' : 'check-circle-2'}" style="width:20px;height:20px;color:${task.done ? 'var(--text-sub)' : 'var(--verde)'}"></i>
@@ -502,11 +509,6 @@ function buildTaskCard(task) {
           <i data-lucide="trash-2" style="width:20px;height:20px;color:#ff4d6d99;"></i>
         </button>
       </div>
-    </div>
-    ${task.desc ? `<div class="task-desc-text">${task.desc}</div>` : ''}
-    <div class="task-meta">
-      <span class="task-tag tag-${task.cat}">${tagLabels[task.cat] || task.cat}</span>
-      ${dateStr || timeStr ? `<span class="task-date">${dateStr}${timeStr}</span>` : ''}
     </div>
   `;
   return card;

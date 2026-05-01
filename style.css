@@ -513,7 +513,8 @@ body {
   font-weight: 700;
   color: var(--text);
   line-height: 1.4;
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .task-name.done {
