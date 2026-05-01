@@ -513,6 +513,7 @@ body {
   font-weight: 700;
   color: var(--text);
   line-height: 1.4;
+  word-break: break-word;
 }
 
 .task-name.done {
@@ -562,6 +563,7 @@ body {
 .task-actions {
   display: flex;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .task-btn {
