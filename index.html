@@ -1,19 +1,585 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#185FA5" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Mi CRM" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-    <title>Mi CRM</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>CRMeli – Tu Centro de Mando</title>
+  <meta name="description" content="App de organización personal para web dev, marketing, máster, Pandín y vida personal." />
+  <meta name="theme-color" content="#0d0d1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CRMeli" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=2.6" />
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-bolt"><i data-lucide="zap"></i></span>
+      <span class="logo-text">CRMeli</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard" onclick="showView('dashboard')">
+        <i data-lucide="layout-dashboard" class="nav-icon"></i><span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-view="webdev" onclick="showView('webdev')">
+        <i data-lucide="code-2" class="nav-icon"></i><span>Dev</span>
+      </button>
+      <button class="nav-item" data-view="marketing" onclick="showView('marketing')">
+        <i data-lucide="megaphone" class="nav-icon"></i><span>Marketing</span>
+      </button>
+      <button class="nav-item" data-view="leads" onclick="showView('leads')" style="display:none;">
+        <i data-lucide="magnet" class="nav-icon"></i><span>Gestión de Leads</span>
+      </button>
+      <button class="nav-item" data-view="master" onclick="showView('master')">
+        <i data-lucide="graduation-cap" class="nav-icon"></i><span>Máster</span>
+      </button>
+      <button class="nav-item" data-view="pandin" onclick="showView('pandin')">
+        <i data-lucide="baby" class="nav-icon"></i><span>Pandín</span>
+      </button>
+      <button class="nav-item" data-view="personal" onclick="showView('personal')">
+        <i data-lucide="heart" class="nav-icon"></i><span>Personal</span>
+      </button>
+      <button class="nav-item" data-view="menu" onclick="showView('menu')">
+        <i data-lucide="utensils" class="nav-icon"></i><span>Menú</span>
+      </button>
+      <button class="nav-item" data-view="otra" onclick="showView('otra')">
+        <i data-lucide="folder-open" class="nav-icon"></i><span>Otra</span>
+      </button>
+      <button class="nav-item" data-view="notas" onclick="showView('notas')">
+        <i data-lucide="sticky-note" class="nav-icon"></i><span>Notas Rápidas</span>
+      </button>
+      <button class="nav-item" data-view="planner" onclick="showView('planner')" style="display:none;">
+        <i data-lucide="calendar-days" class="nav-icon"></i><span>Planner Semanal</span>
+      </button>
+    </nav>
+    <div class="sidebar-date" id="sidebar-date"></div>
+    <button class="btn-refresh-app" onclick="forceAppRefresh()">
+      <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Recargar App
+    </button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <!-- HEADER -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="page-title">CRMeli</h1>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-notif" id="btn-notif" onclick="onBellClick()" title="Ver pendientes">
+          <i data-lucide="bell" style="width:16px;height:16px;"></i>
+        </button>
+        <button class="btn-add" id="btn-add-global" onclick="openModal()">
+          <i data-lucide="plus" style="width:16px;height:16px;"></i> Nueva Tarea
+        </button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD VIEW -->
+    <section class="view active" id="view-dashboard">
+      <div class="stats-row">
+        <!-- Stats cards remain the same -->
+        <div class="stat-card" onclick="showView('webdev')"><div class="stat-icon" style="background:#6c63ff22;"><i data-lucide="code-2" class="stat-lucide" style="color:#a89dff;"></i></div><div class="stat-info"><span class="stat-label">Dev</span><span class="stat-value" id="stat-webdev">0</span></div></div>
+        <div class="stat-card" onclick="showView('marketing')"><div class="stat-icon" style="background:#f093fb22;"><i data-lucide="megaphone" class="stat-lucide" style="color:#e080f5;"></i></div><div class="stat-info"><span class="stat-label">Marketing</span><span class="stat-value" id="stat-marketing">0</span></div></div>
+        <div class="stat-card" onclick="showView('master')"><div class="stat-icon" style="background:#4facfe22;"><i data-lucide="graduation-cap" class="stat-lucide" style="color:#7ec8fd;"></i></div><div class="stat-info"><span class="stat-label">Máster</span><span class="stat-value" id="stat-master">0</span></div></div>
+        <div class="stat-card" onclick="showView('pandin')"><div class="stat-icon" style="background:#ff9a3c22;"><i data-lucide="baby" class="stat-lucide" style="color:#ffb86c;"></i></div><div class="stat-info"><span class="stat-label">Pandín</span><span class="stat-value" id="stat-pandin">0</span></div></div>
+        <div class="stat-card" onclick="showView('personal')"><div class="stat-icon" style="background:#43e97b22;"><i data-lucide="heart" class="stat-lucide" style="color:#4fe99b;"></i></div><div class="stat-info"><span class="stat-label">Personal</span><span class="stat-value" id="stat-personal">0</span></div></div>
+        <div class="stat-card" onclick="showView('otra')"><div class="stat-icon" style="background:#ffd16622;"><i data-lucide="folder-open" class="stat-lucide" style="color:#ffd166;"></i></div><div class="stat-info"><span class="stat-label">Otra</span><span class="stat-value" id="stat-otra">0</span></div></div>
+      </div>
+
+      <!-- PANEL DE ALERTAS -->
+      <div id="alerts-panel" class="alerts-panel" style="display:none;"></div>
+
+      <div class="dashboard-cols">
+        <div class="dashboard-col col-rojo">
+          <h2 class="section-title"><span class="sema-inline dot-urgente"></span> Urgente</h2>
+          <div class="task-list" id="dash-urgente"></div>
+        </div>
+        <div class="dashboard-col col-amarillo">
+          <h2 class="section-title"><span class="sema-inline dot-medio"></span> En progreso</h2>
+          <div class="task-list" id="dash-medio"></div>
+        </div>
+        <div class="dashboard-col col-verde">
+          <h2 class="section-title"><span class="sema-inline dot-bajo"></span> Pendiente</h2>
+          <div class="task-list" id="dash-bajo"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OTHER VIEWS -->
+    <section class="view" id="view-webdev"><div class="task-list full-list" id="list-webdev"></div></section>
+    <section class="view" id="view-marketing">
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <p class="view-sub" style="margin: 0;">Planificación y tareas de Marketing.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-add" onclick="openMarketingExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
+          </button>
+          <button class="btn-add" onclick="changeMarketingExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+        </div>
+      </div>
+      <div class="task-list full-list" id="list-marketing"></div>
+    </section>
+    <section class="view" id="view-master">
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <p class="view-sub" style="margin: 0;">Organización de tu Máster y TFM.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-add" onclick="openMasterWhatsapp()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="message-circle" style="width:16px;height:16px;"></i> Grupo WhatsApp TFM
+          </button>
+          <button class="btn-add" onclick="changeMasterWhatsapp()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Grupo
+          </button>
+        </div>
+      </div>
+      <div class="task-list full-list" id="list-master"></div>
+    </section>
+    <section class="view" id="view-pandin">
+      <div class="task-list full-list" id="list-pandin"></div>
+    </section>
+    <section class="view" id="view-personal">
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <p class="view-sub" style="margin: 0;">Tus tareas y organización personal.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-add" onclick="openPersonalExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
+          </button>
+          <button class="btn-add" onclick="changePersonalExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+        </div>
+      </div>
+      <div class="task-list full-list" id="list-personal"></div>
+    </section>
+    <section class="view" id="view-otra"><div class="task-list full-list" id="list-otra"></div></section>
+    <section class="view" id="view-notas">
+      <p class="view-sub">Captura ideas ahora, organízalas después.</p>
+      <div class="nota-input-area">
+        <input type="hidden" id="editing-nota-id" value="">
+        <textarea id="nota-input" placeholder="Escribe tu idea aquí..." rows="3"></textarea>
+        <div class="nota-controls">
+          <div class="semaforo-selector nota-prio-selector">
+            <button class="sema-btn rojo" data-nota-prio="urgente" onclick="selectNotaPrio('urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+            <button class="sema-btn amarillo active-sema" data-nota-prio="medio" onclick="selectNotaPrio('medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+            <button class="sema-btn verde" data-nota-prio="bajo" onclick="selectNotaPrio('bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+          </div>
+          <button class="btn-add" id="btn-save-nota" onclick="addNota()"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar Nota</button>
+          <button class="btn-cancel" id="btn-cancel-nota" onclick="resetNotaForm()" style="display:none;">Cancelar</button>
+        </div>
+      </div>
+      <div class="notas-grid" id="notas-grid"></div>
+    </section>
+
+    <!-- LEADS VIEW -->
+    <section class="view" id="view-leads" style="display:none;">
+      <div class="leads-header">
+        <p class="view-sub">Gestión de prospectos y scoring automático.</p>
+        <button class="btn-add" onclick="openLeadModal()">
+          <i data-lucide="user-plus" style="width:16px;height:16px;"></i> Nuevo Lead
+        </button>
+      </div>
+
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label>Estado</label>
+          <select id="filter-lead-status" onchange="renderLeads()">
+            <option value="all">Todos</option>
+            <option value="nuevo">Nuevo</option>
+            <option value="contactado">Contactado</option>
+            <option value="en_conversacion">En conversación</option>
+            <option value="validado">Validado</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Interés</label>
+          <select id="filter-lead-interes" onchange="renderLeads()">
+            <option value="all">Todos</option>
+            <option value="alto">Alto</option>
+            <option value="medio">Medio</option>
+            <option value="bajo">Bajo</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Producto</label>
+          <select id="filter-lead-prod" onchange="renderLeads()">
+            <option value="all">Todos</option>
+            <option value="etern-me">Etern-me</option>
+            <option value="cotidiana">Cotidiana</option>
+            <option value="crm">CRM</option>
+            <option value="portafolio">Portafolio</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="leads-container" id="leads-container">
+        <!-- Leads will be rendered here as Kanban or List -->
+      </div>
+    </section>
+
+    <!-- PLANNER SEMANAL VIEW -->
+    <section class="view" id="view-planner" style="display:none;">
+      <div class="planner-header">
+        <p class="view-sub">Organiza tu semana de Lunes a Domingo. Ideal para redes sociales.</p>
+        <button class="btn-add" onclick="savePlannerData()">
+          <i data-lucide="save" style="width:16px;height:16px;"></i> Guardar Cambios
+        </button>
+      </div>
+
+      <div class="planner-grid">
+        <!-- Day cards will be generated here -->
+        <div class="day-card" data-day="lunes">
+          <div class="day-label">Lunes</div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="text" class="p-date" placeholder="Ej: 24 Abril"></div>
+            <div class="field-group">
+              <label>Prioridad</label>
+              <div class="semaforo-selector planner-semaforo">
+                <button type="button" class="sema-btn rojo" onclick="selectPlannerPrio(this, 'urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+                <button type="button" class="sema-btn amarillo" onclick="selectPlannerPrio(this, 'medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+                <button type="button" class="sema-btn verde" onclick="selectPlannerPrio(this, 'bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+                <input type="hidden" class="p-prio" value="medio">
+              </div>
+            </div>
+            <div class="field-group"><label>Notas / Idea</label><textarea class="p-notes" rows="3" placeholder="Contenido de hoy..."></textarea></div>
+            <div class="field-group field-files"><label><i data-lucide="file-text" style="width:12px;height:12px;"></i> Archivos / Recursos</label><textarea class="p-files" rows="2" placeholder="Nombre de archivos..."></textarea></div>
+          </div>
+        </div>
+        <div class="day-card" data-day="martes">
+          <div class="day-label">Martes</div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="text" class="p-date" placeholder="Ej: 25 Abril"></div>
+            <div class="field-group">
+              <label>Prioridad</label>
+              <div class="semaforo-selector planner-semaforo">
+                <button type="button" class="sema-btn rojo" onclick="selectPlannerPrio(this, 'urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+                <button type="button" class="sema-btn amarillo" onclick="selectPlannerPrio(this, 'medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+                <button type="button" class="sema-btn verde" onclick="selectPlannerPrio(this, 'bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+                <input type="hidden" class="p-prio" value="medio">
+              </div>
+            </div>
+            <div class="field-group"><label>Notas / Idea</label><textarea class="p-notes" rows="3" placeholder="Contenido de hoy..."></textarea></div>
+            <div class="field-group field-files"><label><i data-lucide="file-text" style="width:12px;height:12px;"></i> Archivos / Recursos</label><textarea class="p-files" rows="2" placeholder="Nombre de archivos..."></textarea></div>
+          </div>
+        </div>
+        <div class="day-card" data-day="miercoles">
+          <div class="day-label">Miércoles</div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="text" class="p-date" placeholder="Ej: 26 Abril"></div>
+            <div class="field-group">
+              <label>Prioridad</label>
+              <div class="semaforo-selector planner-semaforo">
+                <button type="button" class="sema-btn rojo" onclick="selectPlannerPrio(this, 'urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+                <button type="button" class="sema-btn amarillo" onclick="selectPlannerPrio(this, 'medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+                <button type="button" class="sema-btn verde" onclick="selectPlannerPrio(this, 'bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+                <input type="hidden" class="p-prio" value="medio">
+              </div>
+            </div>
+            <div class="field-group"><label>Notas / Idea</label><textarea class="p-notes" rows="3" placeholder="Contenido de hoy..."></textarea></div>
+            <div class="field-group field-files"><label><i data-lucide="file-text" style="width:12px;height:12px;"></i> Archivos / Recursos</label><textarea class="p-files" rows="2" placeholder="Nombre de archivos..."></textarea></div>
+          </div>
+        </div>
+        <div class="day-card" data-day="jueves">
+          <div class="day-label">Jueves</div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="text" class="p-date" placeholder="Ej: 27 Abril"></div>
+            <div class="field-group">
+              <label>Prioridad</label>
+              <div class="semaforo-selector planner-semaforo">
+                <button type="button" class="sema-btn rojo" onclick="selectPlannerPrio(this, 'urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+                <button type="button" class="sema-btn amarillo" onclick="selectPlannerPrio(this, 'medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+                <button type="button" class="sema-btn verde" onclick="selectPlannerPrio(this, 'bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+                <input type="hidden" class="p-prio" value="medio">
+              </div>
+            </div>
+            <div class="field-group"><label>Notas / Idea</label><textarea class="p-notes" rows="3" placeholder="Contenido de hoy..."></textarea></div>
+            <div class="field-group field-files"><label><i data-lucide="file-text" style="width:12px;height:12px;"></i> Archivos / Recursos</label><textarea class="p-files" rows="2" placeholder="Nombre de archivos..."></textarea></div>
+          </div>
+        </div>
+        <div class="day-card" data-day="viernes">
+          <div class="day-label">Viernes</div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="text" class="p-date" placeholder="Ej: 28 Abril"></div>
+            <div class="field-group">
+              <label>Prioridad</label>
+              <div class="semaforo-selector planner-semaforo">
+                <button type="button" class="sema-btn rojo" onclick="selectPlannerPrio(this, 'urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+                <button type="button" class="sema-btn amarillo" onclick="selectPlannerPrio(this, 'medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+                <button type="button" class="sema-btn verde" onclick="selectPlannerPrio(this, 'bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+                <input type="hidden" class="p-prio" value="medio">
+              </div>
+            </div>
+            <div class="field-group"><label>Notas / Idea</label><textarea class="p-notes" rows="3" placeholder="Contenido de hoy..."></textarea></div>
+            <div class="field-group field-files"><label><i data-lucide="file-text" style="width:12px;height:12px;"></i> Archivos / Recursos</label><textarea class="p-files" rows="2" placeholder="Nombre de archivos..."></textarea></div>
+          </div>
+        </div>
+        <div class="day-card" data-day="sabado">
+          <div class="day-label">Sábado</div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="text" class="p-date" placeholder="Ej: 29 Abril"></div>
+            <div class="field-group">
+              <label>Prioridad</label>
+              <div class="semaforo-selector planner-semaforo">
+                <button type="button" class="sema-btn rojo" onclick="selectPlannerPrio(this, 'urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+                <button type="button" class="sema-btn amarillo" onclick="selectPlannerPrio(this, 'medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+                <button type="button" class="sema-btn verde" onclick="selectPlannerPrio(this, 'bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+                <input type="hidden" class="p-prio" value="medio">
+              </div>
+            </div>
+            <div class="field-group"><label>Notas / Idea</label><textarea class="p-notes" rows="3" placeholder="Contenido de hoy..."></textarea></div>
+            <div class="field-group field-files"><label><i data-lucide="file-text" style="width:12px;height:12px;"></i> Archivos / Recursos</label><textarea class="p-files" rows="2" placeholder="Nombre de archivos..."></textarea></div>
+          </div>
+        </div>
+        <div class="day-card" data-day="domingo">
+          <div class="day-label">Domingo</div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="text" class="p-date" placeholder="Ej: 30 Abril"></div>
+            <div class="field-group">
+              <label>Prioridad</label>
+              <div class="semaforo-selector planner-semaforo">
+                <button type="button" class="sema-btn rojo" onclick="selectPlannerPrio(this, 'urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+                <button type="button" class="sema-btn amarillo" onclick="selectPlannerPrio(this, 'medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+                <button type="button" class="sema-btn verde" onclick="selectPlannerPrio(this, 'bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+                <input type="hidden" class="p-prio" value="medio">
+              </div>
+            </div>
+            <div class="field-group"><label>Notas / Idea</label><textarea class="p-notes" rows="3" placeholder="Contenido de hoy..."></textarea></div>
+            <div class="field-group field-files"><label><i data-lucide="file-text" style="width:12px;height:12px;"></i> Archivos / Recursos</label><textarea class="p-files" rows="2" placeholder="Nombre de archivos..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MENU SEMANAL VIEW -->
+    <section class="view" id="view-menu">
+      <div class="planner-header">
+        <p class="view-sub">Organiza tu alimentación de la semana y lista de compras.</p>
+        <button class="btn-add" onclick="saveMenuData()">
+          <i data-lucide="save" style="width:16px;height:16px;"></i> Guardar Menú
+        </button>
+      </div>
+
+      <!-- LISTA DE SUPERMERCADO (arriba) -->
+      <div class="grocery-section">
+        <h2 class="section-title" style="margin-bottom: 20px; font-size: 20px; color: #333333;">
+          <i data-lucide="shopping-cart" style="width:20px; height:20px; vertical-align:middle; margin-right:8px; color: #333333;"></i>
+          Lista de Supermercado
+        </h2>
+        <div class="grocery-input-group">
+          <input type="text" id="grocery-input" placeholder="Añadir artículo (ej: Leche, Huevos...)" onkeypress="if(event.key==='Enter') addGroceryItem()">
+          <button class="btn-add" onclick="addGroceryItem()">Añadir</button>
+        </div>
+        <div id="grocery-list" class="grocery-list">
+          <!-- Items will be rendered here -->
+        </div>
+      </div>
+
+      <!-- MENÚ SEMANAL GRID -->
+      <div class="planner-grid">
+        <!-- Lunes -->
+        <div class="day-card" data-day="lunes">
+          <div class="day-label" style="display: flex; justify-content: space-between; align-items: center;">
+            Lunes
+            <input type="checkbox" class="m-check" onchange="toggleMenuDay('lunes')" title="Marcar como pasado" style="width: 16px; height: 16px; cursor: pointer;">
+          </div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="date" class="m-date"></div>
+            <div class="field-group"><label>Desayuno</label><input type="text" class="m-desayuno" placeholder="¿Qué desayunamos?"></div>
+            <div class="field-group"><label>Comida</label><input type="text" class="m-comida" placeholder="Plato principal..."></div>
+            <div class="field-group"><label>Cena</label><input type="text" class="m-cena" placeholder="Algo ligero..."></div>
+            <div class="field-group"><label>Colación</label><input type="text" class="m-colacion" placeholder="Snack del día..."></div>
+          </div>
+        </div>
+        <!-- Martes -->
+        <div class="day-card" data-day="martes">
+          <div class="day-label" style="display: flex; justify-content: space-between; align-items: center;">
+            Martes
+            <input type="checkbox" class="m-check" onchange="toggleMenuDay('martes')" title="Marcar como pasado" style="width: 16px; height: 16px; cursor: pointer;">
+          </div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="date" class="m-date"></div>
+            <div class="field-group"><label>Desayuno</label><input type="text" class="m-desayuno" placeholder="..."></div>
+            <div class="field-group"><label>Comida</label><input type="text" class="m-comida" placeholder="..."></div>
+            <div class="field-group"><label>Cena</label><input type="text" class="m-cena" placeholder="..."></div>
+            <div class="field-group"><label>Colación</label><input type="text" class="m-colacion" placeholder="..."></div>
+          </div>
+        </div>
+        <!-- Miercoles -->
+        <div class="day-card" data-day="miercoles">
+          <div class="day-label" style="display: flex; justify-content: space-between; align-items: center;">
+            Miércoles
+            <input type="checkbox" class="m-check" onchange="toggleMenuDay('miercoles')" title="Marcar como pasado" style="width: 16px; height: 16px; cursor: pointer;">
+          </div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="date" class="m-date"></div>
+            <div class="field-group"><label>Desayuno</label><input type="text" class="m-desayuno" placeholder="..."></div>
+            <div class="field-group"><label>Comida</label><input type="text" class="m-comida" placeholder="..."></div>
+            <div class="field-group"><label>Cena</label><input type="text" class="m-cena" placeholder="..."></div>
+            <div class="field-group"><label>Colación</label><input type="text" class="m-colacion" placeholder="..."></div>
+          </div>
+        </div>
+        <!-- Jueves -->
+        <div class="day-card" data-day="jueves">
+          <div class="day-label" style="display: flex; justify-content: space-between; align-items: center;">
+            Jueves
+            <input type="checkbox" class="m-check" onchange="toggleMenuDay('jueves')" title="Marcar como pasado" style="width: 16px; height: 16px; cursor: pointer;">
+          </div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="date" class="m-date"></div>
+            <div class="field-group"><label>Desayuno</label><input type="text" class="m-desayuno" placeholder="..."></div>
+            <div class="field-group"><label>Comida</label><input type="text" class="m-comida" placeholder="..."></div>
+            <div class="field-group"><label>Cena</label><input type="text" class="m-cena" placeholder="..."></div>
+            <div class="field-group"><label>Colación</label><input type="text" class="m-colacion" placeholder="..."></div>
+          </div>
+        </div>
+        <!-- Viernes -->
+        <div class="day-card" data-day="viernes">
+          <div class="day-label" style="display: flex; justify-content: space-between; align-items: center;">
+            Viernes
+            <input type="checkbox" class="m-check" onchange="toggleMenuDay('viernes')" title="Marcar como pasado" style="width: 16px; height: 16px; cursor: pointer;">
+          </div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="date" class="m-date"></div>
+            <div class="field-group"><label>Desayuno</label><input type="text" class="m-desayuno" placeholder="..."></div>
+            <div class="field-group"><label>Comida</label><input type="text" class="m-comida" placeholder="..."></div>
+            <div class="field-group"><label>Cena</label><input type="text" class="m-cena" placeholder="..."></div>
+            <div class="field-group"><label>Colación</label><input type="text" class="m-colacion" placeholder="..."></div>
+          </div>
+        </div>
+        <!-- Sabado -->
+        <div class="day-card" data-day="sabado">
+          <div class="day-label" style="display: flex; justify-content: space-between; align-items: center;">
+            Sábado
+            <input type="checkbox" class="m-check" onchange="toggleMenuDay('sabado')" title="Marcar como pasado" style="width: 16px; height: 16px; cursor: pointer;">
+          </div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="date" class="m-date"></div>
+            <div class="field-group"><label>Desayuno</label><input type="text" class="m-desayuno" placeholder="..."></div>
+            <div class="field-group"><label>Comida</label><input type="text" class="m-comida" placeholder="..."></div>
+            <div class="field-group"><label>Cena</label><input type="text" class="m-cena" placeholder="..."></div>
+            <div class="field-group"><label>Colación</label><input type="text" class="m-colacion" placeholder="..."></div>
+          </div>
+        </div>
+        <!-- Domingo -->
+        <div class="day-card" data-day="domingo">
+          <div class="day-label" style="display: flex; justify-content: space-between; align-items: center;">
+            Domingo
+            <input type="checkbox" class="m-check" onchange="toggleMenuDay('domingo')" title="Marcar como pasado" style="width: 16px; height: 16px; cursor: pointer;">
+          </div>
+          <div class="day-inputs">
+            <div class="field-group"><label>Fecha</label><input type="date" class="m-date"></div>
+            <div class="field-group"><label>Desayuno</label><input type="text" class="m-desayuno" placeholder="..."></div>
+            <div class="field-group"><label>Comida</label><input type="text" class="m-comida" placeholder="..."></div>
+            <div class="field-group"><label>Cena</label><input type="text" class="m-cena" placeholder="..."></div>
+            <div class="field-group"><label>Colación</label><input type="text" class="m-colacion" placeholder="..."></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModalDirect()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <input type="hidden" id="editing-task-id" value="">
+      <h2 class="modal-title" id="modal-title-text">Nueva Tarea</h2>
+      <div class="form-group"><label>Título *</label><input type="text" id="task-title" placeholder="¿Qué necesitas hacer?" /></div>
+      <div class="form-group"><label>Descripción</label><textarea id="task-desc" placeholder="Detalles..." rows="2"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Categoría</label><select id="task-cat"><option value="webdev">Dev</option><option value="marketing">Marketing</option><option value="master">Máster</option><option value="pandin">Pandín</option><option value="personal">Personal</option><option value="otra">Otra</option></select></div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="task-date" /></div>
+        <div class="form-group"><label>Hora</label><input type="time" id="task-time" /></div>
+      </div>
+      <div class="form-group">
+        <label>Prioridad (Semáforo)</label>
+        <div class="semaforo-selector">
+          <button class="sema-btn rojo active-sema" data-prio="urgente" onclick="selectPrio('urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+          <button class="sema-btn amarillo" data-prio="medio" onclick="selectPrio('medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+          <button class="sema-btn verde" data-prio="bajo" onclick="selectPrio('bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+        </div>
+      </div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="closeModalDirect()">Cancelar</button><button class="btn-save" onclick="saveTask()">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- LEAD MODAL -->
+  <div class="modal-overlay" id="modal-lead-overlay" onclick="closeLeadModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <input type="hidden" id="editing-lead-id" value="">
+      <h2 class="modal-title" id="lead-modal-title">Nuevo Lead</h2>
+      
+      <div class="form-row">
+        <div class="form-group"><label>Nombre</label><input type="text" id="lead-nombre" placeholder="Nombre completo" /></div>
+        <div class="form-group"><label>Email *</label><input type="email" id="lead-email" placeholder="email@ejemplo.com" /></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Producto</label>
+          <select id="lead-producto">
+            <option value="etern-me">Etern-me</option>
+            <option value="cotidiana">Cotidiana</option>
+            <option value="crm">CRM</option>
+            <option value="portafolio">Portafolio</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Origen</label>
+          <select id="lead-origen">
+            <option value="directo">Directo</option>
+            <option value="instagram">Instagram</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="google">Google</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="lead-estado">
+          <option value="nuevo">Nuevo</option>
+          <option value="contactado">Contactado</option>
+          <option value="en_conversacion">En conversación</option>
+          <option value="validado">Validado</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Acciones del Usuario (Scoring)</label>
+        <div class="checkbox-group" style="display:flex; flex-direction:column; gap:8px; background:var(--card); padding:12px; border-radius:12px; border:1px solid var(--border);">
+          <label style="display:flex; align-items:center; gap:8px; text-transform:none; font-size:13px; color:var(--text); cursor:pointer;">
+            <input type="checkbox" id="check-form" style="width:16px; height:16px;"> Rellenó formulario
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; text-transform:none; font-size:13px; color:var(--text); cursor:pointer;">
+            <input type="checkbox" id="check-email" style="width:16px; height:16px;"> Respondió email
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeLeadModal()">Cancelar</button>
+        <button class="btn-save" onclick="saveLead()">Guardar Lead</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="app-v2.js?v=3.11"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js?v=5.9').then(reg => reg.update());
+      });
+    }
+  </script>
+</body>
 </html>
