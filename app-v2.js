@@ -26,6 +26,54 @@ db.enablePersistence({ synchronizeTabs: true }).catch(err => {
   console.warn('Persistencia offline:', err.code);
 });
 
+// ===== AUTH =====
+const ALLOWED_EMAIL = 'melina.rivera@gmail.com';
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+function initAuth() {
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      if (user.email !== ALLOWED_EMAIL) {
+        auth.signOut();
+        showLoginError('Acceso denegado. Esta app es privada.');
+        return;
+      }
+      document.getElementById('login-screen').style.display = 'none';
+      subscribeToFirestore();
+      initAlertSystem();
+    } else {
+      document.getElementById('login-screen').style.display = 'flex';
+      lucide.createIcons();
+    }
+  });
+}
+
+function signInWithGoogle() {
+  const btn = document.getElementById('btn-google-login');
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  btn.textContent = 'Conectando…';
+  auth.signInWithPopup(googleProvider).catch(() => {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.innerHTML = originalHTML;
+    showLoginError('No se pudo iniciar sesión. Intenta de nuevo.');
+  });
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function signOutUser() {
+  auth.signOut().then(() => window.location.reload());
+}
+
 // ===== STATE =====
 let tasks = [];
 let notas = [];
@@ -261,8 +309,7 @@ function refreshIcons() {
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   updateDate();
-  subscribeToFirestore();
-  initAlertSystem();
+  initAuth();
 });
 
 // Función para forzar recarga de la aplicación (limpia caché del navegador para la PWA)
