@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
+  body { @apply bg-gray-50 text-gray-900 font-sans; overscroll-behavior: none; }
+  input, select, textarea { @apply font-sans; font-size: 16px; }
+}
+
+@layer components {
+  .screen { @apply min-h-screen flex flex-col bg-gray-50; max-width: 480px; margin: 0 auto; }
+  .topbar { @apply flex items-center gap-3 px-4 pt-12 pb-3 bg-white border-b border-gray-100 sticky top-0 z-10; }
+  .card { @apply bg-white rounded-2xl border border-gray-100 p-4 active:scale-[0.98] transition-transform cursor-pointer; }
+  .badge { @apply inline-block text-xs font-medium px-2.5 py-0.5 rounded-full; }
+  .form-input { @apply w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-primary focus:bg-white transition-colors; }
+  .btn-primary { @apply bg-primary text-white font-medium py-3 px-5 rounded-xl active:bg-primary-dark transition-colors text-sm; }
+  .btn-secondary { @apply bg-gray-100 text-gray-700 font-medium py-3 px-5 rounded-xl active:bg-gray-200 transition-colors text-sm; }
+  .btn-icon { @apply p-2 rounded-xl text-gray-500 active:bg-gray-100 transition-colors; }
+  .fab { @apply fixed bottom-6 right-5 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:bg-primary-dark transition-colors z-20; }
+  .section-card { @apply bg-white rounded-2xl border border-gray-100 overflow-hidden; }
+  .detail-row { @apply flex justify-between items-center px-4 py-3 border-b border-gray-50 last:border-0; }
+}
