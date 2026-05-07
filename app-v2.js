@@ -1,6 +1,6 @@
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
-  apiKey: "AIzaSyB" + "MbkhfkkqDvYL6" + "tww5Uz_t8BliUYyrjEU",
+  apiKey: "AIzaSyAoJpi_l4_9-z22wrTj1iqDXgvazfYGMKM",
   authDomain: "crm-melina.firebaseapp.com",
   projectId: "crm-melina",
   storageBucket: "crm-melina.firebasestorage.app",
