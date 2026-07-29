@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
-        name: 'Mi CRM',
+        name: 'CRM',
         short_name: 'CRM',
         description: 'Gestión de clientes y proyectos web',
         theme_color: '#185FA5',
