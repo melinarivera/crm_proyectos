@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
-        name: 'CRM',
+        name: 'CRMeli',
         short_name: 'CRM',
-        description: 'Gestión de clientes y proyectos web',
+        description: 'Agenda personal y de proyectos',
         theme_color: '#185FA5',
         background_color: '#ffffff',
         display: 'standalone',
