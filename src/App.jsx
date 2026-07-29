@@ -130,6 +130,7 @@ export default function App() {
           </div>
         ) : (
           filtered.map(item => (
+            <ItemCard key={item.id} item={item} onClick={() => goDetail(item.id)} />
           ))
         )}
       </div>
