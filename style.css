@@ -1240,6 +1240,89 @@ body {
   margin-bottom: 24px;
 }
 
+/* ===== CALENDARIO MENSUAL ===== */
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.calendar-cell {
+  min-height: 74px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calendar-cell.empty {
+  background: transparent;
+  border: none;
+  cursor: default;
+}
+
+.calendar-cell:not(.empty):hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.calendar-cell.is-today {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.calendar-cell.is-selected {
+  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+}
+
+.calendar-day-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.calendar-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.calendar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.calendar-day-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+@media (max-width: 700px) {
+  .calendar-weekdays span:nth-child(n) { font-size: 10px; }
+  .calendar-cell { min-height: 54px; padding: 6px; }
+}
+
 .planner-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

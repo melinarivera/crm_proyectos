@@ -704,6 +704,82 @@ function buildTaskCard(task) {
   return card;
 }
 
+// ===== CALENDARIO MENSUAL =====
+let calendarDate = new Date();
+let calendarSelectedDay = null;
+
+function calendarShiftMonth(delta) {
+  calendarDate.setDate(1);
+  calendarDate.setMonth(calendarDate.getMonth() + delta);
+  calendarSelectedDay = null;
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  const label = document.getElementById('calendar-month-label');
+  if (!grid || !label) return;
+
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+  label.textContent = calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+  const firstDay = new Date(year, month, 1);
+  // Lunes = 0 ... Domingo = 6
+  const leadingBlanks = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = toLocalDateStr(new Date());
+
+  grid.innerHTML = '';
+
+  for (let i = 0; i < leadingBlanks; i++) {
+    grid.appendChild(document.createElement('div')).className = 'calendar-cell empty';
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dayTasks = tasks.filter(t => t.date === dateStr);
+
+    const cell = document.createElement('div');
+    cell.className = 'calendar-cell';
+    if (dateStr === todayStr) cell.classList.add('is-today');
+    if (dateStr === calendarSelectedDay) cell.classList.add('is-selected');
+
+    const dots = dayTasks.slice(0, 4).map(t => `<span class="calendar-dot dot-${t.prio}"></span>`).join('');
+    cell.innerHTML = `<span class="calendar-day-num">${day}</span><div class="calendar-dots">${dots}</div>`;
+    cell.onclick = () => selectCalendarDay(dateStr);
+    grid.appendChild(cell);
+  }
+
+  if (calendarSelectedDay) {
+    renderCalendarDayTasks(calendarSelectedDay);
+  }
+  refreshIcons();
+}
+
+function selectCalendarDay(dateStr) {
+  calendarSelectedDay = dateStr;
+  renderCalendar();
+}
+
+function renderCalendarDayTasks(dateStr) {
+  const title = document.getElementById('calendar-day-title');
+  const list = document.getElementById('calendar-day-tasks');
+  if (!title || !list) return;
+
+  const [y, m, d] = dateStr.split('-');
+  title.textContent = `Tareas del ${d}/${m}/${y}`;
+
+  const dayTasks = tasks.filter(t => t.date === dateStr);
+  list.innerHTML = '';
+  if (dayTasks.length === 0) {
+    list.innerHTML = '<p class="empty-state">No hay tareas programadas este día.</p>';
+  } else {
+    dayTasks.forEach(t => list.appendChild(buildTaskCard(t)));
+  }
+  refreshIcons();
+}
+
 async function toggleDone(id) {
   const task = tasks.find(t => t.id === id);
   if (task) {
