@@ -296,6 +296,14 @@ body {
 
 .search-result-row:hover { background: var(--card2); }
 
+.search-result-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .search-result-meta {
   font-size: 11px;
   color: var(--text-sub);
@@ -367,9 +375,11 @@ body {
   font-size: 14px;
   font-weight: 600;
   width: fit-content;
+  max-width: 100%;
 }
 
-.streak-flame { font-size: 20px; }
+.streak-badge span:last-child { min-width: 0; }
+.streak-flame { font-size: 20px; flex-shrink: 0; }
 .streak-count { color: #ffb86c; font-size: 16px; font-weight: 800; }
 
 /* ===== BADGE GLOBITO EN CAMPANA ===== */
@@ -1311,10 +1321,13 @@ body {
   gap: 4px;
   height: 160px;
   margin-top: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .trend-bar-col {
   flex: 1;
+  min-width: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1467,6 +1480,14 @@ body {
 @media (max-width: 700px) {
   .calendar-weekdays span:nth-child(n) { font-size: 10px; }
   .calendar-cell { min-height: 54px; padding: 6px; }
+  .calendar-weekdays, .calendar-grid { gap: 4px; }
+}
+
+@media (max-width: 420px) {
+  .calendar-cell { min-height: 44px; padding: 4px; border-radius: 8px; }
+  .calendar-day-num { font-size: 11px; }
+  .calendar-dot { width: 5px; height: 5px; }
+  .calendar-day-panel { padding: 14px; }
 }
 
 .planner-grid {

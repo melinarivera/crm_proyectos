@@ -402,7 +402,7 @@ function onGlobalSearch(query) {
     box.innerHTML = results.slice(0, 30).map((r, i) => `
       <div class="search-result-row" data-search-idx="${i}">
         <i data-lucide="${r.icon}" style="width:14px;height:14px;flex-shrink:0;"></i>
-        <span>${r.label}</span>
+        <span class="search-result-label">${r.label}</span>
         <span class="search-result-meta">${r.meta}</span>
       </div>
     `).join('');
