@@ -196,6 +196,7 @@ body {
 
 /* ===== TOPBAR ===== */
 .topbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -309,8 +310,23 @@ body {
   font-size: 12px;
 }
 
+.btn-mobile-search { display: none; }
+
 @media (max-width: 900px) {
   .topbar-search { display: none; }
+  .btn-mobile-search { display: flex; }
+
+  .topbar-search.mobile-open {
+    display: flex;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    max-width: none;
+    margin: 0;
+    z-index: 400;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  }
 }
 
 /* ===== BOTÓN CAMPANA ===== */
