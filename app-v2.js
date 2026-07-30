@@ -966,15 +966,23 @@ async function saveMenuData(silent = false) {
   showSyncIndicator('syncing');
   const menuData = {};
   
+  const readPerson = (card, person) => {
+    const col = card.querySelector(`.meal-col[data-person="${person}"]`);
+    return {
+      desayuno: col.querySelector('.m-desayuno').value,
+      comida: col.querySelector('.m-comida').value,
+      cena: col.querySelector('.m-cena').value,
+      colacion: col.querySelector('.m-colacion').value
+    };
+  };
+
   document.querySelectorAll('#view-menu .day-card').forEach(card => {
     const day = card.dataset.day;
     const checkbox = card.querySelector('.m-check');
     menuData[day] = {
       date: card.querySelector('.m-date').value,
-      desayuno: card.querySelector('.m-desayuno').value,
-      comida: card.querySelector('.m-comida').value,
-      cena: card.querySelector('.m-cena').value,
-      colacion: card.querySelector('.m-colacion').value,
+      yo: readPerson(card, 'yo'),
+      hija: readPerson(card, 'hija'),
       checked: checkbox ? checkbox.checked : false
     };
   });
@@ -1003,14 +1011,25 @@ async function loadMenuData() {
     const doc = await db.collection('menu').doc('weekly').get();
     if (doc.exists) {
       const data = doc.data().days;
+      const fillPerson = (card, person, values) => {
+        const col = card.querySelector(`.meal-col[data-person="${person}"]`);
+        col.querySelector('.m-desayuno').value = values.desayuno || '';
+        col.querySelector('.m-comida').value = values.comida || '';
+        col.querySelector('.m-cena').value = values.cena || '';
+        col.querySelector('.m-colacion').value = values.colacion || '';
+      };
       for (const day in data) {
         const card = document.querySelector(`#view-menu .day-card[data-day="${day}"]`);
         if (card) {
           card.querySelector('.m-date').value = data[day].date || '';
-          card.querySelector('.m-desayuno').value = data[day].desayuno || '';
-          card.querySelector('.m-comida').value = data[day].comida || '';
-          card.querySelector('.m-cena').value = data[day].cena || '';
-          card.querySelector('.m-colacion').value = data[day].colacion || '';
+          if (data[day].yo || data[day].hija) {
+            fillPerson(card, 'yo', data[day].yo || {});
+            fillPerson(card, 'hija', data[day].hija || {});
+          } else {
+            // Migración de menú antiguo (un solo campo compartido) -> columna "Yo"
+            fillPerson(card, 'yo', data[day]);
+            fillPerson(card, 'hija', {});
+          }
           const checkbox = card.querySelector('.m-check');
           if (checkbox) {
             checkbox.checked = data[day].checked || false;
