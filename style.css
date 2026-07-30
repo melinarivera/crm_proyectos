@@ -337,6 +337,25 @@ body {
   box-shadow: 0 4px 16px rgba(124,106,255,0.3);
 }
 
+/* ===== RACHA DE TAREAS COMPLETADAS ===== */
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ff9a3c18, #ffd16618);
+  border: 1px solid #ff9a3c44;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.streak-flame { font-size: 20px; }
+.streak-count { color: #ffb86c; font-size: 16px; font-weight: 800; }
+
 /* ===== BADGE GLOBITO EN CAMPANA ===== */
 .notif-badge {
   position: absolute;
@@ -638,6 +657,23 @@ body {
   gap: 8px;
   margin-top: 10px;
   flex-wrap: wrap;
+}
+
+.task-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.task-tag-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text-sub);
 }
 
 .task-tag {

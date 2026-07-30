@@ -308,6 +308,73 @@ function refreshIcons() {
   if (window.lucide) lucide.createIcons();
 }
 
+// ===== BUSCADOR GLOBAL =====
+const searchCatLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
+
+function onGlobalSearch(query) {
+  const box = document.getElementById('search-results');
+  if (!box) return;
+  const q = query.trim().toLowerCase();
+
+  if (!q) {
+    box.classList.remove('open');
+    box.innerHTML = '';
+    return;
+  }
+
+  const results = [];
+
+  tasks.forEach(t => {
+    const tagsMatch = (t.tags || []).some(tg => tg.toLowerCase().includes(q));
+    if ((t.title && t.title.toLowerCase().includes(q)) || (t.desc && t.desc.toLowerCase().includes(q)) || tagsMatch) {
+      results.push({ icon: 'check-circle-2', label: t.title, meta: searchCatLabels[t.cat] || t.cat, action: () => showView(t.cat) });
+    }
+  });
+
+  notas.forEach(n => {
+    if (n.text && n.text.toLowerCase().includes(q)) {
+      results.push({ icon: 'sticky-note', label: n.text.slice(0, 60), meta: 'Nota', action: () => showView('notas') });
+    }
+  });
+
+  drives.forEach(d => {
+    if (d.name && d.name.toLowerCase().includes(q)) {
+      results.push({ icon: 'hard-drive', label: d.name, meta: 'Drive', action: () => showView('drive') });
+    }
+  });
+
+  if (results.length === 0) {
+    box.innerHTML = '<div class="search-empty">Sin resultados para "' + query.trim() + '"</div>';
+  } else {
+    box.innerHTML = results.slice(0, 30).map((r, i) => `
+      <div class="search-result-row" data-search-idx="${i}">
+        <i data-lucide="${r.icon}" style="width:14px;height:14px;flex-shrink:0;"></i>
+        <span>${r.label}</span>
+        <span class="search-result-meta">${r.meta}</span>
+      </div>
+    `).join('');
+    box.querySelectorAll('[data-search-idx]').forEach(row => {
+      const idx = Number(row.dataset.searchIdx);
+      row.onclick = () => {
+        results[idx].action();
+        box.classList.remove('open');
+        document.getElementById('global-search').value = '';
+      };
+    });
+  }
+
+  box.classList.add('open');
+  refreshIcons();
+}
+
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.topbar-search');
+  if (wrapper && !wrapper.contains(e.target)) {
+    const box = document.getElementById('search-results');
+    if (box) box.classList.remove('open');
+  }
+});
+
 // ===== TEMA CLARO / OSCURO =====
 function initTheme() {
   const saved = localStorage.getItem('theme') || 'dark';
@@ -457,7 +524,9 @@ function showView(view) {
     drive:     'Drive',
     leads:     'Leads',
     planner:   'Planner Semanal',
-    menu:      'Menú Semanal'
+    menu:      'Menú Semanal',
+    calendario:'Calendario',
+    stats:     'Estadísticas'
   };
   document.getElementById('page-title').textContent = titles[view] || 'MeliOrganizer';
 
@@ -470,6 +539,8 @@ function showView(view) {
     loadMenuData();
     renderGroceryList();
   }
+  else if (view === 'calendario') renderCalendar();
+  else if (view === 'stats') renderStats();
   else renderCategoryList(view);
   refreshIcons();
 }
@@ -489,8 +560,45 @@ function updateStats() {
   });
 }
 
+function toLocalDateStr(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/** Racha de días consecutivos con al menos una tarea completada */
+function computeStreak() {
+  const completedDates = new Set();
+  tasks.forEach(t => {
+    if (t.completedAt) completedDates.add(t.completedAt.slice(0, 10));
+  });
+
+  let cursor = new Date();
+  if (!completedDates.has(toLocalDateStr(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  let streak = 0;
+  while (completedDates.has(toLocalDateStr(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function renderStreak() {
+  const el = document.getElementById('streak-badge');
+  if (!el) return;
+  const streak = computeStreak();
+  if (streak > 0) {
+    el.style.display = 'flex';
+    el.querySelector('.streak-count').textContent = streak;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function renderDashboard() {
   renderAlertsPanel();
+  renderStreak();
   const prios = ['urgente', 'medio', 'bajo'];
   const ids   = ['dash-urgente', 'dash-medio', 'dash-bajo'];
   
@@ -574,6 +682,7 @@ function buildTaskCard(task) {
       </div>
     </div>
     ${task.desc ? `<div class="task-desc-text">${task.desc}</div>` : ''}
+    ${task.tags && task.tags.length ? `<div class="task-tags-row">${task.tags.map(tg => `<span class="task-tag-chip">#${tg}</span>`).join('')}</div>` : ''}
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; gap: 10px; flex-wrap: wrap;">
       <div class="task-meta" style="margin-top: 0;">
         <span class="task-tag tag-${task.cat}">${tagLabels[task.cat] || task.cat}</span>
@@ -599,7 +708,10 @@ async function toggleDone(id) {
   const task = tasks.find(t => t.id === id);
   if (task) {
     showSyncIndicator('syncing');
-    await db.collection('tasks').doc(id).update({ done: !task.done });
+    const done = !task.done;
+    const update = { done };
+    if (done) update.completedAt = new Date().toISOString();
+    await db.collection('tasks').doc(id).update(update);
   }
 }
 
@@ -625,6 +737,7 @@ function closeModalDirect() {
   document.getElementById('task-desc').value = '';
   document.getElementById('task-date').value = '';
   document.getElementById('task-time').value = '';
+  document.getElementById('task-tags').value = '';
 }
 
 function editTask(id) {
@@ -638,6 +751,7 @@ function editTask(id) {
   document.getElementById('task-cat').value = task.cat || 'webdev';
   document.getElementById('task-date').value = task.date || '';
   document.getElementById('task-time').value = task.time || '';
+  document.getElementById('task-tags').value = (task.tags || []).join(', ');
   selectPrio(task.prio || 'urgente');
 
   openModal();
@@ -655,6 +769,7 @@ async function saveTask() {
   const catEl = document.getElementById('task-cat');
   const dateEl = document.getElementById('task-date');
   const timeEl = document.getElementById('task-time');
+  const tagsEl = document.getElementById('task-tags');
   const editingIdEl = document.getElementById('editing-task-id');
 
   const title = titleEl.value.trim();
@@ -662,12 +777,15 @@ async function saveTask() {
 
   const editingId = editingIdEl.value;
 
+  const tags = tagsEl.value.split(',').map(t => t.trim()).filter(Boolean);
+
   const taskData = {
     title,
     desc:    descEl.value.trim(),
     cat:     catEl.value,
     date:    dateEl.value,
     time:    timeEl.value, // Capturamos la hora directamente del input
+    tags,
     prio:    selectedPrio,
     updated: new Date().toISOString()
   };

@@ -68,6 +68,12 @@
       <button class="nav-item" data-view="personal" onclick="showView('personal')">
         <i data-lucide="heart" class="nav-icon"></i><span>Personal</span>
       </button>
+      <button class="nav-item" data-view="calendario" onclick="showView('calendario')">
+        <i data-lucide="calendar" class="nav-icon"></i><span>Calendario</span>
+      </button>
+      <button class="nav-item" data-view="stats" onclick="showView('stats')">
+        <i data-lucide="bar-chart-3" class="nav-icon"></i><span>Estadísticas</span>
+      </button>
       <button class="nav-item" data-view="menu" onclick="showView('menu')">
         <i data-lucide="utensils" class="nav-icon"></i><span>Menú</span>
       </button>
@@ -127,6 +133,11 @@
         <div class="stat-card" onclick="showView('pandin')"><div class="stat-icon" style="background:#ff9a3c22;"><i data-lucide="baby" class="stat-lucide" style="color:#ffb86c;"></i></div><div class="stat-info"><span class="stat-label">Pandín</span><span class="stat-value" id="stat-pandin">0</span></div></div>
         <div class="stat-card" onclick="showView('sara')"><div class="stat-icon" style="background:#ff6b9d22;"><i data-lucide="sparkles" class="stat-lucide" style="color:#ff6b9d;"></i></div><div class="stat-info"><span class="stat-label">Sara</span><span class="stat-value" id="stat-sara">0</span></div></div>
         <div class="stat-card" onclick="showView('personal')"><div class="stat-icon" style="background:#43e97b22;"><i data-lucide="heart" class="stat-lucide" style="color:#4fe99b;"></i></div><div class="stat-info"><span class="stat-label">Personal</span><span class="stat-value" id="stat-personal">0</span></div></div>
+      </div>
+
+      <div id="streak-badge" class="streak-badge" style="display:none;">
+        <span class="streak-flame">🔥</span>
+        <span><span class="streak-count">0</span> día(s) seguidos completando tareas</span>
       </div>
 
       <!-- PANEL DE ALERTAS -->
@@ -219,6 +230,32 @@
       </div>
       <div class="task-list full-list" id="list-personal"></div>
     </section>
+    <!-- CALENDARIO VIEW -->
+    <section class="view" id="view-calendario">
+      <div class="planner-header">
+        <p class="view-sub">Vista mensual de tus tareas con fecha.</p>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-notif" onclick="calendarShiftMonth(-1)" title="Mes anterior"><i data-lucide="chevron-left" style="width:16px;height:16px;"></i></button>
+          <span id="calendar-month-label" style="font-weight:700;min-width:150px;text-align:center;"></span>
+          <button class="btn-notif" onclick="calendarShiftMonth(1)" title="Mes siguiente"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
+        </div>
+      </div>
+      <div class="calendar-weekdays">
+        <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+      <div class="calendar-day-panel">
+        <h3 id="calendar-day-title" class="section-title">Selecciona un día</h3>
+        <div class="task-list" id="calendar-day-tasks"></div>
+      </div>
+    </section>
+
+    <!-- ESTADÍSTICAS VIEW -->
+    <section class="view" id="view-stats">
+      <p class="view-sub">Progreso de tareas y leads.</p>
+      <div class="stats-grid-charts" id="stats-charts"></div>
+    </section>
+
     <section class="view" id="view-drive">
       <p class="view-sub">Anexa, edita y organiza tus enlaces de Drive.</p>
       <div class="nota-input-area drive-input-area">
@@ -661,6 +698,7 @@
         <div class="form-group"><label>Fecha</label><input type="date" id="task-date" /></div>
         <div class="form-group"><label>Hora</label><input type="time" id="task-time" /></div>
       </div>
+      <div class="form-group"><label>Etiquetas</label><input type="text" id="task-tags" placeholder="separadas por coma, ej: cliente-x, urgente" /></div>
       <div class="form-group">
         <label>Prioridad (Semáforo)</label>
         <div class="semaforo-selector">
