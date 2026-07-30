@@ -1228,6 +1228,10 @@ body {
   .nav-item { justify-content: center; padding: 14px 0; }
   .nav-icon { width: 24px; height: 24px; }
   .sidebar-nav { gap: 12px; }
+
+  /* Topbar: allow wrapping instead of overflowing with the extra icon buttons */
+  .topbar { flex-wrap: wrap; row-gap: 10px; }
+  .topbar-right { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 }
 
 @media (max-width: 600px) {
@@ -1248,7 +1252,7 @@ body {
   /* Topbar Mobile Improvements */
   .page-title { font-size: 22px; }
   .btn-add { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
-  .topbar-right { gap: 14px; }
+  .topbar-right { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
   .btn-notif { width: 36px; height: 36px; }
 }
 
