@@ -420,11 +420,23 @@ function onGlobalSearch(query) {
   refreshIcons();
 }
 
+function toggleMobileSearch() {
+  const wrapper = document.querySelector('.topbar-search');
+  if (!wrapper) return;
+  wrapper.classList.toggle('mobile-open');
+  if (wrapper.classList.contains('mobile-open')) {
+    const input = document.getElementById('global-search');
+    if (input) input.focus();
+  }
+}
+
 document.addEventListener('click', (e) => {
   const wrapper = document.querySelector('.topbar-search');
-  if (wrapper && !wrapper.contains(e.target)) {
+  const mobileBtn = document.getElementById('btn-mobile-search');
+  if (wrapper && !wrapper.contains(e.target) && !(mobileBtn && mobileBtn.contains(e.target))) {
     const box = document.getElementById('search-results');
     if (box) box.classList.remove('open');
+    wrapper.classList.remove('mobile-open');
   }
 });
 
