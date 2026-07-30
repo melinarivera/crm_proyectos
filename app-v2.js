@@ -77,10 +77,12 @@ function signOutUser() {
 // ===== STATE =====
 let tasks = [];
 let notas = [];
+let drives = [];
 let leads = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
+let selectedDrivePrio = 'medio';
 let currentView = 'dashboard';
 
 // ===== SISTEMA DE ALERTAS IN-APP (sin permisos, funciona en iOS/Mac) =====
@@ -336,7 +338,7 @@ function subscribeToFirestore() {
     tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log("Tareas recibidas:", tasks.length);
     renderAll();
-    if (currentView !== 'dashboard' && currentView !== 'notas') renderCategoryList(currentView);
+    if (currentView !== 'dashboard' && currentView !== 'notas' && currentView !== 'drive') renderCategoryList(currentView);
     showSyncIndicator('ok');
     // Re-check del badge al recibir cambios de Firestore
     updateAlertBadge();
@@ -351,6 +353,12 @@ function subscribeToFirestore() {
   db.collection('notas').orderBy('created', 'desc').onSnapshot(snap => {
     notas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     if (currentView === 'notas') renderNotas();
+  });
+
+  // Drive
+  db.collection('drives').orderBy('created', 'desc').onSnapshot(snap => {
+    drives = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'drive') renderDrives();
   });
 
   db.collection('leads').orderBy('createdAt', 'desc').onSnapshot(snap => {
@@ -416,6 +424,7 @@ function showView(view) {
     pandin:    'Pandín',
     personal:  'Vida Personal',
     notas:     'Notas Rápidas',
+    drive:     'Drive',
     leads:     'Leads',
     planner:   'Planner Semanal',
     menu:      'Menú Semanal'
@@ -424,6 +433,7 @@ function showView(view) {
 
   if (view === 'dashboard') renderDashboard();
   else if (view === 'notas') renderNotas();
+  else if (view === 'drive') renderDrives();
   else if (view === 'leads') renderLeads();
   else if (view === 'planner') loadPlannerData();
   else if (view === 'menu') {
@@ -745,6 +755,132 @@ async function deleteNota(id) {
   if (confirm("¿Eliminar esta nota?")) {
     showSyncIndicator('syncing');
     await db.collection('notas').doc(id).delete();
+  }
+}
+
+// ===== DRIVE =====
+function renderDrives() {
+  const grid = document.getElementById('drive-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (drives.length === 0) {
+    grid.innerHTML = '<p class="empty-state">No hay drives guardados.</p>';
+    return;
+  }
+
+  const sorted = [...drives].sort((a, b) => {
+    const dateA = a.date || '9999-12-31';
+    const dateB = b.date || '9999-12-31';
+    return dateA.localeCompare(dateB);
+  });
+
+  sorted.forEach(d => {
+    const card = document.createElement('div');
+    const prioClass = d.prio ? `prio-${d.prio}` : 'prio-medio';
+    card.className = `nota-card drive-card ${prioClass}`;
+
+    let dateStr = 'Sin fecha';
+    if (d.date) {
+      const [y, m, day] = d.date.split('-');
+      dateStr = `${day}/${m}/${y}`;
+    }
+
+    card.innerHTML = `
+      <div class="nota-actions">
+        <button class="nota-btn" onclick="editDrive('${d.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+        <button class="nota-btn del" onclick="deleteDrive('${d.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+      </div>
+      <div class="nota-text drive-name" onclick="openDrive('${d.id}')" title="Abrir enlace">
+        <i data-lucide="hard-drive" style="width:14px;height:14px;vertical-align:middle;margin-right:6px;"></i>${d.name || '(sin nombre)'}
+      </div>
+      <div class="nota-meta">
+        <span class="sema-dot-sm dot-${d.prio || 'medio'}"></span>
+        <span>${dateStr}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  refreshIcons();
+}
+
+function openDrive(id) {
+  const d = drives.find(x => x.id === id);
+  if (d && d.url) window.open(d.url, '_blank');
+}
+
+function selectDrivePrio(prio) {
+  selectedDrivePrio = prio;
+  document.querySelectorAll('[data-drive-prio]').forEach(b => b.classList.remove('active-sema'));
+  document.querySelector(`[data-drive-prio="${prio}"]`).classList.add('active-sema');
+}
+
+async function addDrive() {
+  const name = document.getElementById('drive-name').value.trim();
+  let url = document.getElementById('drive-url').value.trim();
+  const date = document.getElementById('drive-date').value;
+
+  if (!name || !url) {
+    alert("Completa el nombre y el enlace del Drive.");
+    return;
+  }
+  if (!url.startsWith('http')) url = 'https://' + url;
+
+  const editingId = document.getElementById('editing-drive-id').value;
+  const driveData = {
+    name,
+    url,
+    date,
+    prio: selectedDrivePrio,
+    updated: new Date().toISOString()
+  };
+
+  showSyncIndicator('syncing');
+
+  try {
+    if (editingId) {
+      await db.collection('drives').doc(editingId).update(driveData);
+    } else {
+      driveData.created = new Date().toISOString();
+      await db.collection('drives').add(driveData);
+    }
+    resetDriveForm();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editDrive(id) {
+  const d = drives.find(x => x.id === id);
+  if (!d) return;
+
+  document.getElementById('editing-drive-id').value = id;
+  document.getElementById('drive-name').value = d.name || '';
+  document.getElementById('drive-url').value = d.url || '';
+  document.getElementById('drive-date').value = d.date || '';
+  selectDrivePrio(d.prio || 'medio');
+
+  document.getElementById('btn-save-drive').innerHTML = '<i data-lucide="check" style="width:15px;height:15px;"></i> Actualizar Drive';
+  document.getElementById('btn-cancel-drive').style.display = 'block';
+  document.getElementById('drive-name').focus();
+  refreshIcons();
+}
+
+function resetDriveForm() {
+  document.getElementById('editing-drive-id').value = '';
+  document.getElementById('drive-name').value = '';
+  document.getElementById('drive-url').value = '';
+  document.getElementById('drive-date').value = '';
+  selectDrivePrio('medio');
+  document.getElementById('btn-save-drive').innerHTML = '<i data-lucide="save" style="width:15px;height:15px;"></i> Guardar Drive';
+  document.getElementById('btn-cancel-drive').style.display = 'none';
+  refreshIcons();
+}
+
+async function deleteDrive(id) {
+  if (confirm("¿Eliminar este Drive?")) {
+    showSyncIndicator('syncing');
+    await db.collection('drives').doc(id).delete();
   }
 }
 

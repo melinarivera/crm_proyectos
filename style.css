@@ -701,6 +701,43 @@ body {
 
 .nota-card:hover .nota-actions { opacity: 1; }
 
+/* ===== DRIVE ===== */
+.drive-input-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.drive-input-row input {
+  flex: 1;
+  min-width: 160px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.drive-input-row input:focus { border-color: var(--accent); }
+.drive-input-row input::placeholder { color: var(--text-sub); }
+
+.drive-name {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.drive-name:hover { color: var(--accent2); }
+
+@media (max-width: 600px) {
+  .drive-input-row { flex-direction: column; }
+}
+
 .nota-btn {
   background: transparent;
   border: none;

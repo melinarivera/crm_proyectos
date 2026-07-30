@@ -62,6 +62,9 @@
       <button class="nav-item" data-view="menu" onclick="showView('menu')">
         <i data-lucide="utensils" class="nav-icon"></i><span>Menú</span>
       </button>
+      <button class="nav-item" data-view="drive" onclick="showView('drive')">
+        <i data-lucide="hard-drive" class="nav-icon"></i><span>Drive</span>
+      </button>
       <button class="nav-item" data-view="notas" onclick="showView('notas')">
         <i data-lucide="sticky-note" class="nav-icon"></i><span>Notas Rápidas</span>
       </button>
@@ -156,6 +159,27 @@
         </div>
       </div>
       <div class="task-list full-list" id="list-personal"></div>
+    </section>
+    <section class="view" id="view-drive">
+      <p class="view-sub">Anexa, edita y organiza tus enlaces de Drive.</p>
+      <div class="nota-input-area drive-input-area">
+        <input type="hidden" id="editing-drive-id" value="">
+        <div class="drive-input-row">
+          <input type="text" id="drive-name" placeholder="Nombre del Drive...">
+          <input type="url" id="drive-url" placeholder="https://drive.google.com/...">
+          <input type="date" id="drive-date">
+        </div>
+        <div class="nota-controls">
+          <div class="semaforo-selector drive-prio-selector">
+            <button class="sema-btn rojo" data-drive-prio="urgente" onclick="selectDrivePrio('urgente')"><span class="sema-dot-sm dot-urgente"></span> Urgente</button>
+            <button class="sema-btn amarillo active-sema" data-drive-prio="medio" onclick="selectDrivePrio('medio')"><span class="sema-dot-sm dot-medio"></span> Medio</button>
+            <button class="sema-btn verde" data-drive-prio="bajo" onclick="selectDrivePrio('bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
+          </div>
+          <button class="btn-add" id="btn-save-drive" onclick="addDrive()"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar Drive</button>
+          <button class="btn-cancel" id="btn-cancel-drive" onclick="resetDriveForm()" style="display:none;">Cancelar</button>
+        </div>
+      </div>
+      <div class="notas-grid" id="drive-grid"></div>
     </section>
     <section class="view" id="view-notas">
       <p class="view-sub">Captura ideas ahora, organízalas después.</p>
