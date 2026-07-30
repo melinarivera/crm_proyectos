@@ -376,20 +376,23 @@ function subscribeToFirestore() {
   });
 
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
+  const excelCategories = ['webdev', 'marketing', 'pandin', 'sara', 'personal'];
   db.collection('config').doc('urls').onSnapshot(doc => {
     if (doc.exists) {
       globalUrls = doc.data();
-      if (globalUrls.marketingExcelUrl) localStorage.setItem('marketingExcelUrl', globalUrls.marketingExcelUrl);
-      if (globalUrls.personalExcelUrl) localStorage.setItem('personalExcelUrl', globalUrls.personalExcelUrl);
+      excelCategories.forEach(cat => {
+        const key = cat + 'ExcelUrl';
+        if (globalUrls[key]) localStorage.setItem(key, globalUrls[key]);
+      });
     } else {
       // Migración desde localStorage
-      const mExcel = localStorage.getItem('marketingExcelUrl');
-      const pExcel = localStorage.getItem('personalExcelUrl');
-      if (mExcel || pExcel) {
-        const migratedUrls = {
-           ...(mExcel && {marketingExcelUrl: mExcel}),
-           ...(pExcel && {personalExcelUrl: pExcel})
-        };
+      const migratedUrls = {};
+      excelCategories.forEach(cat => {
+        const key = cat + 'ExcelUrl';
+        const val = localStorage.getItem(key);
+        if (val) migratedUrls[key] = val;
+      });
+      if (Object.keys(migratedUrls).length) {
         db.collection('config').doc('urls').set(migratedUrls);
       }
     }
@@ -1291,8 +1294,9 @@ async function saveUrlConfig(key, value) {
   }
 }
 
-function openMarketingExcel() {
-  const url = globalUrls.marketingExcelUrl || localStorage.getItem('marketingExcelUrl');
+function openExcel(category) {
+  const key = category + 'ExcelUrl';
+  const url = globalUrls[key] || localStorage.getItem(key);
   if (url) {
     window.open(url, '_blank');
   } else {
@@ -1300,54 +1304,24 @@ function openMarketingExcel() {
     if (newUrl !== null && newUrl.trim() !== '') {
       newUrl = newUrl.trim();
       if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
-      saveUrlConfig('marketingExcelUrl', newUrl);
+      saveUrlConfig(key, newUrl);
       window.open(newUrl, '_blank');
     }
   }
 }
 
-function changeMarketingExcel() {
-  const currentUrl = globalUrls.marketingExcelUrl || localStorage.getItem('marketingExcelUrl') || '';
+function changeExcel(category) {
+  const key = category + 'ExcelUrl';
+  const currentUrl = globalUrls[key] || localStorage.getItem(key) || '';
   let newUrl = prompt("Actualiza el enlace a tu Google Sheets o Excel Online:", currentUrl);
   if (newUrl !== null) {
     newUrl = newUrl.trim();
     if (newUrl === '') {
-      saveUrlConfig('marketingExcelUrl', '');
+      saveUrlConfig(key, '');
       alert("Enlace eliminado.");
     } else {
       if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
-      saveUrlConfig('marketingExcelUrl', newUrl);
-      alert("Enlace actualizado correctamente.");
-    }
-  }
-}
-
-function openPersonalExcel() {
-  const url = globalUrls.personalExcelUrl || localStorage.getItem('personalExcelUrl');
-  if (url) {
-    window.open(url, '_blank');
-  } else {
-    let newUrl = prompt("Por favor, pega aquí el enlace a tu Google Sheets o Excel Online:\n(Ej: https://docs.google.com/spreadsheets/...)");
-    if (newUrl !== null && newUrl.trim() !== '') {
-      newUrl = newUrl.trim();
-      if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
-      saveUrlConfig('personalExcelUrl', newUrl);
-      window.open(newUrl, '_blank');
-    }
-  }
-}
-
-function changePersonalExcel() {
-  const currentUrl = globalUrls.personalExcelUrl || localStorage.getItem('personalExcelUrl') || '';
-  let newUrl = prompt("Actualiza el enlace a tu Google Sheets o Excel Online:", currentUrl);
-  if (newUrl !== null) {
-    newUrl = newUrl.trim();
-    if (newUrl === '') {
-      saveUrlConfig('personalExcelUrl', '');
-      alert("Enlace eliminado.");
-    } else {
-      if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
-      saveUrlConfig('personalExcelUrl', newUrl);
+      saveUrlConfig(key, newUrl);
       alert("Enlace actualizado correctamente.");
     }
   }

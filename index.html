@@ -132,15 +132,28 @@
     </section>
 
     <!-- OTHER VIEWS -->
-    <section class="view" id="view-webdev"><div class="task-list full-list" id="list-webdev"></div></section>
+    <section class="view" id="view-webdev">
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <p class="view-sub" style="margin: 0;">Tareas y proyectos de desarrollo.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-add" onclick="openExcel('webdev')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
+          </button>
+          <button class="btn-add" onclick="changeExcel('webdev')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+        </div>
+      </div>
+      <div class="task-list full-list" id="list-webdev"></div>
+    </section>
     <section class="view" id="view-marketing">
       <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
         <p class="view-sub" style="margin: 0;">Planificación y tareas de Marketing.</p>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-add" onclick="openMarketingExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <button class="btn-add" onclick="openExcel('marketing')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
           </button>
-          <button class="btn-add" onclick="changeMarketingExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <button class="btn-add" onclick="changeExcel('marketing')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
           </button>
         </div>
@@ -148,19 +161,41 @@
       <div class="task-list full-list" id="list-marketing"></div>
     </section>
     <section class="view" id="view-pandin">
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <p class="view-sub" style="margin: 0;">Tareas y organización de Pandín.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-add" onclick="openExcel('pandin')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
+          </button>
+          <button class="btn-add" onclick="changeExcel('pandin')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+        </div>
+      </div>
       <div class="task-list full-list" id="list-pandin"></div>
     </section>
     <section class="view" id="view-sara">
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <p class="view-sub" style="margin: 0;">Tareas y organización de Sara.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-add" onclick="openExcel('sara')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
+          </button>
+          <button class="btn-add" onclick="changeExcel('sara')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+        </div>
+      </div>
       <div class="task-list full-list" id="list-sara"></div>
     </section>
     <section class="view" id="view-personal">
       <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
         <p class="view-sub" style="margin: 0;">Tus tareas y organización personal.</p>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-add" onclick="openPersonalExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <button class="btn-add" onclick="openExcel('personal')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
           </button>
-          <button class="btn-add" onclick="changePersonalExcel()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <button class="btn-add" onclick="changeExcel('personal')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
           </button>
         </div>
