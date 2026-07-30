@@ -88,6 +88,9 @@
       </button>
     </nav>
     <div class="sidebar-date" id="sidebar-date"></div>
+    <button class="btn-refresh-app" id="btn-enable-notifs" onclick="requestNotificationPermission()">
+      <i data-lucide="bell-ring" style="width:14px;height:14px;"></i> <span>Activar notificaciones</span>
+    </button>
     <button class="btn-refresh-app" onclick="forceAppRefresh()">
       <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Recargar App
     </button>
@@ -170,6 +173,9 @@
           <button class="btn-add" onclick="changeExcel('webdev')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
           </button>
+          <button class="btn-add" onclick="exportCategoryCSV('webdev')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="download" style="width:16px;height:16px;"></i> Exportar CSV
+          </button>
         </div>
       </div>
       <div class="task-list full-list" id="list-webdev"></div>
@@ -183,6 +189,9 @@
           </button>
           <button class="btn-add" onclick="changeExcel('marketing')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+          <button class="btn-add" onclick="exportCategoryCSV('marketing')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="download" style="width:16px;height:16px;"></i> Exportar CSV
           </button>
         </div>
       </div>
@@ -198,6 +207,9 @@
           <button class="btn-add" onclick="changeExcel('pandin')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
           </button>
+          <button class="btn-add" onclick="exportCategoryCSV('pandin')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="download" style="width:16px;height:16px;"></i> Exportar CSV
+          </button>
         </div>
       </div>
       <div class="task-list full-list" id="list-pandin"></div>
@@ -212,6 +224,9 @@
           <button class="btn-add" onclick="changeExcel('sara')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
           </button>
+          <button class="btn-add" onclick="exportCategoryCSV('sara')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="download" style="width:16px;height:16px;"></i> Exportar CSV
+          </button>
         </div>
       </div>
       <div class="task-list full-list" id="list-sara"></div>
@@ -225,6 +240,9 @@
           </button>
           <button class="btn-add" onclick="changeExcel('personal')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
             <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+          </button>
+          <button class="btn-add" onclick="exportCategoryCSV('personal')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="download" style="width:16px;height:16px;"></i> Exportar CSV
           </button>
         </div>
       </div>
@@ -492,6 +510,9 @@
         <div class="grocery-input-group">
           <input type="text" id="grocery-input" placeholder="Añadir artículo (ej: Leche, Huevos...)" onkeypress="if(event.key==='Enter') addGroceryItem()">
           <button class="btn-add" onclick="addGroceryItem()">Añadir</button>
+          <button class="btn-add" onclick="exportGroceryCSV()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+            <i data-lucide="download" style="width:16px;height:16px;"></i> Exportar CSV
+          </button>
         </div>
         <div id="grocery-list" class="grocery-list">
           <!-- Items will be rendered here -->

@@ -90,6 +90,7 @@ let alertTickInterval = null;
 
 function initAlertSystem() {
   updateAlertBadge();
+  updateNotifButtonState();
   // Actualizar cada minuto
   if (alertTickInterval) clearInterval(alertTickInterval);
   alertTickInterval = setInterval(updateAlertBadge, 60000);
@@ -162,10 +163,62 @@ function classifyScheduledTasks() {
   return { overdue, dueToday, upcoming };
 }
 
+// ===== NOTIFICACIONES DEL NAVEGADOR =====
+let notifiedTaskIds = new Set(JSON.parse(localStorage.getItem('notifiedTaskIds') || '[]'));
+
+function persistNotifiedIds() {
+  localStorage.setItem('notifiedTaskIds', JSON.stringify([...notifiedTaskIds]));
+}
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    alert('Tu navegador no soporta notificaciones.');
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    updateNotifButtonState();
+    if (perm === 'granted') {
+      new Notification('CRMeli', { body: 'Notificaciones activadas. Te avisaré de tareas vencidas o de hoy.' });
+    } else if (perm === 'denied') {
+      alert('Bloqueaste las notificaciones. Actívalas desde los ajustes del navegador si cambias de idea.');
+    }
+  });
+}
+
+function updateNotifButtonState() {
+  const btn = document.getElementById('btn-enable-notifs');
+  if (!btn) return;
+  const label = btn.querySelector('span');
+  if (!('Notification' in window)) {
+    btn.style.display = 'none';
+    return;
+  }
+  label.textContent = Notification.permission === 'granted' ? 'Notificaciones activas' : 'Activar notificaciones';
+}
+
+/** Dispara notificaciones del navegador para tareas vencidas o de hoy, una vez por tarea */
+function checkBrowserNotifications() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const { overdue, dueToday } = classifyScheduledTasks();
+  let changed = false;
+  [...overdue, ...dueToday].forEach(task => {
+    if (!notifiedTaskIds.has(task.id)) {
+      notifiedTaskIds.add(task.id);
+      changed = true;
+      const parts = [];
+      if (task.date) parts.push(task.date.split('-').reverse().join('/'));
+      if (task.time) parts.push(task.time);
+      new Notification('⏰ ' + task.title, { body: parts.join(' · '), tag: task.id });
+    }
+  });
+  if (changed) persistNotifiedIds();
+}
+
 /** Actualiza el globito rojo sobre la campana */
 function updateAlertBadge() {
   const { overdue, dueToday } = classifyScheduledTasks();
   const alertCount = overdue.length + dueToday.length;
+  checkBrowserNotifications();
 
   let badge = document.getElementById('notif-badge');
   const bell = document.getElementById('btn-notif');
@@ -628,11 +681,14 @@ function renderDashboard() {
 function renderCategoryList(cat) {
   const container = document.getElementById('list-' + cat);
   if (!container) return;
-  
-  // Filtrar y ordenar: pendientes primero, luego por fecha/hora
+
+  // Filtrar y ordenar: pendientes primero, respetando el orden manual (drag & drop), luego por fecha/hora
   const filtered = tasks.filter(t => t.cat === cat);
   filtered.sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1;
+    const orderA = typeof a.order === 'number' ? a.order : Infinity;
+    const orderB = typeof b.order === 'number' ? b.order : Infinity;
+    if (orderA !== orderB) return orderA - orderB;
     const dateTimeA = (a.date || '9999-12-31') + (a.time || '23:59');
     const dateTimeB = (b.date || '9999-12-31') + (b.time || '23:59');
     return dateTimeA.localeCompare(dateTimeB);
@@ -643,8 +699,61 @@ function renderCategoryList(cat) {
     container.innerHTML = '<p class="empty-state">No hay tareas aún. ¡Añade una!</p>';
   } else {
     filtered.forEach(t => container.appendChild(buildTaskCard(t)));
+    makeListDraggable(container, cat);
   }
   refreshIcons();
+}
+
+// ===== DRAG & DROP PARA REORDENAR TAREAS PENDIENTES =====
+function makeListDraggable(container, cat) {
+  let dragEl = null;
+
+  container.querySelectorAll('.task-card:not(.done-card)').forEach(card => {
+    card.draggable = true;
+    card.classList.add('draggable-card');
+
+    card.addEventListener('dragstart', () => {
+      dragEl = card;
+      card.classList.add('dragging');
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      dragEl = null;
+      persistCategoryOrder(container, cat);
+    });
+  });
+
+  container.ondragover = (e) => {
+    if (!dragEl) return;
+    e.preventDefault();
+    const after = getDragAfterElement(container, e.clientY);
+    if (after == null) container.appendChild(dragEl);
+    else container.insertBefore(dragEl, after);
+  };
+}
+
+function getDragAfterElement(container, y) {
+  const els = [...container.querySelectorAll('.task-card:not(.dragging):not(.done-card)')];
+  return els.reduce((closest, el) => {
+    const box = el.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) return { offset, element: el };
+    return closest;
+  }, { offset: -Infinity }).element;
+}
+
+async function persistCategoryOrder(container, cat) {
+  const ids = [...container.querySelectorAll('.task-card:not(.done-card)')].map(c => c.id.replace('task-', ''));
+  showSyncIndicator('syncing');
+  const batch = db.batch();
+  ids.forEach((id, idx) => batch.update(db.collection('tasks').doc(id), { order: idx }));
+  try {
+    await batch.commit();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
 }
 
 function buildTaskCard(task) {
@@ -702,6 +811,101 @@ function buildTaskCard(task) {
     </div>
   `;
   return card;
+}
+
+// ===== ESTADÍSTICAS / GRÁFICOS DE PROGRESO =====
+function renderStats() {
+  const container = document.getElementById('stats-charts');
+  if (!container) return;
+  container.innerHTML = buildHeroProgressCard() + buildTrendCard() + buildCategoryProgressCard();
+  refreshIcons();
+}
+
+function buildHeroProgressCard() {
+  const total = tasks.length;
+  const done = tasks.filter(t => t.done).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const r = 54;
+  const c = 2 * Math.PI * r;
+  const offset = c - (pct / 100) * c;
+
+  return `
+    <div class="stat-chart-card stat-hero-card">
+      <h3 class="section-title">Progreso general</h3>
+      <div class="hero-ring-wrap">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--border)" stroke-width="12" />
+          <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--accent)" stroke-width="12"
+            stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+            transform="rotate(-90 70 70)" />
+        </svg>
+        <div class="hero-ring-value">${pct}%</div>
+      </div>
+      <p class="hero-ring-caption">${done} de ${total} tareas completadas</p>
+    </div>
+  `;
+}
+
+function buildTrendCard() {
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({ dateStr: toLocalDateStr(d), label: String(d.getDate()).padStart(2, '0') });
+  }
+
+  const counts = days.map(d => tasks.filter(t => t.completedAt && t.completedAt.slice(0, 10) === d.dateStr).length);
+  const maxCount = Math.max(1, ...counts);
+
+  const bars = days.map((d, i) => {
+    const heightPct = (counts[i] / maxCount) * 100;
+    const isPeak = counts[i] === maxCount && maxCount > 0;
+    return `
+      <div class="trend-bar-col">
+        ${isPeak ? `<span class="trend-bar-value">${counts[i]}</span>` : ''}
+        <div class="trend-bar" style="height:${Math.max(heightPct, counts[i] > 0 ? 6 : 2)}%;"></div>
+        <span class="trend-bar-label">${d.label}</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="stat-chart-card stat-trend-card">
+      <h3 class="section-title">Tareas completadas · últimos 14 días</h3>
+      <div class="trend-chart">${bars}</div>
+    </div>
+  `;
+}
+
+function buildCategoryProgressCard() {
+  const cats = [
+    { key: 'webdev', label: 'Dev' },
+    { key: 'marketing', label: 'Marketing' },
+    { key: 'pandin', label: 'Pandín' },
+    { key: 'sara', label: 'Sara' },
+    { key: 'personal', label: 'Personal' }
+  ];
+
+  const rows = cats.map(c => {
+    const catTasks = tasks.filter(t => t.cat === c.key);
+    const total = catTasks.length;
+    const done = catTasks.filter(t => t.done).length;
+    const pct = total ? (done / total) * 100 : 0;
+    return `
+      <div class="meter-row">
+        <span class="meter-label">${c.label}</span>
+        <div class="meter-track"><div class="meter-fill" style="width:${pct}%;"></div></div>
+        <span class="meter-value">${done}/${total}</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="stat-chart-card stat-category-card">
+      <h3 class="section-title">Progreso por categoría</h3>
+      ${rows}
+    </div>
+  `;
 }
 
 // ===== CALENDARIO MENSUAL =====
@@ -786,7 +990,10 @@ async function toggleDone(id) {
     showSyncIndicator('syncing');
     const done = !task.done;
     const update = { done };
-    if (done) update.completedAt = new Date().toISOString();
+    if (done) {
+      update.completedAt = new Date().toISOString();
+      if (notifiedTaskIds.delete(id)) persistNotifiedIds();
+    }
     await db.collection('tasks').doc(id).update(update);
   }
 }
@@ -1494,6 +1701,38 @@ async function syncGrocery() {
   } catch (err) {
     showSyncIndicator('error', err.message);
   }
+}
+
+// ===== EXPORTACIÓN A CSV =====
+function escapeCsvCell(value) {
+  const str = String(value ?? '');
+  return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r => r.map(escapeCsvCell).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCategoryCSV(cat) {
+  const catLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
+  const rows = [['Título', 'Descripción', 'Fecha', 'Hora', 'Prioridad', 'Etiquetas', 'Completada']];
+  tasks.filter(t => t.cat === cat).forEach(t => {
+    rows.push([t.title, t.desc || '', t.date || '', t.time || '', t.prio, (t.tags || []).join('; '), t.done ? 'Sí' : 'No']);
+  });
+  downloadCSV(`tareas-${catLabels[cat] || cat}.csv`, rows);
+}
+
+function exportGroceryCSV() {
+  const rows = [['Artículo', 'Comprado']];
+  groceryItems.forEach(i => rows.push([i.text, i.checked ? 'Sí' : 'No']));
+  downloadCSV('lista-supermercado.csv', rows);
 }
 
 // ===== ENLACES EXTERNOS (EXCEL Y WHATSAPP) =====
