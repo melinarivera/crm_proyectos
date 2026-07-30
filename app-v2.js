@@ -211,7 +211,7 @@ function renderAlertsPanel() {
 
   container.style.display = 'block';
 
-  const catLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', personal: 'Personal' };
+  const catLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
 
   function formatDT(task) {
     const datePart = task.date ? task.date.split('-').reverse().join('/') : '';
@@ -422,6 +422,7 @@ function showView(view) {
     webdev:    'Web Dev',
     marketing: 'Marketing Digital',
     pandin:    'Pandín',
+    sara:      'Sara',
     personal:  'Vida Personal',
     notas:     'Notas Rápidas',
     drive:     'Drive',
@@ -451,7 +452,7 @@ function renderAll() {
 }
 
 function updateStats() {
-  const cats = ['webdev', 'marketing', 'pandin', 'personal'];
+  const cats = ['webdev', 'marketing', 'pandin', 'sara', 'personal'];
   cats.forEach(cat => {
     const count = tasks.filter(t => t.cat === cat && !t.done).length;
     const el = document.getElementById('stat-' + cat);
@@ -524,6 +525,7 @@ function buildTaskCard(task) {
     webdev:    'Dev',
     marketing: 'Marketing',
     pandin:    'Pandín',
+    sara:      'Sara',
     personal:  'Personal'
   };
   let dateStr = '';
