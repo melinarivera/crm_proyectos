@@ -15,6 +15,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link rel="stylesheet" href="style.css?v=2.6" />
+  <script>
+    (function() {
+      var saved = localStorage.getItem('theme');
+      if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    })();
+  </script>
 </head>
 <body>
 
@@ -88,7 +94,18 @@
       <div class="topbar-left">
         <h1 class="page-title" id="page-title">CRMeli</h1>
       </div>
+      <div class="topbar-search">
+        <i data-lucide="search" style="width:15px;height:15px;"></i>
+        <input type="text" id="global-search" placeholder="Buscar tareas, notas, drives, leads..." oninput="onGlobalSearch(this.value)" onfocus="onGlobalSearch(this.value)">
+        <div class="search-results" id="search-results"></div>
+      </div>
       <div class="topbar-right">
+        <button class="btn-notif" id="btn-whatsapp" onclick="openWhatsApp()" oncontextmenu="changeWhatsApp();return false;" title="Clic: abrir WhatsApp · Clic derecho: cambiar enlace">
+          <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
+        </button>
+        <button class="btn-notif" id="btn-theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+          <i data-lucide="moon" style="width:16px;height:16px;"></i>
+        </button>
         <button class="btn-notif" id="btn-notif" onclick="onBellClick()" title="Ver pendientes">
           <i data-lucide="bell" style="width:16px;height:16px;"></i>
         </button>

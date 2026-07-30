@@ -308,9 +308,36 @@ function refreshIcons() {
   if (window.lucide) lucide.createIcons();
 }
 
+// ===== TEMA CLARO / OSCURO =====
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'dark';
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  const icon = document.querySelector('#btn-theme-toggle i');
+  if (icon) {
+    icon.setAttribute('data-lucide', theme === 'light' ? 'sun' : 'moon');
+    refreshIcons();
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  localStorage.setItem('theme', next);
+  applyTheme(next);
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   updateDate();
+  initTheme();
   initAuth();
 });
 
@@ -377,18 +404,17 @@ function subscribeToFirestore() {
 
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
   const excelCategories = ['webdev', 'marketing', 'pandin', 'sara', 'personal'];
+  const urlKeys = [...excelCategories.map(c => c + 'ExcelUrl'), 'whatsappUrl'];
   db.collection('config').doc('urls').onSnapshot(doc => {
     if (doc.exists) {
       globalUrls = doc.data();
-      excelCategories.forEach(cat => {
-        const key = cat + 'ExcelUrl';
+      urlKeys.forEach(key => {
         if (globalUrls[key]) localStorage.setItem(key, globalUrls[key]);
       });
     } else {
       // Migración desde localStorage
       const migratedUrls = {};
-      excelCategories.forEach(cat => {
-        const key = cat + 'ExcelUrl';
+      urlKeys.forEach(key => {
         const val = localStorage.getItem(key);
         if (val) migratedUrls[key] = val;
       });
@@ -1323,6 +1349,32 @@ function changeExcel(category) {
       if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
       saveUrlConfig(key, newUrl);
       alert("Enlace actualizado correctamente.");
+    }
+  }
+}
+
+function openWhatsApp() {
+  const url = globalUrls.whatsappUrl || localStorage.getItem('whatsappUrl');
+  if (url) {
+    window.open(url, '_blank');
+  } else {
+    changeWhatsApp();
+  }
+}
+
+function changeWhatsApp() {
+  const currentUrl = globalUrls.whatsappUrl || localStorage.getItem('whatsappUrl') || '';
+  let newUrl = prompt("Pega tu enlace de WhatsApp (Ej: https://wa.me/34600000000):", currentUrl);
+  if (newUrl !== null) {
+    newUrl = newUrl.trim();
+    if (newUrl === '') {
+      saveUrlConfig('whatsappUrl', '');
+      alert("Enlace eliminado.");
+    } else {
+      if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
+      saveUrlConfig('whatsappUrl', newUrl);
+      alert("Enlace de WhatsApp actualizado.");
+      window.open(newUrl, '_blank');
     }
   }
 }

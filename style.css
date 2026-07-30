@@ -20,6 +20,26 @@
   --shadow: 0 8px 32px rgba(124,106,255,0.15);
 }
 
+:root[data-theme="light"] {
+  --bg: #f4f4fa;
+  --bg2: #ffffff;
+  --bg3: #ececf7;
+  --card: #ffffff;
+  --card2: #f1f0fb;
+  --border: #e2e1f0;
+  --text: #1a1a35;
+  --text-sub: #55536e;
+  --shadow: 0 8px 32px rgba(124,106,255,0.10);
+}
+
+:root[data-theme="light"] .sidebar-logo,
+:root[data-theme="light"] .modal,
+:root[data-theme="light"] .stat-card,
+:root[data-theme="light"] .task-card,
+:root[data-theme="light"] .nota-card {
+  box-shadow: 0 2px 12px rgba(30,30,60,0.06);
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg);
@@ -212,6 +232,85 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+/* ===== BUSCADOR GLOBAL ===== */
+.topbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 360px;
+  margin: 0 20px;
+  padding: 0 14px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-sub);
+}
+
+.topbar-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.topbar-search input::placeholder { color: var(--text-sub); }
+
+.search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  z-index: 500;
+  padding: 6px;
+}
+
+.search-results.open { display: block; }
+
+.search-result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.search-result-row:hover { background: var(--card2); }
+
+.search-result-meta {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.search-empty {
+  padding: 14px;
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .topbar-search { display: none; }
 }
 
 /* ===== BOTÓN CAMPANA ===== */
