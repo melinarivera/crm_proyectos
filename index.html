@@ -53,9 +53,6 @@
       <button class="nav-item" data-view="leads" onclick="showView('leads')" style="display:none;">
         <i data-lucide="magnet" class="nav-icon"></i><span>Gestión de Leads</span>
       </button>
-      <button class="nav-item" data-view="master" onclick="showView('master')">
-        <i data-lucide="graduation-cap" class="nav-icon"></i><span>Máster</span>
-      </button>
       <button class="nav-item" data-view="pandin" onclick="showView('pandin')">
         <i data-lucide="baby" class="nav-icon"></i><span>Pandín</span>
       </button>
@@ -64,9 +61,6 @@
       </button>
       <button class="nav-item" data-view="menu" onclick="showView('menu')">
         <i data-lucide="utensils" class="nav-icon"></i><span>Menú</span>
-      </button>
-      <button class="nav-item" data-view="otra" onclick="showView('otra')">
-        <i data-lucide="folder-open" class="nav-icon"></i><span>Otra</span>
       </button>
       <button class="nav-item" data-view="notas" onclick="showView('notas')">
         <i data-lucide="sticky-note" class="nav-icon"></i><span>Notas Rápidas</span>
@@ -107,10 +101,8 @@
         <!-- Stats cards remain the same -->
         <div class="stat-card" onclick="showView('webdev')"><div class="stat-icon" style="background:#6c63ff22;"><i data-lucide="code-2" class="stat-lucide" style="color:#a89dff;"></i></div><div class="stat-info"><span class="stat-label">Dev</span><span class="stat-value" id="stat-webdev">0</span></div></div>
         <div class="stat-card" onclick="showView('marketing')"><div class="stat-icon" style="background:#f093fb22;"><i data-lucide="megaphone" class="stat-lucide" style="color:#e080f5;"></i></div><div class="stat-info"><span class="stat-label">Marketing</span><span class="stat-value" id="stat-marketing">0</span></div></div>
-        <div class="stat-card" onclick="showView('master')"><div class="stat-icon" style="background:#4facfe22;"><i data-lucide="graduation-cap" class="stat-lucide" style="color:#7ec8fd;"></i></div><div class="stat-info"><span class="stat-label">Máster</span><span class="stat-value" id="stat-master">0</span></div></div>
         <div class="stat-card" onclick="showView('pandin')"><div class="stat-icon" style="background:#ff9a3c22;"><i data-lucide="baby" class="stat-lucide" style="color:#ffb86c;"></i></div><div class="stat-info"><span class="stat-label">Pandín</span><span class="stat-value" id="stat-pandin">0</span></div></div>
         <div class="stat-card" onclick="showView('personal')"><div class="stat-icon" style="background:#43e97b22;"><i data-lucide="heart" class="stat-lucide" style="color:#4fe99b;"></i></div><div class="stat-info"><span class="stat-label">Personal</span><span class="stat-value" id="stat-personal">0</span></div></div>
-        <div class="stat-card" onclick="showView('otra')"><div class="stat-icon" style="background:#ffd16622;"><i data-lucide="folder-open" class="stat-lucide" style="color:#ffd166;"></i></div><div class="stat-info"><span class="stat-label">Otra</span><span class="stat-value" id="stat-otra">0</span></div></div>
       </div>
 
       <!-- PANEL DE ALERTAS -->
@@ -148,20 +140,6 @@
       </div>
       <div class="task-list full-list" id="list-marketing"></div>
     </section>
-    <section class="view" id="view-master">
-      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-        <p class="view-sub" style="margin: 0;">Organización de tu Máster y TFM.</p>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-add" onclick="openMasterWhatsapp()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
-            <i data-lucide="message-circle" style="width:16px;height:16px;"></i> Grupo WhatsApp TFM
-          </button>
-          <button class="btn-add" onclick="changeMasterWhatsapp()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
-            <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Grupo
-          </button>
-        </div>
-      </div>
-      <div class="task-list full-list" id="list-master"></div>
-    </section>
     <section class="view" id="view-pandin">
       <div class="task-list full-list" id="list-pandin"></div>
     </section>
@@ -179,7 +157,6 @@
       </div>
       <div class="task-list full-list" id="list-personal"></div>
     </section>
-    <section class="view" id="view-otra"><div class="task-list full-list" id="list-otra"></div></section>
     <section class="view" id="view-notas">
       <p class="view-sub">Captura ideas ahora, organízalas después.</p>
       <div class="nota-input-area">
@@ -513,7 +490,7 @@
       <div class="form-group"><label>Título *</label><input type="text" id="task-title" placeholder="¿Qué necesitas hacer?" /></div>
       <div class="form-group"><label>Descripción</label><textarea id="task-desc" placeholder="Detalles..." rows="2"></textarea></div>
       <div class="form-row">
-        <div class="form-group"><label>Categoría</label><select id="task-cat"><option value="webdev">Dev</option><option value="marketing">Marketing</option><option value="master">Máster</option><option value="pandin">Pandín</option><option value="personal">Personal</option><option value="otra">Otra</option></select></div>
+        <div class="form-group"><label>Categoría</label><select id="task-cat"><option value="webdev">Dev</option><option value="marketing">Marketing</option><option value="pandin">Pandín</option><option value="personal">Personal</option></select></div>
         <div class="form-group"><label>Fecha</label><input type="date" id="task-date" /></div>
         <div class="form-group"><label>Hora</label><input type="time" id="task-time" /></div>
       </div>

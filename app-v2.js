@@ -209,7 +209,7 @@ function renderAlertsPanel() {
 
   container.style.display = 'block';
 
-  const catLabels = { webdev: 'Dev', marketing: 'Marketing', master: 'Máster', pandin: 'Pandín', personal: 'Personal', otra: 'Otra' };
+  const catLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', personal: 'Personal' };
 
   function formatDT(task) {
     const datePart = task.date ? task.date.split('-').reverse().join('/') : '';
@@ -373,17 +373,14 @@ function subscribeToFirestore() {
       globalUrls = doc.data();
       if (globalUrls.marketingExcelUrl) localStorage.setItem('marketingExcelUrl', globalUrls.marketingExcelUrl);
       if (globalUrls.personalExcelUrl) localStorage.setItem('personalExcelUrl', globalUrls.personalExcelUrl);
-      if (globalUrls.masterWhatsappUrl) localStorage.setItem('masterWhatsappUrl', globalUrls.masterWhatsappUrl);
     } else {
       // Migración desde localStorage
       const mExcel = localStorage.getItem('marketingExcelUrl');
       const pExcel = localStorage.getItem('personalExcelUrl');
-      const mWhatsApp = localStorage.getItem('masterWhatsappUrl');
-      if (mExcel || pExcel || mWhatsApp) {
+      if (mExcel || pExcel) {
         const migratedUrls = {
            ...(mExcel && {marketingExcelUrl: mExcel}),
-           ...(pExcel && {personalExcelUrl: pExcel}),
-           ...(mWhatsApp && {masterWhatsappUrl: mWhatsApp})
+           ...(pExcel && {personalExcelUrl: pExcel})
         };
         db.collection('config').doc('urls').set(migratedUrls);
       }
@@ -416,10 +413,8 @@ function showView(view) {
     dashboard: 'Dashboard',
     webdev:    'Web Dev',
     marketing: 'Marketing Digital',
-    master:    'Máster',
     pandin:    'Pandín',
     personal:  'Vida Personal',
-    otra:      'Otra',
     notas:     'Notas Rápidas',
     leads:     'Leads',
     planner:   'Planner Semanal',
@@ -446,7 +441,7 @@ function renderAll() {
 }
 
 function updateStats() {
-  const cats = ['webdev', 'marketing', 'master', 'pandin', 'personal', 'otra'];
+  const cats = ['webdev', 'marketing', 'pandin', 'personal'];
   cats.forEach(cat => {
     const count = tasks.filter(t => t.cat === cat && !t.done).length;
     const el = document.getElementById('stat-' + cat);
@@ -518,10 +513,8 @@ function buildTaskCard(task) {
   const tagLabels = {
     webdev:    'Dev',
     marketing: 'Marketing',
-    master:    'Máster',
     pandin:    'Pandín',
-    personal:  'Personal',
-    otra:      'Otra'
+    personal:  'Personal'
   };
   let dateStr = '';
   if (task.date) {
@@ -1203,33 +1196,3 @@ function changePersonalExcel() {
   }
 }
 
-function openMasterWhatsapp() {
-  const url = globalUrls.masterWhatsappUrl || localStorage.getItem('masterWhatsappUrl');
-  if (url) {
-    window.open(url, '_blank');
-  } else {
-    let newUrl = prompt("Por favor, pega aquí el enlace de tu grupo de WhatsApp:\n(Ej: https://chat.whatsapp.com/...)");
-    if (newUrl !== null && newUrl.trim() !== '') {
-      newUrl = newUrl.trim();
-      if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
-      saveUrlConfig('masterWhatsappUrl', newUrl);
-      window.open(newUrl, '_blank');
-    }
-  }
-}
-
-function changeMasterWhatsapp() {
-  const currentUrl = globalUrls.masterWhatsappUrl || localStorage.getItem('masterWhatsappUrl') || '';
-  let newUrl = prompt("Actualiza el enlace de tu grupo de WhatsApp:", currentUrl);
-  if (newUrl !== null) {
-    newUrl = newUrl.trim();
-    if (newUrl === '') {
-      saveUrlConfig('masterWhatsappUrl', '');
-      alert("Enlace eliminado.");
-    } else {
-      if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
-      saveUrlConfig('masterWhatsappUrl', newUrl);
-      alert("Enlace actualizado correctamente.");
-    }
-  }
-}
