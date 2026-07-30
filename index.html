@@ -56,6 +56,9 @@
       <button class="nav-item" data-view="pandin" onclick="showView('pandin')">
         <i data-lucide="baby" class="nav-icon"></i><span>Pandín</span>
       </button>
+      <button class="nav-item" data-view="sara" onclick="showView('sara')">
+        <i data-lucide="sparkles" class="nav-icon"></i><span>Sara</span>
+      </button>
       <button class="nav-item" data-view="personal" onclick="showView('personal')">
         <i data-lucide="heart" class="nav-icon"></i><span>Personal</span>
       </button>
@@ -105,6 +108,7 @@
         <div class="stat-card" onclick="showView('webdev')"><div class="stat-icon" style="background:#6c63ff22;"><i data-lucide="code-2" class="stat-lucide" style="color:#a89dff;"></i></div><div class="stat-info"><span class="stat-label">Dev</span><span class="stat-value" id="stat-webdev">0</span></div></div>
         <div class="stat-card" onclick="showView('marketing')"><div class="stat-icon" style="background:#f093fb22;"><i data-lucide="megaphone" class="stat-lucide" style="color:#e080f5;"></i></div><div class="stat-info"><span class="stat-label">Marketing</span><span class="stat-value" id="stat-marketing">0</span></div></div>
         <div class="stat-card" onclick="showView('pandin')"><div class="stat-icon" style="background:#ff9a3c22;"><i data-lucide="baby" class="stat-lucide" style="color:#ffb86c;"></i></div><div class="stat-info"><span class="stat-label">Pandín</span><span class="stat-value" id="stat-pandin">0</span></div></div>
+        <div class="stat-card" onclick="showView('sara')"><div class="stat-icon" style="background:#ff6b9d22;"><i data-lucide="sparkles" class="stat-lucide" style="color:#ff6b9d;"></i></div><div class="stat-info"><span class="stat-label">Sara</span><span class="stat-value" id="stat-sara">0</span></div></div>
         <div class="stat-card" onclick="showView('personal')"><div class="stat-icon" style="background:#43e97b22;"><i data-lucide="heart" class="stat-lucide" style="color:#4fe99b;"></i></div><div class="stat-info"><span class="stat-label">Personal</span><span class="stat-value" id="stat-personal">0</span></div></div>
       </div>
 
@@ -145,6 +149,9 @@
     </section>
     <section class="view" id="view-pandin">
       <div class="task-list full-list" id="list-pandin"></div>
+    </section>
+    <section class="view" id="view-sara">
+      <div class="task-list full-list" id="list-sara"></div>
     </section>
     <section class="view" id="view-personal">
       <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
