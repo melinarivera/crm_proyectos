@@ -448,6 +448,7 @@ document.addEventListener('click', (e) => {
 function initTheme() {
   const saved = localStorage.getItem('theme') || 'dark';
   applyTheme(saved);
+  updateMoneyNavIcon();
 }
 
 function applyTheme(theme) {
@@ -456,9 +457,11 @@ function applyTheme(theme) {
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
-  const icon = document.querySelector('#btn-theme-toggle i');
-  if (icon) {
-    icon.setAttribute('data-lucide', theme === 'light' ? 'sun' : 'moon');
+  const btn = document.getElementById('btn-theme-toggle');
+  if (btn) {
+    // Regeneramos el <i> siempre: Lucide reemplaza el <i> original por un <svg>,
+    // así que reusar el nodo existente deja de funcionar después del primer cambio.
+    btn.innerHTML = `<i data-lucide="${theme === 'light' ? 'sun' : 'moon'}" style="width:16px;height:16px;"></i>`;
     refreshIcons();
   }
 }
@@ -571,6 +574,7 @@ function subscribeToFirestore() {
         localStorage.setItem('moneyCurrency', moneyCurrency);
         const sel = document.getElementById('money-currency-select');
         if (sel) sel.value = moneyCurrency;
+        updateMoneyNavIcon();
         if (currentView === 'dinero') renderMoney();
       }
     } else {
@@ -1909,7 +1913,19 @@ function changeMoneyCurrency(value) {
   moneyCurrency = value;
   localStorage.setItem('moneyCurrency', value);
   saveUrlConfig('moneyCurrency', value);
+  updateMoneyNavIcon();
   renderMoney();
+}
+
+/** Ícono del menú lateral: € para Euro, $ para Dólar/Peso mexicano */
+function updateMoneyNavIcon() {
+  const navBtn = document.querySelector('.nav-item[data-view="dinero"]');
+  if (!navBtn) return;
+  const iconName = moneyCurrency === 'EUR' ? 'euro' : 'dollar-sign';
+  // Regeneramos el contenido: Lucide reemplaza el <i> original por un <svg>,
+  // así que reusar el nodo existente deja de funcionar después del primer cambio.
+  navBtn.innerHTML = `<i data-lucide="${iconName}" class="nav-icon"></i><span>Dinero</span>`;
+  refreshIcons();
 }
 
 function computeAccountBalance(accountId) {
