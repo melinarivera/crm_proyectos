@@ -1783,6 +1783,44 @@ function downloadXLS(filename, rows, sheetName) {
   XLSX.writeFile(wb, filename);
 }
 
+/** Descarga un respaldo completo de todos tus datos (tareas, dinero, notas, etc.) en un solo JSON */
+async function exportFullBackup() {
+  showSyncIndicator('syncing');
+  try {
+    const [plannerDoc, menuDoc] = await Promise.all([
+      db.collection('planner').doc('current_week').get(),
+      db.collection('menu').doc('weekly').get()
+    ]);
+
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      tasks,
+      notas,
+      drives,
+      leads,
+      accounts,
+      transactions,
+      recurringTransactions,
+      budgets,
+      icalEvents,
+      groceryItems,
+      planner: plannerDoc.exists ? plannerDoc.data() : null,
+      menu: menuDoc.exists ? menuDoc.data() : null
+    };
+
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `crmeli-respaldo-${toLocalDateStr(new Date())}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
 function exportCategoryXLS(cat) {
   const catLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
   const rows = [['Título', 'Descripción', 'Fecha', 'Hora', 'Prioridad', 'Etiquetas', 'Completada']];
@@ -2288,7 +2326,7 @@ function populateCategorySelect(type) {
 
 function selectTransactionType(type) {
   selectedTxType = type;
-  document.querySelectorAll('.money-type-btn').forEach(b => b.classList.remove('active-money-type'));
+  document.querySelectorAll('.money-type-btn[data-tx-type]').forEach(b => b.classList.remove('active-money-type'));
   const btn = document.querySelector(`.money-type-btn[data-tx-type="${type}"]`);
   if (btn) btn.classList.add('active-money-type');
   populateCategorySelect(type);
