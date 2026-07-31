@@ -1673,36 +1673,27 @@ async function syncGrocery() {
   }
 }
 
-// ===== EXPORTACIÓN A CSV =====
-function escapeCsvCell(value) {
-  const str = String(value ?? '');
-  return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+// ===== EXPORTACIÓN A EXCEL (.xlsx) =====
+function downloadXLS(filename, rows, sheetName) {
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || 'Hoja1');
+  XLSX.writeFile(wb, filename);
 }
 
-function downloadCSV(filename, rows) {
-  const csv = rows.map(r => r.map(escapeCsvCell).join(',')).join('\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function exportCategoryCSV(cat) {
+function exportCategoryXLS(cat) {
   const catLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
   const rows = [['Título', 'Descripción', 'Fecha', 'Hora', 'Prioridad', 'Etiquetas', 'Completada']];
   tasks.filter(t => t.cat === cat).forEach(t => {
     rows.push([t.title, t.desc || '', t.date || '', t.time || '', t.prio, (t.tags || []).join('; '), t.done ? 'Sí' : 'No']);
   });
-  downloadCSV(`tareas-${catLabels[cat] || cat}.csv`, rows);
+  downloadXLS(`tareas-${catLabels[cat] || cat}.xlsx`, rows, 'Tareas');
 }
 
-function exportGroceryCSV() {
+function exportGroceryXLS() {
   const rows = [['Artículo', 'Comprado']];
   groceryItems.forEach(i => rows.push([i.text, i.checked ? 'Sí' : 'No']));
-  downloadCSV('lista-supermercado.csv', rows);
+  downloadXLS('lista-supermercado.xlsx', rows, 'Supermercado');
 }
 
 // ===== SINCRONIZACIÓN CON ICAL =====
@@ -2176,7 +2167,7 @@ function renderTransactionList() {
   refreshIcons();
 }
 
-function exportTransactionsCSV() {
+function exportTransactionsXLS() {
   const filterAccount = document.getElementById('filter-tx-account').value;
   const filterType = document.getElementById('filter-tx-type').value;
   const month = getFilterMonth();
@@ -2192,7 +2183,7 @@ function exportTransactionsCSV() {
   filtered.forEach(t => {
     rows.push([t.date, t.type === 'ingreso' ? 'Ingreso' : 'Gasto', t.category, getAccountName(t.accountId), t.amount.toFixed(2), t.note || '']);
   });
-  downloadCSV(`movimientos-${month || 'todos'}.csv`, rows);
+  downloadXLS(`movimientos-${month || 'todos'}.xlsx`, rows, 'Movimientos');
 }
 
 // --- Gestión de cuentas ---
