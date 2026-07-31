@@ -1824,7 +1824,7 @@ body {
 .field-files input { background: #fff; border: 1px solid #cbd5e0; }
 
 @media (max-width: 600px) {
-  .planner-grid { grid-template-columns: 1fr; }
+  .planner-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ===== GROCERY LIST ===== */
