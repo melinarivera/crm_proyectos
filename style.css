@@ -1809,7 +1809,7 @@ body {
   border-bottom: 1px dashed #eee;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 600px) {
   .meal-split { flex-direction: column; }
 }
 

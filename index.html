@@ -288,17 +288,7 @@
 
     <!-- DINERO VIEW -->
     <section class="view" id="view-dinero">
-      <div class="money-header-row">
-        <p class="view-sub" style="margin:0;">Controla tus cuentas, saldos, gastos e ingresos.</p>
-        <div class="form-group" style="margin:0;">
-          <label>Moneda</label>
-          <select id="money-currency-select" onchange="changeMoneyCurrency(this.value)">
-            <option value="EUR">€ Euro</option>
-            <option value="USD">$ Dólar estadounidense</option>
-            <option value="MXN">$ Peso mexicano</option>
-          </select>
-        </div>
-      </div>
+      <p class="view-sub">Controla tus cuentas, saldos, gastos e ingresos en varias monedas.</p>
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
         <button class="btn-add" onclick="openExcel('dinero')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
@@ -324,6 +314,14 @@
         </div>
         <div class="money-form-row">
           <div class="form-group"><label>Monto</label><input type="number" id="tx-amount" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group">
+            <label>Moneda</label>
+            <select id="tx-currency">
+              <option value="EUR">€ EUR</option>
+              <option value="USD">$ USD</option>
+              <option value="MXN">$ MXN</option>
+            </select>
+          </div>
           <div class="form-group"><label>Categoría</label><select id="tx-category"></select></div>
           <div class="form-group"><label>Cuenta</label><select id="tx-account"></select></div>
           <div class="form-group"><label>Fecha</label><input type="date" id="tx-date"></div>
@@ -355,6 +353,11 @@
         <div class="money-account-form-row">
           <input type="text" id="account-name" placeholder="Nombre de la cuenta (ej: Banco)">
           <input type="number" id="account-initial-balance" step="0.01" placeholder="Saldo inicial">
+          <select id="account-initial-currency">
+            <option value="EUR">€ EUR</option>
+            <option value="USD">$ USD</option>
+            <option value="MXN">$ MXN</option>
+          </select>
           <button class="btn-add" onclick="addAccount()"><i data-lucide="plus" style="width:15px;height:15px;"></i> Añadir cuenta</button>
         </div>
         <div class="money-account-manage-list" id="money-account-manage-list"></div>
