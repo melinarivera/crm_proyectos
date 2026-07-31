@@ -927,6 +927,8 @@ function renderCalendar() {
 function selectCalendarDay(dateStr) {
   calendarSelectedDay = dateStr;
   renderCalendar();
+  const panel = document.getElementById('calendar-day-panel');
+  if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderCalendarDayTasks(dateStr) {
