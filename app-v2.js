@@ -667,6 +667,14 @@ function toLocalDateStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+/** Ordena por horario: las tareas sin hora (todo el día) van primero */
+function sortByTime(a, b) {
+  if (!a.time && !b.time) return 0;
+  if (!a.time) return -1;
+  if (!b.time) return 1;
+  return a.time.localeCompare(b.time);
+}
+
 /** Racha de días consecutivos con al menos una tarea completada */
 function computeStreak() {
   const completedDates = new Set();
@@ -898,7 +906,7 @@ function renderCalendar() {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const dayTasks = tasks.filter(t => t.date === dateStr);
+    const dayTasks = tasks.filter(t => t.date === dateStr).sort(sortByTime);
     const dayIcalEvents = icalEvents.filter(e => e.date === dateStr);
 
     const cell = document.createElement('div');
@@ -933,7 +941,7 @@ function renderCalendarDayTasks(dateStr) {
   const [y, m, d] = dateStr.split('-');
   title.textContent = `Tareas del ${d}/${m}/${y}`;
 
-  const dayTasks = tasks.filter(t => t.date === dateStr);
+  const dayTasks = tasks.filter(t => t.date === dateStr).sort(sortByTime);
   list.innerHTML = '';
   if (dayTasks.length === 0) {
     list.innerHTML = '<p class="empty-state">No hay tareas programadas este día.</p>';
@@ -942,7 +950,7 @@ function renderCalendarDayTasks(dateStr) {
   }
 
   if (icalList) {
-    const dayIcalEvents = icalEvents.filter(e => e.date === dateStr);
+    const dayIcalEvents = icalEvents.filter(e => e.date === dateStr).sort(sortByTime);
     if (dayIcalEvents.length === 0) {
       icalList.innerHTML = '';
     } else {
