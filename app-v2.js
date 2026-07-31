@@ -569,13 +569,10 @@ function subscribeToFirestore() {
       urlKeys.forEach(key => {
         if (globalUrls[key]) localStorage.setItem(key, globalUrls[key]);
       });
-      if (globalUrls.moneyCurrency && globalUrls.moneyCurrency !== moneyCurrency) {
-        moneyCurrency = globalUrls.moneyCurrency;
-        localStorage.setItem('moneyCurrency', moneyCurrency);
-        const sel = document.getElementById('money-currency-select');
-        if (sel) sel.value = moneyCurrency;
+      if (globalUrls.moneyCurrency && globalUrls.moneyCurrency !== defaultMoneyCurrency) {
+        defaultMoneyCurrency = globalUrls.moneyCurrency;
+        localStorage.setItem('moneyCurrency', defaultMoneyCurrency);
         updateMoneyNavIcon();
-        if (currentView === 'dinero') renderMoney();
       }
     } else {
       // Migración desde localStorage
@@ -1903,6 +1900,7 @@ function maybeAutoSyncICal() {
 const EXPENSE_CATEGORIES = ['Comida', 'Transporte', 'Vivienda', 'Salud', 'Ocio', 'Educación', 'Ropa', 'Otros'];
 const INCOME_CATEGORIES = ['Sueldo', 'Freelance', 'Regalo', 'Reembolso', 'Otros'];
 let selectedTxType = 'gasto';
+let moneyFormInitialized = false;
 
 const MONEY_CURRENCIES = {
   EUR: { locale: 'es-ES', label: '€ Euro' },
@@ -1910,51 +1908,73 @@ const MONEY_CURRENCIES = {
   MXN: { locale: 'es-MX', label: '$ Peso mexicano' }
 };
 
-let moneyCurrency = globalUrls.moneyCurrency || localStorage.getItem('moneyCurrency') || 'EUR';
+// Moneda "por defecto": solo precarga el selector de cada movimiento nuevo,
+// cada transacción y cada cuenta guarda su propia moneda de forma independiente.
+let defaultMoneyCurrency = globalUrls.moneyCurrency || localStorage.getItem('moneyCurrency') || 'EUR';
 
-function formatMoney(amount) {
-  const conf = MONEY_CURRENCIES[moneyCurrency] || MONEY_CURRENCIES.EUR;
-  return new Intl.NumberFormat(conf.locale, { style: 'currency', currency: moneyCurrency }).format(amount || 0);
+function formatMoney(amount, currency) {
+  const cur = currency || 'EUR';
+  const conf = MONEY_CURRENCIES[cur] || MONEY_CURRENCIES.EUR;
+  return new Intl.NumberFormat(conf.locale, { style: 'currency', currency: cur }).format(amount || 0);
 }
 
-function changeMoneyCurrency(value) {
-  moneyCurrency = value;
-  localStorage.setItem('moneyCurrency', value);
-  saveUrlConfig('moneyCurrency', value);
-  updateMoneyNavIcon();
-  renderMoney();
-}
-
-/** Ícono del menú lateral: € para Euro, $ para Dólar/Peso mexicano */
+/** Ícono del menú lateral: € para Euro, $ para Dólar/Peso mexicano (según tu última moneda usada) */
 function updateMoneyNavIcon() {
   const navBtn = document.querySelector('.nav-item[data-view="dinero"]');
   if (!navBtn) return;
-  const iconName = moneyCurrency === 'EUR' ? 'euro' : 'dollar-sign';
+  const iconName = defaultMoneyCurrency === 'EUR' ? 'euro' : 'dollar-sign';
   // Regeneramos el contenido: Lucide reemplaza el <i> original por un <svg>,
   // así que reusar el nodo existente deja de funcionar después del primer cambio.
   navBtn.innerHTML = `<i data-lucide="${iconName}" class="nav-icon"></i><span>Dinero</span>`;
   refreshIcons();
 }
 
-function computeAccountBalance(accountId) {
+/** Balance de una cuenta desglosado por moneda: { EUR: 120.5, USD: 30 } */
+function computeAccountBalancesByCurrency(accountId) {
+  const balances = {};
   const account = accounts.find(a => a.id === accountId);
-  const initial = account ? (account.initialBalance || 0) : 0;
-  const movement = transactions
-    .filter(t => t.accountId === accountId)
-    .reduce((sum, t) => sum + (t.type === 'ingreso' ? t.amount : -t.amount), 0);
-  return initial + movement;
+  if (account && account.initialBalance) {
+    const cur = account.initialBalanceCurrency || 'EUR';
+    balances[cur] = (balances[cur] || 0) + account.initialBalance;
+  }
+  transactions.filter(t => t.accountId === accountId).forEach(t => {
+    const cur = t.currency || 'EUR';
+    const delta = t.type === 'ingreso' ? t.amount : -t.amount;
+    balances[cur] = (balances[cur] || 0) + delta;
+  });
+  return balances;
 }
 
-function computeTotalBalance() {
-  return accounts.reduce((sum, a) => sum + computeAccountBalance(a.id), 0);
+/** Suma de todas las cuentas, desglosada por moneda */
+function computeTotalBalancesByCurrency() {
+  const totals = {};
+  accounts.forEach(a => {
+    Object.entries(computeAccountBalancesByCurrency(a.id)).forEach(([cur, amt]) => {
+      totals[cur] = (totals[cur] || 0) + amt;
+    });
+  });
+  return totals;
+}
+
+function renderBalanceValues(balancesByCurrency, fallbackCurrency) {
+  const entries = Object.entries(balancesByCurrency);
+  if (entries.length === 0) {
+    return `<span class="account-card-value">${formatMoney(0, fallbackCurrency)}</span>`;
+  }
+  return entries
+    .map(([cur, amt]) => `<span class="account-card-value ${amt < 0 ? 'negative' : ''}">${formatMoney(amt, cur)}</span>`)
+    .join('');
 }
 
 function renderMoney() {
   if (!document.getElementById('money-accounts-row')) return;
   const dateEl = document.getElementById('tx-date');
   if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
-  const currencySel = document.getElementById('money-currency-select');
-  if (currencySel) currencySel.value = moneyCurrency;
+  if (!moneyFormInitialized) {
+    const currencyEl = document.getElementById('tx-currency');
+    if (currencyEl) currencyEl.value = defaultMoneyCurrency;
+    moneyFormInitialized = true;
+  }
   renderAccountCards();
   populateAccountSelects();
   populateCategorySelect(selectedTxType);
@@ -1968,20 +1988,18 @@ function renderAccountCards() {
   const row = document.getElementById('money-accounts-row');
   if (!row) return;
 
-  const totalBalance = computeTotalBalance();
   let html = `
     <div class="account-card account-card-total">
       <span class="account-card-label">Balance total</span>
-      <span class="account-card-value">${formatMoney(totalBalance)}</span>
+      <div class="account-card-values">${renderBalanceValues(computeTotalBalancesByCurrency(), defaultMoneyCurrency)}</div>
     </div>
   `;
 
   accounts.forEach(a => {
-    const balance = computeAccountBalance(a.id);
     html += `
       <div class="account-card">
         <span class="account-card-label">${a.name}</span>
-        <span class="account-card-value ${balance < 0 ? 'negative' : ''}">${formatMoney(balance)}</span>
+        <div class="account-card-values">${renderBalanceValues(computeAccountBalancesByCurrency(a.id), a.initialBalanceCurrency || 'EUR')}</div>
       </div>
     `;
   });
@@ -2003,30 +2021,51 @@ function getFilterMonth() {
   return input.value;
 }
 
+/** Un grupo Ingresos/Gastos/Neto por cada moneda con movimientos ese mes */
 function renderMoneySummary() {
   const row = document.getElementById('money-summary-row');
   if (!row) return;
 
   const month = getFilterMonth();
   const monthTx = transactions.filter(t => t.date && t.date.slice(0, 7) === month);
-  const ingresos = monthTx.filter(t => t.type === 'ingreso').reduce((s, t) => s + t.amount, 0);
-  const gastos = monthTx.filter(t => t.type === 'gasto').reduce((s, t) => s + t.amount, 0);
-  const neto = ingresos - gastos;
 
-  row.innerHTML = `
-    <div class="money-summary-card ingreso">
-      <span class="money-summary-label">Ingresos del mes</span>
-      <span class="money-summary-value">${formatMoney(ingresos)}</span>
-    </div>
-    <div class="money-summary-card gasto">
-      <span class="money-summary-label">Gastos del mes</span>
-      <span class="money-summary-value">${formatMoney(gastos)}</span>
-    </div>
-    <div class="money-summary-card ${neto >= 0 ? 'ingreso' : 'gasto'}">
-      <span class="money-summary-label">Resultado neto</span>
-      <span class="money-summary-value">${formatMoney(neto)}</span>
-    </div>
-  `;
+  const byCurrency = {};
+  monthTx.forEach(t => {
+    const cur = t.currency || 'EUR';
+    if (!byCurrency[cur]) byCurrency[cur] = { ingresos: 0, gastos: 0 };
+    if (t.type === 'ingreso') byCurrency[cur].ingresos += t.amount;
+    else byCurrency[cur].gastos += t.amount;
+  });
+
+  const currencies = Object.keys(byCurrency);
+  if (currencies.length === 0) {
+    row.innerHTML = '<p class="empty-state">Sin movimientos este mes.</p>';
+    return;
+  }
+
+  row.innerHTML = currencies.map(cur => {
+    const { ingresos, gastos } = byCurrency[cur];
+    const neto = ingresos - gastos;
+    return `
+      <div class="money-summary-group">
+        <span class="money-summary-currency-label">${cur}</span>
+        <div class="money-summary-cards">
+          <div class="money-summary-card ingreso">
+            <span class="money-summary-label">Ingresos del mes</span>
+            <span class="money-summary-value">${formatMoney(ingresos, cur)}</span>
+          </div>
+          <div class="money-summary-card gasto">
+            <span class="money-summary-label">Gastos del mes</span>
+            <span class="money-summary-value">${formatMoney(gastos, cur)}</span>
+          </div>
+          <div class="money-summary-card ${neto >= 0 ? 'ingreso' : 'gasto'}">
+            <span class="money-summary-label">Resultado neto</span>
+            <span class="money-summary-value">${formatMoney(neto, cur)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function populateAccountSelects() {
@@ -2071,6 +2110,7 @@ function getAccountName(accountId) {
 
 async function saveTransaction() {
   const amountEl = document.getElementById('tx-amount');
+  const currencyEl = document.getElementById('tx-currency');
   const categoryEl = document.getElementById('tx-category');
   const accountEl = document.getElementById('tx-account');
   const dateEl = document.getElementById('tx-date');
@@ -2085,6 +2125,7 @@ async function saveTransaction() {
   const txData = {
     type: selectedTxType,
     amount,
+    currency: currencyEl.value,
     category: categoryEl.value,
     accountId: accountEl.value,
     date: dateEl.value,
@@ -2100,6 +2141,11 @@ async function saveTransaction() {
       txData.created = new Date().toISOString();
       await db.collection('transactions').add(txData);
     }
+    // Recordamos la última moneda usada para precargarla en el próximo movimiento
+    defaultMoneyCurrency = txData.currency;
+    localStorage.setItem('moneyCurrency', defaultMoneyCurrency);
+    saveUrlConfig('moneyCurrency', defaultMoneyCurrency);
+    updateMoneyNavIcon();
     resetTransactionForm();
     showSyncIndicator('ok');
   } catch (err) {
@@ -2114,6 +2160,7 @@ function editTransaction(id) {
   document.getElementById('editing-transaction-id').value = id;
   selectTransactionType(tx.type);
   document.getElementById('tx-amount').value = tx.amount;
+  document.getElementById('tx-currency').value = tx.currency || 'EUR';
   document.getElementById('tx-category').value = tx.category;
   document.getElementById('tx-account').value = tx.accountId;
   document.getElementById('tx-date').value = tx.date;
@@ -2128,6 +2175,7 @@ function editTransaction(id) {
 function resetTransactionForm() {
   document.getElementById('editing-transaction-id').value = '';
   document.getElementById('tx-amount').value = '';
+  document.getElementById('tx-currency').value = defaultMoneyCurrency;
   document.getElementById('tx-note').value = '';
   const now = new Date();
   document.getElementById('tx-date').value = toLocalDateStr(now);
@@ -2180,7 +2228,7 @@ function renderTransactionList() {
         <span class="transaction-category">${t.category}</span>
         <span class="transaction-meta">${getAccountName(t.accountId)} · ${dateStr}${t.note ? ' · ' + t.note : ''}</span>
       </div>
-      <span class="transaction-amount ${t.type}">${sign} ${formatMoney(t.amount)}</span>
+      <span class="transaction-amount ${t.type}">${sign} ${formatMoney(t.amount, t.currency || 'EUR')}</span>
       <div class="task-actions">
         <button class="task-btn" onclick="editTransaction('${t.id}')" title="Editar"><i data-lucide="edit-3" style="width:16px;height:16px;color:var(--accent);"></i></button>
         <button class="task-btn" onclick="deleteTransaction('${t.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:16px;height:16px;color:#ff4d6d99;"></i></button>
@@ -2203,9 +2251,9 @@ function exportTransactionsXLS() {
     return true;
   });
 
-  const rows = [['Fecha', 'Tipo', 'Categoría', 'Cuenta', 'Monto', 'Nota']];
+  const rows = [['Fecha', 'Tipo', 'Categoría', 'Cuenta', 'Moneda', 'Monto', 'Nota']];
   filtered.forEach(t => {
-    rows.push([t.date, t.type === 'ingreso' ? 'Ingreso' : 'Gasto', t.category, getAccountName(t.accountId), t.amount.toFixed(2), t.note || '']);
+    rows.push([t.date, t.type === 'ingreso' ? 'Ingreso' : 'Gasto', t.category, getAccountName(t.accountId), t.currency || 'EUR', t.amount.toFixed(2), t.note || '']);
   });
   downloadXLS(`movimientos-${month || 'todos'}.xlsx`, rows, 'Movimientos');
 }
@@ -2214,6 +2262,7 @@ function exportTransactionsXLS() {
 async function addAccount() {
   const nameEl = document.getElementById('account-name');
   const balanceEl = document.getElementById('account-initial-balance');
+  const currencyEl = document.getElementById('account-initial-currency');
   const name = nameEl.value.trim();
   if (!name) { alert('Ponle un nombre a la cuenta.'); return; }
 
@@ -2222,6 +2271,7 @@ async function addAccount() {
     await db.collection('accounts').add({
       name,
       initialBalance: parseFloat(balanceEl.value) || 0,
+      initialBalanceCurrency: currencyEl.value,
       created: new Date().toISOString()
     });
     nameEl.value = '';
@@ -2263,7 +2313,7 @@ function renderAccountManageList() {
   list.innerHTML = accounts.map(a => `
     <div class="money-account-manage-row">
       <span>${a.name}</span>
-      <span class="text-sub">Saldo inicial: ${formatMoney(a.initialBalance || 0)}</span>
+      <span class="text-sub">Saldo inicial: ${formatMoney(a.initialBalance || 0, a.initialBalanceCurrency || 'EUR')}</span>
       <button class="task-btn" onclick="deleteAccount('${a.id}')" title="Eliminar cuenta"><i data-lucide="trash-2" style="width:15px;height:15px;color:#ff4d6d99;"></i></button>
     </div>
   `).join('');

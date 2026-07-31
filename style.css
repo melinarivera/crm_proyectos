@@ -1446,22 +1446,9 @@ body {
 }
 
 /* ===== DINERO ===== */
-.money-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.money-header-row select {
-  min-width: 220px;
-}
-
 .money-accounts-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 14px;
   margin-bottom: 20px;
 }
@@ -1489,8 +1476,14 @@ body {
   letter-spacing: 0.4px;
 }
 
+.account-card-values {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .account-card-value {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--verde);
 }
@@ -1498,10 +1491,30 @@ body {
 .account-card-value.negative { color: var(--rojo); }
 
 .money-summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.money-summary-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.money-summary-currency-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.money-summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
-  margin-bottom: 24px;
 }
 
 .money-summary-card {
@@ -1564,7 +1577,7 @@ body {
 
 .money-form-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -1654,7 +1667,8 @@ body {
   margin-bottom: 14px;
 }
 
-.money-account-form-row input {
+.money-account-form-row input,
+.money-account-form-row select {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -1665,7 +1679,8 @@ body {
 }
 
 #account-name { flex: 2; min-width: 160px; }
-#account-initial-balance { flex: 1; min-width: 120px; }
+#account-initial-balance { flex: 1; min-width: 110px; }
+#account-initial-currency { flex: 1; min-width: 90px; }
 
 .money-account-manage-row {
   display: flex;
@@ -1685,11 +1700,11 @@ body {
 }
 
 @media (max-width: 700px) {
-  .money-form-row { grid-template-columns: 1fr 1fr; }
+  .money-form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 480px) {
-  .money-form-row { grid-template-columns: 1fr; }
+  .money-form-row { grid-template-columns: minmax(0, 1fr); }
   .transaction-row { flex-wrap: wrap; }
   .transaction-amount { order: 3; margin-left: 52px; }
 }
