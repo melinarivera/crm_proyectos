@@ -331,6 +331,9 @@
           <button type="button" class="money-type-btn ingreso" data-tx-type="ingreso" onclick="selectTransactionType('ingreso')">
             <i data-lucide="arrow-up-circle" style="width:15px;height:15px;"></i> Ingreso
           </button>
+          <button type="button" class="money-type-btn transferencia" data-tx-type="transferencia" onclick="selectTransactionType('transferencia')">
+            <i data-lucide="arrow-right-left" style="width:15px;height:15px;"></i> Transferencia
+          </button>
         </div>
         <div class="money-form-row">
           <div class="form-group"><label>Monto</label><input type="number" id="tx-amount" step="0.01" min="0" placeholder="0.00"></div>
@@ -342,8 +345,9 @@
               <option value="MXN">$ MXN</option>
             </select>
           </div>
-          <div class="form-group"><label>Categoría</label><select id="tx-category"></select></div>
-          <div class="form-group"><label>Cuenta</label><select id="tx-account"></select></div>
+          <div class="form-group" id="tx-category-group"><label>Categoría</label><select id="tx-category"></select></div>
+          <div class="form-group"><label id="tx-account-label">Cuenta</label><select id="tx-account"></select></div>
+          <div class="form-group" id="tx-account-to-group" style="display:none;"><label>Cuenta destino</label><select id="tx-account-to"></select></div>
           <div class="form-group"><label>Fecha</label><input type="date" id="tx-date"></div>
         </div>
         <div class="money-form-row-2">
@@ -366,6 +370,7 @@
           <option value="all">Todos</option>
           <option value="ingreso">Ingresos</option>
           <option value="gasto">Gastos</option>
+          <option value="transferencia">Transferencias</option>
         </select>
         <input type="month" id="filter-tx-month" onchange="renderTransactionList()">
         <button class="btn-add" onclick="exportTransactionsXLS()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">

@@ -382,6 +382,26 @@ body {
 .streak-flame { font-size: 20px; flex-shrink: 0; }
 .streak-count { color: #ffb86c; font-size: 16px; font-weight: 800; }
 
+/* ===== INDICADOR DE SIN CONEXIÓN ===== */
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #ff9a3c, #ff4d6d);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px 16px calc(8px + env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
 /* ===== TOAST DE "DESHACER" ===== */
 .undo-toast {
   position: fixed;
@@ -1614,6 +1634,7 @@ body {
 
 .money-type-btn.gasto.active-money-type { border-color: var(--rojo); background: #ff4d6d18; color: var(--rojo); }
 .money-type-btn.ingreso.active-money-type { border-color: var(--verde); background: #06d6a018; color: var(--verde); }
+.money-type-btn.transferencia.active-money-type { border-color: var(--accent); background: #7c6aff18; color: var(--accent); }
 
 .money-form-row {
   display: grid;
@@ -1749,6 +1770,7 @@ body {
 
 .transaction-icon.ingreso { background: #06d6a022; color: var(--verde); }
 .transaction-icon.gasto   { background: #ff4d6d22; color: var(--rojo); }
+.transaction-icon.transferencia { background: #7c6aff22; color: var(--accent); }
 
 .transaction-info {
   flex: 1;
@@ -1780,6 +1802,7 @@ body {
 
 .transaction-amount.ingreso { color: var(--verde); }
 .transaction-amount.gasto { color: var(--rojo); }
+.transaction-amount.transferencia { color: var(--accent); }
 
 .money-accounts-manage {
   margin-top: 28px;

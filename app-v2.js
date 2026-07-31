@@ -220,11 +220,82 @@ function checkBrowserNotifications() {
   if (changed) persistNotifiedIds();
 }
 
+// --- Avisos de presupuesto y de movimientos recurrentes (Dinero) ---
+let notifiedBudgetKeys = new Set(JSON.parse(localStorage.getItem('notifiedBudgetKeys') || '[]'));
+let notifiedRecurringKeys = new Set(JSON.parse(localStorage.getItem('notifiedRecurringKeys') || '[]'));
+
+function persistNotifiedBudgetKeys() {
+  localStorage.setItem('notifiedBudgetKeys', JSON.stringify([...notifiedBudgetKeys]));
+}
+
+function persistNotifiedRecurringKeys() {
+  localStorage.setItem('notifiedRecurringKeys', JSON.stringify([...notifiedRecurringKeys]));
+}
+
+/** Avisa cuando un presupuesto llega al 90% o se pasa del límite (una vez por mes por presupuesto) */
+function checkBudgetAlerts() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  let changed = false;
+
+  budgets.forEach(b => {
+    const spent = transactions
+      .filter(t => t.type === 'gasto' && t.category === b.category && (t.currency || 'EUR') === b.currency && t.date && t.date.slice(0, 7) === month)
+      .reduce((s, t) => s + t.amount, 0);
+    if (spent <= 0 || !b.limit) return;
+    const pct = spent / b.limit;
+    if (pct < 0.9) return;
+
+    const key = `${b.category}-${b.currency}-${month}`;
+    if (notifiedBudgetKeys.has(key)) return;
+    notifiedBudgetKeys.add(key);
+    changed = true;
+
+    const title = pct >= 1 ? `⚠️ Presupuesto de ${b.category} superado` : `💸 Presupuesto de ${b.category} casi al límite`;
+    new Notification(title, {
+      body: `Llevas ${formatMoney(spent, b.currency)} de ${formatMoney(b.limit, b.currency)} este mes.`,
+      tag: key
+    });
+  });
+
+  if (changed) persistNotifiedBudgetKeys();
+}
+
+/** Avisa 2 días antes de que se genere un movimiento recurrente */
+function checkRecurringReminders() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const today = now.getDate();
+  let changed = false;
+
+  recurringTransactions.forEach(r => {
+    if (r.active === false) return;
+    const targetDay = Math.min(r.dayOfMonth, daysInMonth(now));
+    if (targetDay - today !== 2) return;
+
+    const key = `${r.id}-${currentMonth}`;
+    if (notifiedRecurringKeys.has(key)) return;
+    notifiedRecurringKeys.add(key);
+    changed = true;
+
+    new Notification('🔁 Próximo movimiento recurrente', {
+      body: `${r.note || r.category} se registrará en 2 días · ${formatMoney(r.amount, r.currency || 'EUR')}`,
+      tag: key
+    });
+  });
+
+  if (changed) persistNotifiedRecurringKeys();
+}
+
 /** Actualiza el globito rojo sobre la campana */
 function updateAlertBadge() {
   const { overdue, dueToday } = classifyScheduledTasks();
   const alertCount = overdue.length + dueToday.length;
   checkBrowserNotifications();
+  checkBudgetAlerts();
+  checkRecurringReminders();
 
   let badge = document.getElementById('notif-badge');
   const bell = document.getElementById('btn-notif');
@@ -531,7 +602,28 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDate();
   initTheme();
   initAuth();
+  updateOnlineStatus();
 });
+
+// ===== INDICADOR DE SIN CONEXIÓN =====
+function updateOnlineStatus() {
+  let banner = document.getElementById('offline-banner');
+  if (!navigator.onLine) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'offline-banner';
+      banner.className = 'offline-banner';
+      banner.innerHTML = '<i data-lucide="wifi-off" style="width:14px;height:14px;"></i> Sin conexión — tus cambios se guardan y se sincronizan cuando vuelvas a tener internet.';
+      document.body.appendChild(banner);
+      refreshIcons();
+    }
+  } else if (banner) {
+    banner.remove();
+  }
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
 
 // Función para forzar recarga de la aplicación (limpia caché del navegador para la PWA)
 function forceAppRefresh() {
@@ -616,17 +708,20 @@ function subscribeToFirestore() {
 
   db.collection('transactions').orderBy('date', 'desc').onSnapshot(snap => {
     transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    checkBudgetAlerts();
     if (currentView === 'dinero') renderMoney();
   });
 
   db.collection('recurringTransactions').orderBy('created', 'asc').onSnapshot(snap => {
     recurringTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     checkRecurringTransactions();
+    checkRecurringReminders();
     if (currentView === 'dinero') renderMoney();
   });
 
   db.collection('config').doc('budgets').onSnapshot(doc => {
     budgets = doc.exists ? (doc.data().items || []) : [];
+    checkBudgetAlerts();
     if (currentView === 'dinero') renderMoney();
   });
 
@@ -2154,10 +2249,15 @@ function computeAccountBalancesByCurrency(accountId) {
     const cur = account.initialBalanceCurrency || 'EUR';
     balances[cur] = (balances[cur] || 0) + account.initialBalance;
   }
-  transactions.filter(t => t.accountId === accountId).forEach(t => {
+  transactions.forEach(t => {
     const cur = t.currency || 'EUR';
-    const delta = t.type === 'ingreso' ? t.amount : -t.amount;
-    balances[cur] = (balances[cur] || 0) + delta;
+    if (t.type === 'transferencia') {
+      if (t.fromAccountId === accountId) balances[cur] = (balances[cur] || 0) - t.amount;
+      if (t.toAccountId === accountId) balances[cur] = (balances[cur] || 0) + t.amount;
+    } else if (t.accountId === accountId) {
+      const delta = t.type === 'ingreso' ? t.amount : -t.amount;
+      balances[cur] = (balances[cur] || 0) + delta;
+    }
   });
   return balances;
 }
@@ -2253,6 +2353,7 @@ function renderMoneySummary() {
 
   const byCurrency = {};
   monthTx.forEach(t => {
+    if (t.type === 'transferencia') return; // no es ingreso ni gasto real
     const cur = t.currency || 'EUR';
     if (!byCurrency[cur]) byCurrency[cur] = { ingresos: 0, gastos: 0 };
     if (t.type === 'ingreso') byCurrency[cur].ingresos += t.amount;
@@ -2300,6 +2401,13 @@ function populateAccountSelects() {
     if (prev && accounts.some(a => a.id === prev)) txSel.value = prev;
   }
 
+  const txToSel = document.getElementById('tx-account-to');
+  if (txToSel) {
+    const prev = txToSel.value;
+    txToSel.innerHTML = options || '<option value="">Crea una cuenta primero</option>';
+    if (prev && accounts.some(a => a.id === prev)) txToSel.value = prev;
+  }
+
   const filterSel = document.getElementById('filter-tx-account');
   if (filterSel) {
     const prev = filterSel.value;
@@ -2329,7 +2437,20 @@ function selectTransactionType(type) {
   document.querySelectorAll('.money-type-btn[data-tx-type]').forEach(b => b.classList.remove('active-money-type'));
   const btn = document.querySelector(`.money-type-btn[data-tx-type="${type}"]`);
   if (btn) btn.classList.add('active-money-type');
-  populateCategorySelect(type);
+
+  const catGroup = document.getElementById('tx-category-group');
+  const toGroup = document.getElementById('tx-account-to-group');
+  const accountLabel = document.getElementById('tx-account-label');
+  if (type === 'transferencia') {
+    catGroup.style.display = 'none';
+    toGroup.style.display = '';
+    accountLabel.textContent = 'Cuenta origen';
+  } else {
+    catGroup.style.display = '';
+    toGroup.style.display = 'none';
+    accountLabel.textContent = 'Cuenta';
+    populateCategorySelect(type);
+  }
 }
 
 function getAccountName(accountId) {
@@ -2342,6 +2463,7 @@ async function saveTransaction() {
   const currencyEl = document.getElementById('tx-currency');
   const categoryEl = document.getElementById('tx-category');
   const accountEl = document.getElementById('tx-account');
+  const accountToEl = document.getElementById('tx-account-to');
   const dateEl = document.getElementById('tx-date');
   const noteEl = document.getElementById('tx-note');
   const editingId = document.getElementById('editing-transaction-id').value;
@@ -2351,16 +2473,33 @@ async function saveTransaction() {
   if (!accountEl.value) { alert('Crea o selecciona una cuenta primero.'); return; }
   if (!dateEl.value) { alert('Selecciona una fecha.'); return; }
 
-  const txData = {
-    type: selectedTxType,
-    amount,
-    currency: currencyEl.value,
-    category: categoryEl.value,
-    accountId: accountEl.value,
-    date: dateEl.value,
-    note: noteEl.value.trim(),
-    updated: new Date().toISOString()
-  };
+  let txData;
+  if (selectedTxType === 'transferencia') {
+    if (!accountToEl.value) { alert('Selecciona la cuenta destino.'); return; }
+    if (accountToEl.value === accountEl.value) { alert('La cuenta de origen y destino no pueden ser la misma.'); return; }
+    txData = {
+      type: 'transferencia',
+      amount,
+      currency: currencyEl.value,
+      category: 'Transferencia',
+      fromAccountId: accountEl.value,
+      toAccountId: accountToEl.value,
+      date: dateEl.value,
+      note: noteEl.value.trim(),
+      updated: new Date().toISOString()
+    };
+  } else {
+    txData = {
+      type: selectedTxType,
+      amount,
+      currency: currencyEl.value,
+      category: categoryEl.value,
+      accountId: accountEl.value,
+      date: dateEl.value,
+      note: noteEl.value.trim(),
+      updated: new Date().toISOString()
+    };
+  }
 
   showSyncIndicator('syncing');
   try {
@@ -2401,8 +2540,13 @@ function editTransaction(id) {
   selectTransactionType(tx.type);
   document.getElementById('tx-amount').value = tx.amount;
   document.getElementById('tx-currency').value = tx.currency || 'EUR';
-  document.getElementById('tx-category').value = tx.category;
-  document.getElementById('tx-account').value = tx.accountId;
+  if (tx.type === 'transferencia') {
+    document.getElementById('tx-account').value = tx.fromAccountId;
+    document.getElementById('tx-account-to').value = tx.toAccountId;
+  } else {
+    document.getElementById('tx-category').value = tx.category;
+    document.getElementById('tx-account').value = tx.accountId;
+  }
   document.getElementById('tx-date').value = tx.date;
   document.getElementById('tx-note').value = tx.note || '';
   document.getElementById('tx-receipt').value = '';
@@ -2461,7 +2605,12 @@ function renderTransactionList() {
   const month = getFilterMonth();
 
   const filtered = transactions.filter(t => {
-    if (filterAccount !== 'all' && t.accountId !== filterAccount) return false;
+    if (filterAccount !== 'all') {
+      const matchesAccount = t.type === 'transferencia'
+        ? (t.fromAccountId === filterAccount || t.toAccountId === filterAccount)
+        : t.accountId === filterAccount;
+      if (!matchesAccount) return false;
+    }
     if (filterType !== 'all' && t.type !== filterType) return false;
     if (month && t.date && t.date.slice(0, 7) !== month) return false;
     return true;
@@ -2478,15 +2627,22 @@ function renderTransactionList() {
   filtered.forEach(t => {
     const row = document.createElement('div');
     row.className = 'transaction-row';
-    const sign = t.type === 'ingreso' ? '+' : '−';
     const dateStr = t.date ? t.date.split('-').reverse().join('/') : '';
+    const isTransfer = t.type === 'transferencia';
+    const sign = t.type === 'ingreso' ? '+' : t.type === 'gasto' ? '−' : '';
+    const icon = isTransfer ? 'arrow-right-left' : (t.type === 'ingreso' ? 'arrow-up-circle' : 'arrow-down-circle');
+    const categoryLabel = isTransfer ? 'Transferencia' : t.category;
+    const metaLabel = isTransfer
+      ? `${getAccountName(t.fromAccountId)} → ${getAccountName(t.toAccountId)} · ${dateStr}${t.note ? ' · ' + t.note : ''}`
+      : `${getAccountName(t.accountId)} · ${dateStr}${t.note ? ' · ' + t.note : ''}`;
+
     row.innerHTML = `
       <div class="transaction-icon ${t.type}">
-        <i data-lucide="${t.type === 'ingreso' ? 'arrow-up-circle' : 'arrow-down-circle'}" style="width:18px;height:18px;"></i>
+        <i data-lucide="${icon}" style="width:18px;height:18px;"></i>
       </div>
       <div class="transaction-info">
-        <span class="transaction-category">${t.category}</span>
-        <span class="transaction-meta">${getAccountName(t.accountId)} · ${dateStr}${t.note ? ' · ' + t.note : ''}</span>
+        <span class="transaction-category">${categoryLabel}</span>
+        <span class="transaction-meta">${metaLabel}</span>
       </div>
       <span class="transaction-amount ${t.type}">${sign} ${formatMoney(t.amount, t.currency || 'EUR')}</span>
       <div class="task-actions">
@@ -2506,15 +2662,22 @@ function exportTransactionsXLS() {
   const month = getFilterMonth();
 
   const filtered = transactions.filter(t => {
-    if (filterAccount !== 'all' && t.accountId !== filterAccount) return false;
+    if (filterAccount !== 'all') {
+      const matchesAccount = t.type === 'transferencia'
+        ? (t.fromAccountId === filterAccount || t.toAccountId === filterAccount)
+        : t.accountId === filterAccount;
+      if (!matchesAccount) return false;
+    }
     if (filterType !== 'all' && t.type !== filterType) return false;
     if (month && t.date && t.date.slice(0, 7) !== month) return false;
     return true;
   });
 
+  const typeLabels = { ingreso: 'Ingreso', gasto: 'Gasto', transferencia: 'Transferencia' };
   const rows = [['Fecha', 'Tipo', 'Categoría', 'Cuenta', 'Moneda', 'Monto', 'Nota']];
   filtered.forEach(t => {
-    rows.push([t.date, t.type === 'ingreso' ? 'Ingreso' : 'Gasto', t.category, getAccountName(t.accountId), t.currency || 'EUR', t.amount.toFixed(2), t.note || '']);
+    const cuenta = t.type === 'transferencia' ? `${getAccountName(t.fromAccountId)} → ${getAccountName(t.toAccountId)}` : getAccountName(t.accountId);
+    rows.push([t.date, typeLabels[t.type] || t.type, t.category, cuenta, t.currency || 'EUR', t.amount.toFixed(2), t.note || '']);
   });
   downloadXLS(`movimientos-${month || 'todos'}.xlsx`, rows, 'Movimientos');
 }
