@@ -365,6 +365,29 @@ function refreshIcons() {
   if (window.lucide) lucide.createIcons();
 }
 
+// ===== DESHACER AL ELIMINAR =====
+let undoToastTimer = null;
+
+function showUndoToast(message, undoFn) {
+  let toast = document.getElementById('undo-toast');
+  if (toast) toast.remove();
+  clearTimeout(undoToastTimer);
+
+  toast = document.createElement('div');
+  toast.id = 'undo-toast';
+  toast.className = 'undo-toast';
+  toast.innerHTML = `<span>${message}</span><button class="undo-btn">Deshacer</button>`;
+  document.body.appendChild(toast);
+
+  const remove = () => { if (toast) { toast.remove(); toast = null; } };
+  undoToastTimer = setTimeout(remove, 6000);
+  toast.querySelector('.undo-btn').onclick = async () => {
+    clearTimeout(undoToastTimer);
+    remove();
+    await undoFn();
+  };
+}
+
 // ===== BUSCADOR GLOBAL =====
 const searchCatLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
 
@@ -980,10 +1003,17 @@ async function toggleDone(id) {
 }
 
 async function deleteTask(id) {
-  if (confirm("¿Eliminar esta tarea?")) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  showSyncIndicator('syncing');
+  await db.collection('tasks').doc(id).delete();
+  showSyncIndicator('ok');
+  showUndoToast('Tarea eliminada', async () => {
     showSyncIndicator('syncing');
-    await db.collection('tasks').doc(id).delete();
-  }
+    const { id: _drop, ...data } = task;
+    await db.collection('tasks').doc(id).set(data);
+    showSyncIndicator('ok');
+  });
 }
 
 // MODAL
@@ -1165,10 +1195,17 @@ function resetNotaForm() {
 }
 
 async function deleteNota(id) {
-  if (confirm("¿Eliminar esta nota?")) {
+  const nota = notas.find(n => n.id === id);
+  if (!nota) return;
+  showSyncIndicator('syncing');
+  await db.collection('notas').doc(id).delete();
+  showSyncIndicator('ok');
+  showUndoToast('Nota eliminada', async () => {
     showSyncIndicator('syncing');
-    await db.collection('notas').doc(id).delete();
-  }
+    const { id: _drop, ...data } = nota;
+    await db.collection('notas').doc(id).set(data);
+    showSyncIndicator('ok');
+  });
 }
 
 // ===== DRIVE =====
@@ -1291,10 +1328,17 @@ function resetDriveForm() {
 }
 
 async function deleteDrive(id) {
-  if (confirm("¿Eliminar este Drive?")) {
+  const drive = drives.find(d => d.id === id);
+  if (!drive) return;
+  showSyncIndicator('syncing');
+  await db.collection('drives').doc(id).delete();
+  showSyncIndicator('ok');
+  showUndoToast('Drive eliminado', async () => {
     showSyncIndicator('syncing');
-    await db.collection('drives').doc(id).delete();
-  }
+    const { id: _drop, ...data } = drive;
+    await db.collection('drives').doc(id).set(data);
+    showSyncIndicator('ok');
+  });
 }
 
 // LEADS
@@ -2188,10 +2232,17 @@ function resetTransactionForm() {
 }
 
 async function deleteTransaction(id) {
-  if (confirm('¿Eliminar este movimiento?')) {
+  const tx = transactions.find(t => t.id === id);
+  if (!tx) return;
+  showSyncIndicator('syncing');
+  await db.collection('transactions').doc(id).delete();
+  showSyncIndicator('ok');
+  showUndoToast('Movimiento eliminado', async () => {
     showSyncIndicator('syncing');
-    await db.collection('transactions').doc(id).delete();
-  }
+    const { id: _drop, ...data } = tx;
+    await db.collection('transactions').doc(id).set(data);
+    showSyncIndicator('ok');
+  });
 }
 
 function renderTransactionList() {
@@ -2285,19 +2336,32 @@ async function addAccount() {
 }
 
 async function deleteAccount(id) {
-  const relatedCount = transactions.filter(t => t.accountId === id).length;
-  const msg = relatedCount > 0
-    ? `Esta cuenta tiene ${relatedCount} movimiento(s). Si la eliminas, también se borrarán. ¿Continuar?`
-    : '¿Eliminar esta cuenta?';
-  if (!confirm(msg)) return;
+  const account = accounts.find(a => a.id === id);
+  if (!account) return;
+  const relatedTx = transactions.filter(t => t.accountId === id);
 
   showSyncIndicator('syncing');
   const batch = db.batch();
   batch.delete(db.collection('accounts').doc(id));
-  transactions.filter(t => t.accountId === id).forEach(t => batch.delete(db.collection('transactions').doc(t.id)));
+  relatedTx.forEach(t => batch.delete(db.collection('transactions').doc(t.id)));
   try {
     await batch.commit();
     showSyncIndicator('ok');
+    const msg = relatedTx.length > 0
+      ? `Cuenta y ${relatedTx.length} movimiento(s) eliminados`
+      : 'Cuenta eliminada';
+    showUndoToast(msg, async () => {
+      showSyncIndicator('syncing');
+      const restoreBatch = db.batch();
+      const { id: _drop, ...accData } = account;
+      restoreBatch.set(db.collection('accounts').doc(id), accData);
+      relatedTx.forEach(t => {
+        const { id: txId, ...txData } = t;
+        restoreBatch.set(db.collection('transactions').doc(txId), txData);
+      });
+      await restoreBatch.commit();
+      showSyncIndicator('ok');
+    });
   } catch (err) {
     showSyncIndicator('error', err.message);
   }

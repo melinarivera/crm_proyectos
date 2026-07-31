@@ -297,7 +297,24 @@
         <button class="btn-add" onclick="changeExcel('dinero')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
           <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
         </button>
+        <button class="btn-add" onclick="configureDineroPIN()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <i data-lucide="lock" style="width:16px;height:16px;"></i> <span id="dinero-pin-btn-label">Configurar PIN</span>
+        </button>
       </div>
+
+      <!-- BLOQUEO CON PIN -->
+      <div id="dinero-lock-overlay" class="dinero-lock-overlay" style="display:none;">
+        <div class="dinero-lock-box">
+          <i data-lucide="lock" style="width:32px;height:32px;color:var(--accent);"></i>
+          <h3>Sección protegida</h3>
+          <p class="view-sub">Ingresa tu PIN para ver Dinero.</p>
+          <input type="password" inputmode="numeric" id="dinero-pin-input" placeholder="PIN" maxlength="8" onkeypress="if(event.key==='Enter') submitDineroPIN()">
+          <button class="btn-add" onclick="submitDineroPIN()">Desbloquear</button>
+          <p id="dinero-pin-error" class="dinero-pin-error" style="display:none;">PIN incorrecto.</p>
+        </div>
+      </div>
+
+      <div id="dinero-content-wrap">
 
       <div class="money-accounts-row" id="money-accounts-row"></div>
       <div class="money-summary-row" id="money-summary-row"></div>
@@ -326,7 +343,14 @@
           <div class="form-group"><label>Cuenta</label><select id="tx-account"></select></div>
           <div class="form-group"><label>Fecha</label><input type="date" id="tx-date"></div>
         </div>
-        <div class="form-group"><label>Nota</label><input type="text" id="tx-note" placeholder="Opcional..."></div>
+        <div class="money-form-row-2">
+          <div class="form-group"><label>Nota</label><input type="text" id="tx-note" placeholder="Opcional..."></div>
+          <div class="form-group">
+            <label>Foto del recibo</label>
+            <input type="file" id="tx-receipt" accept="image/*">
+          </div>
+        </div>
+        <div id="tx-receipt-preview" class="tx-receipt-preview" style="display:none;"></div>
         <div class="nota-controls">
           <button class="btn-add" id="btn-save-tx" onclick="saveTransaction()"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar movimiento</button>
           <button class="btn-cancel" id="btn-cancel-tx" onclick="resetTransactionForm()" style="display:none;">Cancelar</button>
@@ -362,6 +386,57 @@
         </div>
         <div class="money-account-manage-list" id="money-account-manage-list"></div>
       </div>
+
+      <div class="money-accounts-manage">
+        <h3 class="section-title">Presupuestos por categoría</h3>
+        <p class="view-sub" style="margin-top:0;">Ponle un límite mensual a una categoría de gasto y te avisamos cuando te acerques.</p>
+        <div class="money-account-form-row">
+          <select id="budget-category"></select>
+          <input type="number" id="budget-limit" step="0.01" min="0" placeholder="Límite mensual">
+          <select id="budget-currency">
+            <option value="EUR">€ EUR</option>
+            <option value="USD">$ USD</option>
+            <option value="MXN">$ MXN</option>
+          </select>
+          <button class="btn-add" onclick="saveBudget()"><i data-lucide="plus" style="width:15px;height:15px;"></i> Guardar presupuesto</button>
+        </div>
+        <div id="budget-list"></div>
+      </div>
+
+      <div class="money-accounts-manage">
+        <h3 class="section-title">Movimientos recurrentes</h3>
+        <p class="view-sub" style="margin-top:0;">Renta, sueldo, suscripciones... se registran solos cada mes en la fecha que elijas.</p>
+        <input type="hidden" id="editing-recurring-id" value="">
+        <div class="money-type-selector">
+          <button type="button" class="money-type-btn gasto active-money-type" data-rec-type="gasto" onclick="selectRecurringType('gasto')">
+            <i data-lucide="arrow-down-circle" style="width:15px;height:15px;"></i> Gasto
+          </button>
+          <button type="button" class="money-type-btn ingreso" data-rec-type="ingreso" onclick="selectRecurringType('ingreso')">
+            <i data-lucide="arrow-up-circle" style="width:15px;height:15px;"></i> Ingreso
+          </button>
+        </div>
+        <div class="money-form-row">
+          <div class="form-group"><label>Monto</label><input type="number" id="rec-amount" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group">
+            <label>Moneda</label>
+            <select id="rec-currency">
+              <option value="EUR">€ EUR</option>
+              <option value="USD">$ USD</option>
+              <option value="MXN">$ MXN</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Categoría</label><select id="rec-category"></select></div>
+          <div class="form-group"><label>Cuenta</label><select id="rec-account"></select></div>
+          <div class="form-group"><label>Día del mes</label><input type="number" id="rec-day" min="1" max="31" placeholder="Ej: 1"></div>
+        </div>
+        <div class="form-group"><label>Nota</label><input type="text" id="rec-note" placeholder="Ej: Renta departamento"></div>
+        <div class="nota-controls">
+          <button class="btn-add" id="btn-save-rec" onclick="saveRecurring()"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar recurrente</button>
+          <button class="btn-cancel" id="btn-cancel-rec" onclick="resetRecurringForm()" style="display:none;">Cancelar</button>
+        </div>
+        <div id="recurring-list"></div>
+      </div>
+      </div><!-- /dinero-content-wrap -->
     </section>
 
     <section class="view" id="view-drive">
