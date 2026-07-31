@@ -83,6 +83,8 @@ let leads = [];
 let icalEvents = [];
 let accounts = [];
 let transactions = [];
+let recurringTransactions = [];
+let budgets = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
@@ -423,6 +425,34 @@ function onGlobalSearch(query) {
     }
   });
 
+  // Los movimientos de Dinero no se indexan en el buscador si la sección está protegida con PIN
+  if (!dineroPinHash || isDineroUnlocked()) {
+    transactions.forEach(t => {
+      const noteMatch = t.note && t.note.toLowerCase().includes(q);
+      const catMatch = t.category && t.category.toLowerCase().includes(q);
+      if (noteMatch || catMatch) {
+        const dateStr = t.date ? t.date.split('-').reverse().join('/') : '';
+        results.push({
+          icon: t.type === 'ingreso' ? 'arrow-up-circle' : 'arrow-down-circle',
+          label: `${t.category}${t.note ? ' · ' + t.note : ''}`,
+          meta: `${formatMoney(t.amount, t.currency || 'EUR')} · ${dateStr}`,
+          action: () => showView('dinero')
+        });
+      }
+    });
+  }
+
+  icalEvents.forEach(e => {
+    if (e.title && e.title.toLowerCase().includes(q)) {
+      results.push({
+        icon: 'calendar-clock',
+        label: e.title,
+        meta: e.date ? e.date.split('-').reverse().join('/') : 'iCal',
+        action: () => { showView('calendario'); if (e.date) selectCalendarDay(e.date); }
+      });
+    }
+  });
+
   if (results.length === 0) {
     box.innerHTML = '<div class="search-empty">Sin resultados para "' + query.trim() + '"</div>';
   } else {
@@ -572,6 +602,12 @@ function subscribeToFirestore() {
     if (currentView === 'calendario') renderCalendar();
   });
 
+  db.collection('config').doc('security').onSnapshot(doc => {
+    dineroPinHash = doc.exists ? (doc.data().dineroPinHash || null) : null;
+    updateDineroPinButtonLabel();
+    if (currentView === 'dinero') checkDineroLock();
+  });
+
   // Dinero: cuentas y movimientos
   db.collection('accounts').orderBy('created', 'asc').onSnapshot(snap => {
     accounts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -580,6 +616,17 @@ function subscribeToFirestore() {
 
   db.collection('transactions').orderBy('date', 'desc').onSnapshot(snap => {
     transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'dinero') renderMoney();
+  });
+
+  db.collection('recurringTransactions').orderBy('created', 'asc').onSnapshot(snap => {
+    recurringTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    checkRecurringTransactions();
+    if (currentView === 'dinero') renderMoney();
+  });
+
+  db.collection('config').doc('budgets').onSnapshot(doc => {
+    budgets = doc.exists ? (doc.data().items || []) : [];
     if (currentView === 'dinero') renderMoney();
   });
 
@@ -1975,6 +2022,92 @@ function updateMoneyNavIcon() {
   refreshIcons();
 }
 
+// --- Bloqueo con PIN para Dinero ---
+let dineroPinHash = null;
+
+async function sha256Hex(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function isDineroUnlocked() {
+  return sessionStorage.getItem('dineroUnlocked') === '1';
+}
+
+function updateDineroPinButtonLabel() {
+  const label = document.getElementById('dinero-pin-btn-label');
+  if (label) label.textContent = dineroPinHash ? 'Cambiar/Quitar PIN' : 'Configurar PIN';
+}
+
+/** Muestra el overlay de bloqueo si hay PIN configurado y no se ha desbloqueado esta sesión. Devuelve true si está desbloqueado. */
+function checkDineroLock() {
+  const overlay = document.getElementById('dinero-lock-overlay');
+  const wrap = document.getElementById('dinero-content-wrap');
+  if (!overlay || !wrap) return true;
+
+  if (!dineroPinHash || isDineroUnlocked()) {
+    overlay.style.display = 'none';
+    wrap.style.display = '';
+    return true;
+  }
+
+  overlay.style.display = 'flex';
+  wrap.style.display = 'none';
+  const input = document.getElementById('dinero-pin-input');
+  if (input) { input.value = ''; input.focus(); }
+  return false;
+}
+
+async function submitDineroPIN() {
+  const input = document.getElementById('dinero-pin-input');
+  const errorEl = document.getElementById('dinero-pin-error');
+  const entered = input.value.trim();
+  if (!entered) return;
+
+  const hash = await sha256Hex(entered);
+  if (hash === dineroPinHash) {
+    sessionStorage.setItem('dineroUnlocked', '1');
+    errorEl.style.display = 'none';
+    renderMoney();
+  } else {
+    errorEl.style.display = 'block';
+    input.value = '';
+    input.focus();
+  }
+}
+
+async function configureDineroPIN() {
+  const hasPin = !!dineroPinHash;
+  const msg = hasPin
+    ? 'Ya tienes un PIN configurado.\nEscribe uno nuevo para cambiarlo, o escribe "quitar" para eliminarlo:'
+    : 'Crea un PIN numérico para proteger la sección Dinero (déjalo vacío para cancelar):';
+  const entered = prompt(msg);
+  if (entered === null || entered.trim() === '') return;
+
+  if (hasPin && entered.trim().toLowerCase() === 'quitar') {
+    showSyncIndicator('syncing');
+    await db.collection('config').doc('security').set({ dineroPinHash: null }, { merge: true });
+    sessionStorage.removeItem('dineroUnlocked');
+    showSyncIndicator('ok');
+    alert('PIN eliminado. Dinero ya no está protegido.');
+    return;
+  }
+
+  const confirmEntered = prompt('Confirma tu PIN:');
+  if (confirmEntered !== entered) {
+    alert('Los PIN no coinciden. Inténtalo de nuevo.');
+    return;
+  }
+
+  const hash = await sha256Hex(entered.trim());
+  showSyncIndicator('syncing');
+  await db.collection('config').doc('security').set({ dineroPinHash: hash }, { merge: true });
+  sessionStorage.setItem('dineroUnlocked', '1');
+  showSyncIndicator('ok');
+  alert('PIN configurado correctamente.');
+}
+
 /** Balance de una cuenta desglosado por moneda: { EUR: 120.5, USD: 30 } */
 function computeAccountBalancesByCurrency(accountId) {
   const balances = {};
@@ -2014,6 +2147,7 @@ function renderBalanceValues(balancesByCurrency, fallbackCurrency) {
 
 function renderMoney() {
   if (!document.getElementById('money-accounts-row')) return;
+  if (!checkDineroLock()) return;
   const dateEl = document.getElementById('tx-date');
   if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
   if (!moneyFormInitialized) {
@@ -2024,9 +2158,13 @@ function renderMoney() {
   renderAccountCards();
   populateAccountSelects();
   populateCategorySelect(selectedTxType);
+  populateBudgetCategorySelect();
+  if (!document.getElementById('rec-category').value) selectRecurringType(selectedRecType);
   renderMoneySummary();
   renderTransactionList();
   renderAccountManageList();
+  renderBudgetList();
+  renderRecurringList();
   refreshIcons();
 }
 
@@ -2130,6 +2268,13 @@ function populateAccountSelects() {
     filterSel.innerHTML = '<option value="all">Todas las cuentas</option>' + options;
     filterSel.value = prev || 'all';
   }
+
+  const recSel = document.getElementById('rec-account');
+  if (recSel) {
+    const prev = recSel.value;
+    recSel.innerHTML = options || '<option value="">Crea una cuenta primero</option>';
+    if (prev && accounts.some(a => a.id === prev)) recSel.value = prev;
+  }
 }
 
 function populateCategorySelect(type) {
@@ -2181,12 +2326,23 @@ async function saveTransaction() {
 
   showSyncIndicator('syncing');
   try {
+    let txId = editingId;
     if (editingId) {
       await db.collection('transactions').doc(editingId).update(txData);
     } else {
       txData.created = new Date().toISOString();
-      await db.collection('transactions').add(txData);
+      const ref = await db.collection('transactions').add(txData);
+      txId = ref.id;
     }
+
+    const receiptFile = document.getElementById('tx-receipt').files[0];
+    if (receiptFile) {
+      const storageRef = storage.ref(`receipts/${txId}_${Date.now()}`);
+      await storageRef.put(receiptFile);
+      const receiptUrl = await storageRef.getDownloadURL();
+      await db.collection('transactions').doc(txId).update({ receiptUrl });
+    }
+
     // Recordamos la última moneda usada para precargarla en el próximo movimiento
     defaultMoneyCurrency = txData.currency;
     localStorage.setItem('moneyCurrency', defaultMoneyCurrency);
@@ -2211,6 +2367,16 @@ function editTransaction(id) {
   document.getElementById('tx-account').value = tx.accountId;
   document.getElementById('tx-date').value = tx.date;
   document.getElementById('tx-note').value = tx.note || '';
+  document.getElementById('tx-receipt').value = '';
+
+  const preview = document.getElementById('tx-receipt-preview');
+  if (tx.receiptUrl) {
+    preview.innerHTML = `<a href="${tx.receiptUrl}" target="_blank" rel="noopener"><img src="${tx.receiptUrl}" alt="Recibo"> Ver recibo actual</a>`;
+    preview.style.display = 'flex';
+  } else {
+    preview.innerHTML = '';
+    preview.style.display = 'none';
+  }
 
   document.getElementById('btn-save-tx').innerHTML = '<i data-lucide="check" style="width:15px;height:15px;"></i> Actualizar movimiento';
   document.getElementById('btn-cancel-tx').style.display = 'block';
@@ -2223,6 +2389,9 @@ function resetTransactionForm() {
   document.getElementById('tx-amount').value = '';
   document.getElementById('tx-currency').value = defaultMoneyCurrency;
   document.getElementById('tx-note').value = '';
+  document.getElementById('tx-receipt').value = '';
+  document.getElementById('tx-receipt-preview').style.display = 'none';
+  document.getElementById('tx-receipt-preview').innerHTML = '';
   const now = new Date();
   document.getElementById('tx-date').value = toLocalDateStr(now);
   selectTransactionType('gasto');
@@ -2283,6 +2452,7 @@ function renderTransactionList() {
       </div>
       <span class="transaction-amount ${t.type}">${sign} ${formatMoney(t.amount, t.currency || 'EUR')}</span>
       <div class="task-actions">
+        ${t.receiptUrl ? `<a class="task-btn" href="${t.receiptUrl}" target="_blank" rel="noopener" title="Ver recibo"><i data-lucide="image" style="width:16px;height:16px;color:var(--accent2);"></i></a>` : ''}
         <button class="task-btn" onclick="editTransaction('${t.id}')" title="Editar"><i data-lucide="edit-3" style="width:16px;height:16px;color:var(--accent);"></i></button>
         <button class="task-btn" onclick="deleteTransaction('${t.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:16px;height:16px;color:#ff4d6d99;"></i></button>
       </div>
@@ -2384,6 +2554,235 @@ function renderAccountManageList() {
     </div>
   `).join('');
   refreshIcons();
+}
+
+// --- Presupuestos por categoría ---
+function populateBudgetCategorySelect() {
+  const sel = document.getElementById('budget-category');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = EXPENSE_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (EXPENSE_CATEGORIES.includes(prev)) sel.value = prev;
+}
+
+async function saveBudget() {
+  const category = document.getElementById('budget-category').value;
+  const limit = parseFloat(document.getElementById('budget-limit').value);
+  const currency = document.getElementById('budget-currency').value;
+  if (!limit || limit <= 0) { alert('Ingresa un límite válido.'); return; }
+
+  const next = budgets.filter(b => b.category !== category);
+  next.push({ category, limit, currency });
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('budgets').set({ items: next });
+    document.getElementById('budget-limit').value = '';
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+async function deleteBudget(category) {
+  const next = budgets.filter(b => b.category !== category);
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('budgets').set({ items: next });
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function renderBudgetList() {
+  const list = document.getElementById('budget-list');
+  if (!list) return;
+
+  if (budgets.length === 0) {
+    list.innerHTML = '<p class="empty-state">Sin presupuestos configurados.</p>';
+    return;
+  }
+
+  const month = getFilterMonth();
+  list.innerHTML = budgets.map(b => {
+    const spent = transactions
+      .filter(t => t.type === 'gasto' && t.category === b.category && (t.currency || 'EUR') === b.currency && t.date && t.date.slice(0, 7) === month)
+      .reduce((s, t) => s + t.amount, 0);
+    const pct = Math.min(100, (spent / b.limit) * 100);
+    const over = spent > b.limit;
+    return `
+      <div class="meter-row budget-row">
+        <span class="meter-label">${b.category}</span>
+        <div class="meter-track"><div class="meter-fill ${over ? 'over' : pct >= 70 ? 'warn' : ''}" style="width:${pct}%;"></div></div>
+        <span class="meter-value">${formatMoney(spent, b.currency)} / ${formatMoney(b.limit, b.currency)}</span>
+        <button class="task-btn" onclick="deleteBudget('${b.category}')" title="Eliminar presupuesto"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+      </div>
+    `;
+  }).join('');
+  refreshIcons();
+}
+
+// --- Movimientos recurrentes ---
+let selectedRecType = 'gasto';
+
+function selectRecurringType(type) {
+  selectedRecType = type;
+  document.querySelectorAll('.money-type-btn[data-rec-type]').forEach(b => b.classList.remove('active-money-type'));
+  const btn = document.querySelector(`.money-type-btn[data-rec-type="${type}"]`);
+  if (btn) btn.classList.add('active-money-type');
+  const sel = document.getElementById('rec-category');
+  if (!sel) return;
+  const prev = sel.value;
+  const cats = type === 'ingreso' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (cats.includes(prev)) sel.value = prev;
+}
+
+async function saveRecurring() {
+  const amount = parseFloat(document.getElementById('rec-amount').value);
+  const currency = document.getElementById('rec-currency').value;
+  const category = document.getElementById('rec-category').value;
+  const accountId = document.getElementById('rec-account').value;
+  const day = parseInt(document.getElementById('rec-day').value, 10);
+  const note = document.getElementById('rec-note').value.trim();
+  const editingId = document.getElementById('editing-recurring-id').value;
+
+  if (!amount || amount <= 0) { alert('Ingresa un monto válido.'); return; }
+  if (!accountId) { alert('Crea o selecciona una cuenta primero.'); return; }
+  if (!day || day < 1 || day > 31) { alert('Ingresa un día del mes válido (1-31).'); return; }
+
+  const data = { type: selectedRecType, amount, currency, category, accountId, dayOfMonth: day, note, active: true };
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('recurringTransactions').doc(editingId).update(data);
+    } else {
+      data.created = new Date().toISOString();
+      data.lastGeneratedMonth = null;
+      await db.collection('recurringTransactions').add(data);
+    }
+    resetRecurringForm();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editRecurring(id) {
+  const r = recurringTransactions.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('editing-recurring-id').value = id;
+  selectRecurringType(r.type);
+  document.getElementById('rec-amount').value = r.amount;
+  document.getElementById('rec-currency').value = r.currency || 'EUR';
+  document.getElementById('rec-category').value = r.category;
+  document.getElementById('rec-account').value = r.accountId;
+  document.getElementById('rec-day').value = r.dayOfMonth;
+  document.getElementById('rec-note').value = r.note || '';
+  document.getElementById('btn-save-rec').innerHTML = '<i data-lucide="check" style="width:15px;height:15px;"></i> Actualizar recurrente';
+  document.getElementById('btn-cancel-rec').style.display = 'block';
+  refreshIcons();
+}
+
+function resetRecurringForm() {
+  document.getElementById('editing-recurring-id').value = '';
+  document.getElementById('rec-amount').value = '';
+  document.getElementById('rec-day').value = '';
+  document.getElementById('rec-note').value = '';
+  selectRecurringType('gasto');
+  document.getElementById('btn-save-rec').innerHTML = '<i data-lucide="save" style="width:15px;height:15px;"></i> Guardar recurrente';
+  document.getElementById('btn-cancel-rec').style.display = 'none';
+  refreshIcons();
+}
+
+async function toggleRecurringActive(id, active) {
+  showSyncIndicator('syncing');
+  await db.collection('recurringTransactions').doc(id).update({ active });
+  showSyncIndicator('ok');
+}
+
+async function deleteRecurring(id) {
+  const r = recurringTransactions.find(x => x.id === id);
+  if (!r) return;
+  showSyncIndicator('syncing');
+  await db.collection('recurringTransactions').doc(id).delete();
+  showSyncIndicator('ok');
+  showUndoToast('Recurrente eliminado', async () => {
+    showSyncIndicator('syncing');
+    const { id: _drop, ...data } = r;
+    await db.collection('recurringTransactions').doc(id).set(data);
+    showSyncIndicator('ok');
+  });
+}
+
+function renderRecurringList() {
+  const list = document.getElementById('recurring-list');
+  if (!list) return;
+
+  if (recurringTransactions.length === 0) {
+    list.innerHTML = '<p class="empty-state">Sin movimientos recurrentes.</p>';
+    return;
+  }
+
+  list.innerHTML = recurringTransactions.map(r => `
+    <div class="transaction-row">
+      <div class="transaction-icon ${r.type}">
+        <i data-lucide="repeat" style="width:18px;height:18px;"></i>
+      </div>
+      <div class="transaction-info">
+        <span class="transaction-category">${r.category}${r.note ? ' · ' + r.note : ''}</span>
+        <span class="transaction-meta">${getAccountName(r.accountId)} · día ${r.dayOfMonth} de cada mes${r.active === false ? ' · pausado' : ''}</span>
+      </div>
+      <span class="transaction-amount ${r.type}">${formatMoney(r.amount, r.currency || 'EUR')}</span>
+      <div class="task-actions">
+        <button class="task-btn" onclick="toggleRecurringActive('${r.id}', ${r.active === false})" title="${r.active === false ? 'Reanudar' : 'Pausar'}">
+          <i data-lucide="${r.active === false ? 'play' : 'pause'}" style="width:16px;height:16px;color:var(--accent);"></i>
+        </button>
+        <button class="task-btn" onclick="editRecurring('${r.id}')" title="Editar"><i data-lucide="edit-3" style="width:16px;height:16px;color:var(--accent);"></i></button>
+        <button class="task-btn" onclick="deleteRecurring('${r.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:16px;height:16px;color:#ff4d6d99;"></i></button>
+      </div>
+    </div>
+  `).join('');
+  refreshIcons();
+}
+
+function daysInMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+}
+
+/** Genera automáticamente la transacción del mes para cada recurrente activo cuyo día ya llegó */
+async function checkRecurringTransactions() {
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const today = now.getDate();
+
+  for (const r of recurringTransactions) {
+    if (r.active === false) continue;
+    if (r.lastGeneratedMonth === currentMonth) continue;
+    const targetDay = Math.min(r.dayOfMonth, daysInMonth(now));
+    if (today < targetDay) continue;
+
+    const dateStr = `${currentMonth}-${String(targetDay).padStart(2, '0')}`;
+    try {
+      await db.collection('transactions').add({
+        type: r.type,
+        amount: r.amount,
+        currency: r.currency || 'EUR',
+        category: r.category,
+        accountId: r.accountId,
+        date: dateStr,
+        note: r.note ? `${r.note} (recurrente)` : '(recurrente)',
+        recurringId: r.id,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString()
+      });
+      await db.collection('recurringTransactions').doc(r.id).update({ lastGeneratedMonth: currentMonth });
+    } catch (err) {
+      console.error('Error generando movimiento recurrente:', err);
+    }
+  }
 }
 
 // ===== ENLACES EXTERNOS (EXCEL Y WHATSAPP) =====
