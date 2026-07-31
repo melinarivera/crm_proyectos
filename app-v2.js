@@ -20,6 +20,7 @@ try {
 }
 
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 // Enable offline persistence
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
@@ -79,6 +80,7 @@ let tasks = [];
 let notas = [];
 let drives = [];
 let leads = [];
+let icalEvents = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
@@ -497,10 +499,13 @@ function subscribeToFirestore() {
     tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log("Tareas recibidas:", tasks.length);
     renderAll();
-    if (currentView !== 'dashboard' && currentView !== 'notas' && currentView !== 'drive') renderCategoryList(currentView);
+    if (currentView === 'calendario') renderCalendar();
+    else if (currentView === 'stats') renderStats();
+    else if (!['dashboard', 'notas', 'drive'].includes(currentView)) renderCategoryList(currentView);
     showSyncIndicator('ok');
     // Re-check del badge al recibir cambios de Firestore
     updateAlertBadge();
+    scheduleICSSync();
   }, err => {
     showSyncIndicator('error', err.message);
     if(err.code === 'permission-denied') {
@@ -532,6 +537,12 @@ function subscribeToFirestore() {
       groceryItems = doc.data().items || [];
       if (currentView === 'menu') renderGroceryList();
     }
+  });
+
+  // Eventos importados desde iCal externo
+  db.collection('config').doc('icalEvents').onSnapshot(doc => {
+    icalEvents = doc.exists ? (doc.data().events || []) : [];
+    if (currentView === 'calendario') renderCalendar();
   });
 
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
@@ -604,7 +615,11 @@ function showView(view) {
     loadMenuData();
     renderGroceryList();
   }
-  else if (view === 'calendario') renderCalendar();
+  else if (view === 'calendario') {
+    renderCalendar();
+    updateICalFeedUI();
+    maybeAutoSyncICal();
+  }
   else if (view === 'stats') renderStats();
   else renderCategoryList(view);
   refreshIcons();
@@ -955,14 +970,16 @@ function renderCalendar() {
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const dayTasks = tasks.filter(t => t.date === dateStr);
+    const dayIcalEvents = icalEvents.filter(e => e.date === dateStr);
 
     const cell = document.createElement('div');
     cell.className = 'calendar-cell';
     if (dateStr === todayStr) cell.classList.add('is-today');
     if (dateStr === calendarSelectedDay) cell.classList.add('is-selected');
 
-    const dots = dayTasks.slice(0, 4).map(t => `<span class="calendar-dot dot-${t.prio}"></span>`).join('');
-    cell.innerHTML = `<span class="calendar-day-num">${day}</span><div class="calendar-dots">${dots}</div>`;
+    const taskDots = dayTasks.slice(0, 3).map(t => `<span class="calendar-dot dot-${t.prio}"></span>`).join('');
+    const icalDot = dayIcalEvents.length ? '<span class="calendar-dot calendar-dot-ical"></span>' : '';
+    cell.innerHTML = `<span class="calendar-day-num">${day}</span><div class="calendar-dots">${taskDots}${icalDot}</div>`;
     cell.onclick = () => selectCalendarDay(dateStr);
     grid.appendChild(cell);
   }
@@ -981,6 +998,7 @@ function selectCalendarDay(dateStr) {
 function renderCalendarDayTasks(dateStr) {
   const title = document.getElementById('calendar-day-title');
   const list = document.getElementById('calendar-day-tasks');
+  const icalList = document.getElementById('calendar-day-ical');
   if (!title || !list) return;
 
   const [y, m, d] = dateStr.split('-');
@@ -992,6 +1010,21 @@ function renderCalendarDayTasks(dateStr) {
     list.innerHTML = '<p class="empty-state">No hay tareas programadas este día.</p>';
   } else {
     dayTasks.forEach(t => list.appendChild(buildTaskCard(t)));
+  }
+
+  if (icalList) {
+    const dayIcalEvents = icalEvents.filter(e => e.date === dateStr);
+    if (dayIcalEvents.length === 0) {
+      icalList.innerHTML = '';
+    } else {
+      icalList.innerHTML = '<h4 class="ical-events-title"><i data-lucide="calendar-clock" style="width:13px;height:13px;"></i> Eventos de tu iCal</h4>' +
+        dayIcalEvents.map(e => `
+          <div class="ical-event-row">
+            <span class="ical-event-title">${e.title}</span>
+            ${e.time ? `<span class="ical-event-time">${e.time}</span>` : ''}
+          </div>
+        `).join('');
+    }
   }
   refreshIcons();
 }
@@ -1745,6 +1778,197 @@ function exportGroceryCSV() {
   const rows = [['Artículo', 'Comprado']];
   groceryItems.forEach(i => rows.push([i.text, i.checked ? 'Sí' : 'No']));
   downloadCSV('lista-supermercado.csv', rows);
+}
+
+// ===== SINCRONIZACIÓN CON ICAL =====
+// Proxy CORS público gratuito: necesario porque los feeds de Apple/Google Calendar
+// no permiten lectura directa desde el navegador (sin backend propio).
+const ICS_CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+let icalFeedUrl = localStorage.getItem('icalFeedUrl') || '';
+let icsUploadTimer = null;
+
+// --- EXPORTAR: tareas de CRMeli -> feed .ics público en Firebase Storage ---
+function escapeICSText(str) {
+  return String(str || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
+}
+
+function formatICSDate(dateStr, timeStr) {
+  const [y, m, d] = dateStr.split('-');
+  if (timeStr) {
+    const [h, mi] = timeStr.split(':');
+    return `${y}${m}${d}T${h}${mi}00`;
+  }
+  return `${y}${m}${d}`;
+}
+
+function buildICSFromTasks() {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//CRMeli//Tareas//ES',
+    'CALSCALE:GREGORIAN',
+    'X-WR-CALNAME:CRMeli - Tareas'
+  ];
+
+  tasks.filter(t => t.date).forEach(t => {
+    lines.push('BEGIN:VEVENT');
+    lines.push('UID:' + t.id + '@crmeli');
+    lines.push('DTSTAMP:' + stamp);
+    lines.push(t.time ? 'DTSTART:' + formatICSDate(t.date, t.time) : 'DTSTART;VALUE=DATE:' + formatICSDate(t.date));
+    lines.push('SUMMARY:' + escapeICSText(t.title));
+    if (t.desc) lines.push('DESCRIPTION:' + escapeICSText(t.desc));
+    lines.push('STATUS:' + (t.done ? 'COMPLETED' : 'CONFIRMED'));
+    lines.push('END:VEVENT');
+  });
+
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+
+async function syncICSFeedToStorage() {
+  try {
+    const icsContent = buildICSFromTasks();
+    const ref = storage.ref('public/tasks.ics');
+    await ref.put(new Blob([icsContent], { type: 'text/calendar' }));
+    icalFeedUrl = await ref.getDownloadURL();
+    localStorage.setItem('icalFeedUrl', icalFeedUrl);
+    updateICalFeedUI();
+  } catch (err) {
+    // No interrumpe la app: si Storage aún no tiene las reglas configuradas, solo se registra.
+    console.warn('No se pudo actualizar el feed iCal (revisa las reglas de Storage):', err.message);
+  }
+}
+
+function scheduleICSSync() {
+  clearTimeout(icsUploadTimer);
+  icsUploadTimer = setTimeout(syncICSFeedToStorage, 4000);
+}
+
+function updateICalFeedUI() {
+  const el = document.getElementById('ical-feed-link');
+  if (!el) return;
+  el.style.display = (icalFeedUrl || localStorage.getItem('icalFeedUrl')) ? 'inline-flex' : 'none';
+}
+
+function copyICalFeedLink() {
+  const url = icalFeedUrl || localStorage.getItem('icalFeedUrl');
+  if (!url) {
+    alert('Todavía no se generó tu enlace iCal. Espera unos segundos (o guarda una tarea) y vuelve a intentar.');
+    return;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Enlace copiado. Pégalo en Apple/Google Calendar como "calendario suscrito por URL".');
+    }).catch(() => prompt('Copia este enlace y pégalo en tu app de calendario:', url));
+  } else {
+    prompt('Copia este enlace y pégalo en tu app de calendario:', url);
+  }
+}
+
+// --- IMPORTAR: tu iCal externo -> eventos visibles en el Calendario ---
+function configureICalSource() {
+  const current = globalUrls.icalSourceUrl || localStorage.getItem('icalSourceUrl') || '';
+  let newUrl = prompt('Pega tu URL secreta de iCal (en Google/Apple Calendar: Configuración > Compartir calendario > Dirección secreta en formato iCal):', current);
+  if (newUrl === null) return;
+  newUrl = newUrl.trim().replace(/^webcal:\/\//, 'https://');
+  if (newUrl === '') {
+    saveUrlConfig('icalSourceUrl', '');
+    alert('Enlace de iCal eliminado.');
+    return;
+  }
+  saveUrlConfig('icalSourceUrl', newUrl);
+  syncICalNow();
+}
+
+function parseICSDateValue(value, isDateOnly) {
+  const digits = value.replace('Z', '');
+  const y = digits.slice(0, 4), mo = digits.slice(4, 6), d = digits.slice(6, 8);
+  const date = `${y}-${mo}-${d}`;
+  if (isDateOnly || digits.length <= 8) return { date, time: null };
+  const h = digits.slice(9, 11), mi = digits.slice(11, 13);
+  return { date, time: `${h}:${mi}` };
+}
+
+function parseICS(icsText) {
+  const unfolded = icsText.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '');
+  const lines = unfolded.split(/\r\n|\n/);
+  const events = [];
+  let current = null;
+
+  lines.forEach(line => {
+    if (line === 'BEGIN:VEVENT') {
+      current = {};
+    } else if (line === 'END:VEVENT') {
+      if (current && current.date) events.push(current);
+      current = null;
+    } else if (current) {
+      const idx = line.indexOf(':');
+      if (idx === -1) return;
+      const rawKey = line.slice(0, idx);
+      const value = line.slice(idx + 1);
+      const key = rawKey.split(';')[0].toUpperCase();
+
+      if (key === 'UID') {
+        current.uid = value;
+      } else if (key === 'SUMMARY') {
+        current.title = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' ').replace(/\\\\/g, '\\');
+      } else if (key === 'DTSTART') {
+        const isDateOnly = rawKey.toUpperCase().includes('VALUE=DATE') && !rawKey.toUpperCase().includes('VALUE=DATE-TIME');
+        const parsed = parseICSDateValue(value, isDateOnly);
+        current.date = parsed.date;
+        current.time = parsed.time;
+      }
+    }
+  });
+
+  return events;
+}
+
+async function syncICalNow() {
+  const url = globalUrls.icalSourceUrl || localStorage.getItem('icalSourceUrl');
+  if (!url) {
+    configureICalSource();
+    return;
+  }
+
+  showSyncIndicator('syncing');
+  try {
+    const res = await fetch(ICS_CORS_PROXY + encodeURIComponent(url));
+    if (!res.ok) throw new Error('No se pudo descargar tu calendario (código ' + res.status + ')');
+    const text = await res.text();
+
+    const parsedEvents = parseICS(text).map((e, i) => ({
+      uid: e.uid || (e.date + '-' + i),
+      title: e.title || '(Sin título)',
+      date: e.date,
+      time: e.time || null
+    }));
+
+    await db.collection('config').doc('icalEvents').set({
+      events: parsedEvents,
+      lastSynced: new Date().toISOString()
+    });
+    showSyncIndicator('ok');
+  } catch (err) {
+    console.error('Error al sincronizar iCal:', err);
+    showSyncIndicator('error', 'iCal: ' + err.message + ' (el proxy gratuito puede fallar a veces, reintenta luego)');
+  }
+}
+
+/** Sincroniza solo si nunca se hizo o si pasó más de 1 hora, para no saturar el proxy gratuito */
+function maybeAutoSyncICal() {
+  const url = globalUrls.icalSourceUrl || localStorage.getItem('icalSourceUrl');
+  if (!url) return;
+  const lastSynced = window.__icalLastSynced || 0;
+  if (Date.now() - lastSynced < 60 * 60 * 1000) return;
+  window.__icalLastSynced = Date.now();
+  syncICalNow();
 }
 
 // ===== ENLACES EXTERNOS (EXCEL Y WHATSAPP) =====

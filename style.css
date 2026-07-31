@@ -1477,6 +1477,51 @@ body {
   padding: 20px;
 }
 
+.ical-sync-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.calendar-dot-ical {
+  background: var(--accent2);
+  box-shadow: 0 0 6px var(--accent2);
+}
+
+.ical-events-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 18px 0 10px;
+}
+
+.ical-event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.ical-event-time {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent2);
+  flex-shrink: 0;
+}
+
 @media (max-width: 700px) {
   .calendar-weekdays span:nth-child(n) { font-size: 10px; }
   .calendar-cell { min-height: 54px; padding: 6px; }

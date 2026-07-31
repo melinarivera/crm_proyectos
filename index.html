@@ -261,6 +261,19 @@
           <button class="btn-notif" onclick="calendarShiftMonth(1)" title="Mes siguiente"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
         </div>
       </div>
+
+      <div class="ical-sync-bar">
+        <button class="btn-add" onclick="configureICalSource()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <i data-lucide="link" style="width:15px;height:15px;"></i> Conectar mi iCal
+        </button>
+        <button class="btn-add" onclick="syncICalNow()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <i data-lucide="refresh-cw" style="width:15px;height:15px;"></i> Sincronizar ahora
+        </button>
+        <button class="btn-add" id="ical-feed-link" onclick="copyICalFeedLink()" style="display:none;background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <i data-lucide="copy" style="width:15px;height:15px;"></i> Copiar mi enlace iCal
+        </button>
+      </div>
+
       <div class="calendar-weekdays">
         <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
       </div>
@@ -268,6 +281,7 @@
       <div class="calendar-day-panel">
         <h3 id="calendar-day-title" class="section-title">Selecciona un día</h3>
         <div class="task-list" id="calendar-day-tasks"></div>
+        <div id="calendar-day-ical"></div>
       </div>
     </section>
 
@@ -800,6 +814,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
   <script src="app-v2.js?v=3.12"></script>
   <script>
     if ('serviceWorker' in navigator) {
