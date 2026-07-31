@@ -81,6 +81,8 @@ let notas = [];
 let drives = [];
 let leads = [];
 let icalEvents = [];
+let accounts = [];
+let transactions = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
@@ -500,8 +502,7 @@ function subscribeToFirestore() {
     console.log("Tareas recibidas:", tasks.length);
     renderAll();
     if (currentView === 'calendario') renderCalendar();
-    else if (currentView === 'stats') renderStats();
-    else if (!['dashboard', 'notas', 'drive'].includes(currentView)) renderCategoryList(currentView);
+    else if (!['dashboard', 'notas', 'drive', 'dinero'].includes(currentView)) renderCategoryList(currentView);
     showSyncIndicator('ok');
     // Re-check del badge al recibir cambios de Firestore
     updateAlertBadge();
@@ -545,8 +546,19 @@ function subscribeToFirestore() {
     if (currentView === 'calendario') renderCalendar();
   });
 
+  // Dinero: cuentas y movimientos
+  db.collection('accounts').orderBy('created', 'asc').onSnapshot(snap => {
+    accounts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'dinero') renderMoney();
+  });
+
+  db.collection('transactions').orderBy('date', 'desc').onSnapshot(snap => {
+    transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'dinero') renderMoney();
+  });
+
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
-  const excelCategories = ['webdev', 'marketing', 'pandin', 'sara', 'personal'];
+  const excelCategories = ['webdev', 'marketing', 'pandin', 'sara', 'personal', 'dinero'];
   const urlKeys = [...excelCategories.map(c => c + 'ExcelUrl'), 'whatsappUrl'];
   db.collection('config').doc('urls').onSnapshot(doc => {
     if (doc.exists) {
@@ -554,6 +566,13 @@ function subscribeToFirestore() {
       urlKeys.forEach(key => {
         if (globalUrls[key]) localStorage.setItem(key, globalUrls[key]);
       });
+      if (globalUrls.moneyCurrency && globalUrls.moneyCurrency !== moneyCurrency) {
+        moneyCurrency = globalUrls.moneyCurrency;
+        localStorage.setItem('moneyCurrency', moneyCurrency);
+        const sel = document.getElementById('money-currency-select');
+        if (sel) sel.value = moneyCurrency;
+        if (currentView === 'dinero') renderMoney();
+      }
     } else {
       // Migración desde localStorage
       const migratedUrls = {};
@@ -602,7 +621,7 @@ function showView(view) {
     planner:   'Planner Semanal',
     menu:      'Menú Semanal',
     calendario:'Calendario',
-    stats:     'Estadísticas'
+    dinero:    'Dinero'
   };
   document.getElementById('page-title').textContent = titles[view] || 'MeliOrganizer';
 
@@ -620,7 +639,7 @@ function showView(view) {
     updateICalFeedUI();
     maybeAutoSyncICal();
   }
-  else if (view === 'stats') renderStats();
+  else if (view === 'dinero') renderMoney();
   else renderCategoryList(view);
   refreshIcons();
 }
@@ -840,100 +859,6 @@ function buildTaskCard(task) {
   return card;
 }
 
-// ===== ESTADÍSTICAS / GRÁFICOS DE PROGRESO =====
-function renderStats() {
-  const container = document.getElementById('stats-charts');
-  if (!container) return;
-  container.innerHTML = buildHeroProgressCard() + buildTrendCard() + buildCategoryProgressCard();
-  refreshIcons();
-}
-
-function buildHeroProgressCard() {
-  const total = tasks.length;
-  const done = tasks.filter(t => t.done).length;
-  const pct = total ? Math.round((done / total) * 100) : 0;
-  const r = 54;
-  const c = 2 * Math.PI * r;
-  const offset = c - (pct / 100) * c;
-
-  return `
-    <div class="stat-chart-card stat-hero-card">
-      <h3 class="section-title">Progreso general</h3>
-      <div class="hero-ring-wrap">
-        <svg width="140" height="140" viewBox="0 0 140 140">
-          <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--border)" stroke-width="12" />
-          <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--accent)" stroke-width="12"
-            stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
-            transform="rotate(-90 70 70)" />
-        </svg>
-        <div class="hero-ring-value">${pct}%</div>
-      </div>
-      <p class="hero-ring-caption">${done} de ${total} tareas completadas</p>
-    </div>
-  `;
-}
-
-function buildTrendCard() {
-  const days = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push({ dateStr: toLocalDateStr(d), label: String(d.getDate()).padStart(2, '0') });
-  }
-
-  const counts = days.map(d => tasks.filter(t => t.completedAt && t.completedAt.slice(0, 10) === d.dateStr).length);
-  const maxCount = Math.max(1, ...counts);
-
-  const bars = days.map((d, i) => {
-    const heightPct = (counts[i] / maxCount) * 100;
-    const isPeak = counts[i] === maxCount && maxCount > 0;
-    return `
-      <div class="trend-bar-col">
-        ${isPeak ? `<span class="trend-bar-value">${counts[i]}</span>` : ''}
-        <div class="trend-bar" style="height:${Math.max(heightPct, counts[i] > 0 ? 6 : 2)}%;"></div>
-        <span class="trend-bar-label">${d.label}</span>
-      </div>
-    `;
-  }).join('');
-
-  return `
-    <div class="stat-chart-card stat-trend-card">
-      <h3 class="section-title">Tareas completadas · últimos 14 días</h3>
-      <div class="trend-chart">${bars}</div>
-    </div>
-  `;
-}
-
-function buildCategoryProgressCard() {
-  const cats = [
-    { key: 'webdev', label: 'Dev' },
-    { key: 'marketing', label: 'Marketing' },
-    { key: 'pandin', label: 'Pandín' },
-    { key: 'sara', label: 'Sara' },
-    { key: 'personal', label: 'Personal' }
-  ];
-
-  const rows = cats.map(c => {
-    const catTasks = tasks.filter(t => t.cat === c.key);
-    const total = catTasks.length;
-    const done = catTasks.filter(t => t.done).length;
-    const pct = total ? (done / total) * 100 : 0;
-    return `
-      <div class="meter-row">
-        <span class="meter-label">${c.label}</span>
-        <div class="meter-track"><div class="meter-fill" style="width:${pct}%;"></div></div>
-        <span class="meter-value">${done}/${total}</span>
-      </div>
-    `;
-  }).join('');
-
-  return `
-    <div class="stat-chart-card stat-category-card">
-      <h3 class="section-title">Progreso por categoría</h3>
-      ${rows}
-    </div>
-  `;
-}
 
 // ===== CALENDARIO MENSUAL =====
 let calendarDate = new Date();
@@ -1969,6 +1894,365 @@ function maybeAutoSyncICal() {
   if (Date.now() - lastSynced < 60 * 60 * 1000) return;
   window.__icalLastSynced = Date.now();
   syncICalNow();
+}
+
+// ===== DINERO: CUENTAS, GASTOS E INGRESOS =====
+const EXPENSE_CATEGORIES = ['Comida', 'Transporte', 'Vivienda', 'Salud', 'Ocio', 'Educación', 'Ropa', 'Otros'];
+const INCOME_CATEGORIES = ['Sueldo', 'Freelance', 'Regalo', 'Reembolso', 'Otros'];
+let selectedTxType = 'gasto';
+
+const MONEY_CURRENCIES = {
+  EUR: { locale: 'es-ES', label: '€ Euro' },
+  USD: { locale: 'en-US', label: '$ Dólar estadounidense' },
+  MXN: { locale: 'es-MX', label: '$ Peso mexicano' }
+};
+
+let moneyCurrency = globalUrls.moneyCurrency || localStorage.getItem('moneyCurrency') || 'EUR';
+
+function formatMoney(amount) {
+  const conf = MONEY_CURRENCIES[moneyCurrency] || MONEY_CURRENCIES.EUR;
+  return new Intl.NumberFormat(conf.locale, { style: 'currency', currency: moneyCurrency }).format(amount || 0);
+}
+
+function changeMoneyCurrency(value) {
+  moneyCurrency = value;
+  localStorage.setItem('moneyCurrency', value);
+  saveUrlConfig('moneyCurrency', value);
+  renderMoney();
+}
+
+function computeAccountBalance(accountId) {
+  const account = accounts.find(a => a.id === accountId);
+  const initial = account ? (account.initialBalance || 0) : 0;
+  const movement = transactions
+    .filter(t => t.accountId === accountId)
+    .reduce((sum, t) => sum + (t.type === 'ingreso' ? t.amount : -t.amount), 0);
+  return initial + movement;
+}
+
+function computeTotalBalance() {
+  return accounts.reduce((sum, a) => sum + computeAccountBalance(a.id), 0);
+}
+
+function renderMoney() {
+  if (!document.getElementById('money-accounts-row')) return;
+  const dateEl = document.getElementById('tx-date');
+  if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
+  const currencySel = document.getElementById('money-currency-select');
+  if (currencySel) currencySel.value = moneyCurrency;
+  renderAccountCards();
+  populateAccountSelects();
+  populateCategorySelect(selectedTxType);
+  renderMoneySummary();
+  renderTransactionList();
+  renderAccountManageList();
+  refreshIcons();
+}
+
+function renderAccountCards() {
+  const row = document.getElementById('money-accounts-row');
+  if (!row) return;
+
+  const totalBalance = computeTotalBalance();
+  let html = `
+    <div class="account-card account-card-total">
+      <span class="account-card-label">Balance total</span>
+      <span class="account-card-value">${formatMoney(totalBalance)}</span>
+    </div>
+  `;
+
+  accounts.forEach(a => {
+    const balance = computeAccountBalance(a.id);
+    html += `
+      <div class="account-card">
+        <span class="account-card-label">${a.name}</span>
+        <span class="account-card-value ${balance < 0 ? 'negative' : ''}">${formatMoney(balance)}</span>
+      </div>
+    `;
+  });
+
+  if (accounts.length === 0) {
+    html += '<p class="empty-state">Crea tu primera cuenta abajo para empezar a registrar movimientos.</p>';
+  }
+
+  row.innerHTML = html;
+}
+
+function getFilterMonth() {
+  const input = document.getElementById('filter-tx-month');
+  if (!input) return null;
+  if (!input.value) {
+    const now = new Date();
+    input.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  return input.value;
+}
+
+function renderMoneySummary() {
+  const row = document.getElementById('money-summary-row');
+  if (!row) return;
+
+  const month = getFilterMonth();
+  const monthTx = transactions.filter(t => t.date && t.date.slice(0, 7) === month);
+  const ingresos = monthTx.filter(t => t.type === 'ingreso').reduce((s, t) => s + t.amount, 0);
+  const gastos = monthTx.filter(t => t.type === 'gasto').reduce((s, t) => s + t.amount, 0);
+  const neto = ingresos - gastos;
+
+  row.innerHTML = `
+    <div class="money-summary-card ingreso">
+      <span class="money-summary-label">Ingresos del mes</span>
+      <span class="money-summary-value">${formatMoney(ingresos)}</span>
+    </div>
+    <div class="money-summary-card gasto">
+      <span class="money-summary-label">Gastos del mes</span>
+      <span class="money-summary-value">${formatMoney(gastos)}</span>
+    </div>
+    <div class="money-summary-card ${neto >= 0 ? 'ingreso' : 'gasto'}">
+      <span class="money-summary-label">Resultado neto</span>
+      <span class="money-summary-value">${formatMoney(neto)}</span>
+    </div>
+  `;
+}
+
+function populateAccountSelects() {
+  const options = accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+
+  const txSel = document.getElementById('tx-account');
+  if (txSel) {
+    const prev = txSel.value;
+    txSel.innerHTML = options || '<option value="">Crea una cuenta primero</option>';
+    if (prev && accounts.some(a => a.id === prev)) txSel.value = prev;
+  }
+
+  const filterSel = document.getElementById('filter-tx-account');
+  if (filterSel) {
+    const prev = filterSel.value;
+    filterSel.innerHTML = '<option value="all">Todas las cuentas</option>' + options;
+    filterSel.value = prev || 'all';
+  }
+}
+
+function populateCategorySelect(type) {
+  const sel = document.getElementById('tx-category');
+  if (!sel) return;
+  const prev = sel.value;
+  const cats = type === 'ingreso' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (cats.includes(prev)) sel.value = prev;
+}
+
+function selectTransactionType(type) {
+  selectedTxType = type;
+  document.querySelectorAll('.money-type-btn').forEach(b => b.classList.remove('active-money-type'));
+  const btn = document.querySelector(`.money-type-btn[data-tx-type="${type}"]`);
+  if (btn) btn.classList.add('active-money-type');
+  populateCategorySelect(type);
+}
+
+function getAccountName(accountId) {
+  const account = accounts.find(a => a.id === accountId);
+  return account ? account.name : '(cuenta eliminada)';
+}
+
+async function saveTransaction() {
+  const amountEl = document.getElementById('tx-amount');
+  const categoryEl = document.getElementById('tx-category');
+  const accountEl = document.getElementById('tx-account');
+  const dateEl = document.getElementById('tx-date');
+  const noteEl = document.getElementById('tx-note');
+  const editingId = document.getElementById('editing-transaction-id').value;
+
+  const amount = parseFloat(amountEl.value);
+  if (!amount || amount <= 0) { alert('Ingresa un monto válido.'); return; }
+  if (!accountEl.value) { alert('Crea o selecciona una cuenta primero.'); return; }
+  if (!dateEl.value) { alert('Selecciona una fecha.'); return; }
+
+  const txData = {
+    type: selectedTxType,
+    amount,
+    category: categoryEl.value,
+    accountId: accountEl.value,
+    date: dateEl.value,
+    note: noteEl.value.trim(),
+    updated: new Date().toISOString()
+  };
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('transactions').doc(editingId).update(txData);
+    } else {
+      txData.created = new Date().toISOString();
+      await db.collection('transactions').add(txData);
+    }
+    resetTransactionForm();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editTransaction(id) {
+  const tx = transactions.find(t => t.id === id);
+  if (!tx) return;
+
+  document.getElementById('editing-transaction-id').value = id;
+  selectTransactionType(tx.type);
+  document.getElementById('tx-amount').value = tx.amount;
+  document.getElementById('tx-category').value = tx.category;
+  document.getElementById('tx-account').value = tx.accountId;
+  document.getElementById('tx-date').value = tx.date;
+  document.getElementById('tx-note').value = tx.note || '';
+
+  document.getElementById('btn-save-tx').innerHTML = '<i data-lucide="check" style="width:15px;height:15px;"></i> Actualizar movimiento';
+  document.getElementById('btn-cancel-tx').style.display = 'block';
+  refreshIcons();
+  document.getElementById('tx-amount').focus();
+}
+
+function resetTransactionForm() {
+  document.getElementById('editing-transaction-id').value = '';
+  document.getElementById('tx-amount').value = '';
+  document.getElementById('tx-note').value = '';
+  const now = new Date();
+  document.getElementById('tx-date').value = toLocalDateStr(now);
+  selectTransactionType('gasto');
+  document.getElementById('btn-save-tx').innerHTML = '<i data-lucide="save" style="width:15px;height:15px;"></i> Guardar movimiento';
+  document.getElementById('btn-cancel-tx').style.display = 'none';
+  refreshIcons();
+}
+
+async function deleteTransaction(id) {
+  if (confirm('¿Eliminar este movimiento?')) {
+    showSyncIndicator('syncing');
+    await db.collection('transactions').doc(id).delete();
+  }
+}
+
+function renderTransactionList() {
+  const list = document.getElementById('transaction-list');
+  if (!list) return;
+
+  const filterAccount = document.getElementById('filter-tx-account').value;
+  const filterType = document.getElementById('filter-tx-type').value;
+  const month = getFilterMonth();
+
+  const filtered = transactions.filter(t => {
+    if (filterAccount !== 'all' && t.accountId !== filterAccount) return false;
+    if (filterType !== 'all' && t.type !== filterType) return false;
+    if (month && t.date && t.date.slice(0, 7) !== month) return false;
+    return true;
+  });
+
+  renderMoneySummary();
+
+  list.innerHTML = '';
+  if (filtered.length === 0) {
+    list.innerHTML = '<p class="empty-state">No hay movimientos con estos filtros.</p>';
+    return;
+  }
+
+  filtered.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'transaction-row';
+    const sign = t.type === 'ingreso' ? '+' : '−';
+    const dateStr = t.date ? t.date.split('-').reverse().join('/') : '';
+    row.innerHTML = `
+      <div class="transaction-icon ${t.type}">
+        <i data-lucide="${t.type === 'ingreso' ? 'arrow-up-circle' : 'arrow-down-circle'}" style="width:18px;height:18px;"></i>
+      </div>
+      <div class="transaction-info">
+        <span class="transaction-category">${t.category}</span>
+        <span class="transaction-meta">${getAccountName(t.accountId)} · ${dateStr}${t.note ? ' · ' + t.note : ''}</span>
+      </div>
+      <span class="transaction-amount ${t.type}">${sign} ${formatMoney(t.amount)}</span>
+      <div class="task-actions">
+        <button class="task-btn" onclick="editTransaction('${t.id}')" title="Editar"><i data-lucide="edit-3" style="width:16px;height:16px;color:var(--accent);"></i></button>
+        <button class="task-btn" onclick="deleteTransaction('${t.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:16px;height:16px;color:#ff4d6d99;"></i></button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+  refreshIcons();
+}
+
+function exportTransactionsCSV() {
+  const filterAccount = document.getElementById('filter-tx-account').value;
+  const filterType = document.getElementById('filter-tx-type').value;
+  const month = getFilterMonth();
+
+  const filtered = transactions.filter(t => {
+    if (filterAccount !== 'all' && t.accountId !== filterAccount) return false;
+    if (filterType !== 'all' && t.type !== filterType) return false;
+    if (month && t.date && t.date.slice(0, 7) !== month) return false;
+    return true;
+  });
+
+  const rows = [['Fecha', 'Tipo', 'Categoría', 'Cuenta', 'Monto', 'Nota']];
+  filtered.forEach(t => {
+    rows.push([t.date, t.type === 'ingreso' ? 'Ingreso' : 'Gasto', t.category, getAccountName(t.accountId), t.amount.toFixed(2), t.note || '']);
+  });
+  downloadCSV(`movimientos-${month || 'todos'}.csv`, rows);
+}
+
+// --- Gestión de cuentas ---
+async function addAccount() {
+  const nameEl = document.getElementById('account-name');
+  const balanceEl = document.getElementById('account-initial-balance');
+  const name = nameEl.value.trim();
+  if (!name) { alert('Ponle un nombre a la cuenta.'); return; }
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('accounts').add({
+      name,
+      initialBalance: parseFloat(balanceEl.value) || 0,
+      created: new Date().toISOString()
+    });
+    nameEl.value = '';
+    balanceEl.value = '';
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+async function deleteAccount(id) {
+  const relatedCount = transactions.filter(t => t.accountId === id).length;
+  const msg = relatedCount > 0
+    ? `Esta cuenta tiene ${relatedCount} movimiento(s). Si la eliminas, también se borrarán. ¿Continuar?`
+    : '¿Eliminar esta cuenta?';
+  if (!confirm(msg)) return;
+
+  showSyncIndicator('syncing');
+  const batch = db.batch();
+  batch.delete(db.collection('accounts').doc(id));
+  transactions.filter(t => t.accountId === id).forEach(t => batch.delete(db.collection('transactions').doc(t.id)));
+  try {
+    await batch.commit();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function renderAccountManageList() {
+  const list = document.getElementById('money-account-manage-list');
+  if (!list) return;
+
+  if (accounts.length === 0) {
+    list.innerHTML = '';
+    return;
+  }
+
+  list.innerHTML = accounts.map(a => `
+    <div class="money-account-manage-row">
+      <span>${a.name}</span>
+      <span class="text-sub">Saldo inicial: ${formatMoney(a.initialBalance || 0)}</span>
+      <button class="task-btn" onclick="deleteAccount('${a.id}')" title="Eliminar cuenta"><i data-lucide="trash-2" style="width:15px;height:15px;color:#ff4d6d99;"></i></button>
+    </div>
+  `).join('');
+  refreshIcons();
 }
 
 // ===== ENLACES EXTERNOS (EXCEL Y WHATSAPP) =====

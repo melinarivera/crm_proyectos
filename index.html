@@ -71,14 +71,14 @@
       <button class="nav-item" data-view="leads" onclick="showView('leads')" style="display:none;">
         <i data-lucide="magnet" class="nav-icon"></i><span>Gestión de Leads</span>
       </button>
-      <button class="nav-item" data-view="stats" onclick="showView('stats')">
-        <i data-lucide="bar-chart-3" class="nav-icon"></i><span>Estadísticas</span>
-      </button>
       <button class="nav-item" data-view="pandin" onclick="showView('pandin')">
         <i data-lucide="baby" class="nav-icon"></i><span>Pandín</span>
       </button>
       <button class="nav-item" data-view="drive" onclick="showView('drive')">
         <i data-lucide="hard-drive" class="nav-icon"></i><span>Drive</span>
+      </button>
+      <button class="nav-item" data-view="dinero" onclick="showView('dinero')">
+        <i data-lucide="wallet" class="nav-icon"></i><span>Dinero</span>
       </button>
       <button class="nav-item" data-view="notas" onclick="showView('notas')">
         <i data-lucide="sticky-note" class="nav-icon"></i><span>Notas Rápidas</span>
@@ -285,10 +285,79 @@
       </div>
     </section>
 
-    <!-- ESTADÍSTICAS VIEW -->
-    <section class="view" id="view-stats">
-      <p class="view-sub">Progreso de tareas y leads.</p>
-      <div class="stats-grid-charts" id="stats-charts"></div>
+    <!-- DINERO VIEW -->
+    <section class="view" id="view-dinero">
+      <div class="money-header-row">
+        <p class="view-sub" style="margin:0;">Controla tus cuentas, saldos, gastos e ingresos.</p>
+        <div class="form-group" style="margin:0;">
+          <label>Moneda</label>
+          <select id="money-currency-select" onchange="changeMoneyCurrency(this.value)">
+            <option value="EUR">€ Euro</option>
+            <option value="USD">$ Dólar estadounidense</option>
+            <option value="MXN">$ Peso mexicano</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
+        <button class="btn-add" onclick="openExcel('dinero')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <i data-lucide="external-link" style="width:16px;height:16px;"></i> Abrir mi Excel
+        </button>
+        <button class="btn-add" onclick="changeExcel('dinero')" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <i data-lucide="edit-3" style="width:16px;height:16px;"></i> Cambiar Excel
+        </button>
+      </div>
+
+      <div class="money-accounts-row" id="money-accounts-row"></div>
+      <div class="money-summary-row" id="money-summary-row"></div>
+
+      <div class="money-form-card">
+        <input type="hidden" id="editing-transaction-id" value="">
+        <div class="money-type-selector">
+          <button type="button" class="money-type-btn gasto active-money-type" data-tx-type="gasto" onclick="selectTransactionType('gasto')">
+            <i data-lucide="arrow-down-circle" style="width:15px;height:15px;"></i> Gasto
+          </button>
+          <button type="button" class="money-type-btn ingreso" data-tx-type="ingreso" onclick="selectTransactionType('ingreso')">
+            <i data-lucide="arrow-up-circle" style="width:15px;height:15px;"></i> Ingreso
+          </button>
+        </div>
+        <div class="money-form-row">
+          <div class="form-group"><label>Monto</label><input type="number" id="tx-amount" step="0.01" min="0" placeholder="0.00"></div>
+          <div class="form-group"><label>Categoría</label><select id="tx-category"></select></div>
+          <div class="form-group"><label>Cuenta</label><select id="tx-account"></select></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="tx-date"></div>
+        </div>
+        <div class="form-group"><label>Nota</label><input type="text" id="tx-note" placeholder="Opcional..."></div>
+        <div class="nota-controls">
+          <button class="btn-add" id="btn-save-tx" onclick="saveTransaction()"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar movimiento</button>
+          <button class="btn-cancel" id="btn-cancel-tx" onclick="resetTransactionForm()" style="display:none;">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="money-filters-bar">
+        <select id="filter-tx-account" onchange="renderTransactionList()"><option value="all">Todas las cuentas</option></select>
+        <select id="filter-tx-type" onchange="renderTransactionList()">
+          <option value="all">Todos</option>
+          <option value="ingreso">Ingresos</option>
+          <option value="gasto">Gastos</option>
+        </select>
+        <input type="month" id="filter-tx-month" onchange="renderTransactionList()">
+        <button class="btn-add" onclick="exportTransactionsCSV()" style="background: var(--card); border: 1px solid var(--border); color: var(--text);">
+          <i data-lucide="download" style="width:15px;height:15px;"></i> Exportar CSV
+        </button>
+      </div>
+
+      <div class="task-list full-list" id="transaction-list"></div>
+
+      <div class="money-accounts-manage">
+        <h3 class="section-title">Gestionar cuentas</h3>
+        <div class="money-account-form-row">
+          <input type="text" id="account-name" placeholder="Nombre de la cuenta (ej: Banco)">
+          <input type="number" id="account-initial-balance" step="0.01" placeholder="Saldo inicial">
+          <button class="btn-add" onclick="addAccount()"><i data-lucide="plus" style="width:15px;height:15px;"></i> Añadir cuenta</button>
+        </div>
+        <div class="money-account-manage-list" id="money-account-manage-list"></div>
+      </div>
     </section>
 
     <section class="view" id="view-drive">
