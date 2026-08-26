@@ -680,14 +680,6 @@ function subscribeToFirestore() {
     updateStats();
   });
 
-  // Menú y Lista de Súper
-  db.collection('menu').doc('grocery').onSnapshot(doc => {
-    if (doc.exists) {
-      groceryItems = doc.data().items || [];
-      if (currentView === 'menu') renderGroceryList();
-    }
-  });
-
   // Eventos importados desde iCal externo
   db.collection('config').doc('icalEvents').onSnapshot(doc => {
     icalEvents = doc.exists ? (doc.data().events || []) : [];
@@ -786,7 +778,6 @@ function showView(view) {
     drive:     'Drive',
     leads:     'Leads',
     planner:   'Planner Semanal',
-    menu:      'Menú Semanal',
     calendario:'Calendario',
     dinero:    'Dinero'
   };
@@ -797,10 +788,6 @@ function showView(view) {
   else if (view === 'drive') renderDrives();
   else if (view === 'leads') renderLeads();
   else if (view === 'planner') loadPlannerData();
-  else if (view === 'menu') {
-    loadMenuData();
-    renderGroceryList();
-  }
   else if (view === 'calendario') {
     renderCalendar();
     updateICalFeedUI();
@@ -1692,186 +1679,6 @@ async function loadPlannerData() {
   }
 }
 
-// MENU SEMANAL DATA
-let isMenuLoaded = false;
-
-async function saveMenuData(silent = false) {
-  if (!isMenuLoaded) {
-    console.warn("Intento de guardar menú antes de cargar.");
-    return;
-  }
-  showSyncIndicator('syncing');
-  const menuData = {};
-  
-  const readPerson = (card, person) => {
-    const col = card.querySelector(`.meal-col[data-person="${person}"]`);
-    return {
-      desayuno: col.querySelector('.m-desayuno').value,
-      comida: col.querySelector('.m-comida').value,
-      cena: col.querySelector('.m-cena').value,
-      colacion: col.querySelector('.m-colacion').value
-    };
-  };
-
-  document.querySelectorAll('#view-menu .day-card').forEach(card => {
-    const day = card.dataset.day;
-    const checkbox = card.querySelector('.m-check');
-    menuData[day] = {
-      date: card.querySelector('.m-date').value,
-      yo: readPerson(card, 'yo'),
-      hija: readPerson(card, 'hija'),
-      checked: checkbox ? checkbox.checked : false
-    };
-  });
-
-  try {
-    await db.collection('menu').doc('weekly').set({
-      days: menuData,
-      updatedAt: new Date().toISOString()
-    });
-    showSyncIndicator('ok');
-    if (typeof silent !== 'boolean' || !silent) {
-        alert("¡Menú guardado correctamente!");
-    }
-  } catch (err) {
-    showSyncIndicator('error', err.message);
-    if (typeof silent !== 'boolean' || !silent) {
-        alert("Error al guardar: " + err.message);
-    }
-  }
-}
-
-async function loadMenuData() {
-  showSyncIndicator('syncing');
-  isMenuLoaded = false;
-  try {
-    const doc = await db.collection('menu').doc('weekly').get();
-    if (doc.exists) {
-      const data = doc.data().days;
-      const fillPerson = (card, person, values) => {
-        const col = card.querySelector(`.meal-col[data-person="${person}"]`);
-        col.querySelector('.m-desayuno').value = values.desayuno || '';
-        col.querySelector('.m-comida').value = values.comida || '';
-        col.querySelector('.m-cena').value = values.cena || '';
-        col.querySelector('.m-colacion').value = values.colacion || '';
-      };
-      for (const day in data) {
-        const card = document.querySelector(`#view-menu .day-card[data-day="${day}"]`);
-        if (card) {
-          card.querySelector('.m-date').value = data[day].date || '';
-          if (data[day].yo || data[day].hija) {
-            fillPerson(card, 'yo', data[day].yo || {});
-            fillPerson(card, 'hija', data[day].hija || {});
-          } else {
-            // Migración de menú antiguo (un solo campo compartido) -> columna "Yo"
-            fillPerson(card, 'yo', data[day]);
-            fillPerson(card, 'hija', {});
-          }
-          const checkbox = card.querySelector('.m-check');
-          if (checkbox) {
-            checkbox.checked = data[day].checked || false;
-            reorderMenuCard(card, checkbox.checked);
-          }
-        }
-      }
-    }
-    isMenuLoaded = true;
-    showSyncIndicator('ok');
-  } catch (err) {
-    showSyncIndicator('error', err.message);
-  }
-}
-
-async function toggleMenuDay(day) {
-  if (!isMenuLoaded) return;
-  const card = document.querySelector(`#view-menu .day-card[data-day="${day}"]`);
-  if (!card) return;
-  const checkbox = card.querySelector('.m-check');
-  reorderMenuCard(card, checkbox.checked);
-  await saveMenuData(true);
-}
-
-function reorderMenuCard(card, isChecked) {
-  // Las tarjetas no marcadas tienen order = 0 (por defecto)
-  // Las tarjetas marcadas tienen order = 1, para que se vayan al final.
-  // También bajamos la opacidad para indicar que "ya pasó".
-  if (isChecked) {
-    card.style.order = '1';
-    card.style.opacity = '0.6';
-  } else {
-    card.style.order = '0';
-    card.style.opacity = '1';
-  }
-}
-
-// GROCERY LIST LOGIC
-let groceryItems = [];
-
-function renderGroceryList() {
-  const container = document.getElementById('grocery-list');
-  if (!container) return;
-  container.innerHTML = '';
-
-  if (groceryItems.length === 0) {
-    container.innerHTML = '<p class="empty-state">La lista está vacía.</p>';
-    return;
-  }
-
-  groceryItems.forEach((item, index) => {
-    const div = document.createElement('div');
-    div.className = `grocery-item ${item.checked ? 'checked' : ''}`;
-    div.onclick = () => toggleGroceryItem(index);
-    
-    div.innerHTML = `
-      <div class="grocery-check">
-        ${item.checked ? '<i data-lucide="check" style="width:14px;height:14px;"></i>' : ''}
-      </div>
-      <span class="grocery-text">${item.text}</span>
-      <button class="grocery-del" onclick="event.stopPropagation(); deleteGroceryItem(${index})">
-        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-      </button>
-    `;
-    container.appendChild(div);
-  });
-  refreshIcons();
-}
-
-async function addGroceryItem() {
-  const input = document.getElementById('grocery-input');
-  const text = input.value.trim();
-  if (!text) return;
-
-  groceryItems.push({ text, checked: false });
-  input.value = '';
-  await syncGrocery();
-  renderGroceryList();
-}
-
-async function toggleGroceryItem(index) {
-  groceryItems[index].checked = !groceryItems[index].checked;
-  await syncGrocery();
-  renderGroceryList();
-}
-
-async function deleteGroceryItem(index) {
-  groceryItems.splice(index, 1);
-  await syncGrocery();
-  renderGroceryList();
-}
-
-async function syncGrocery() {
-  showSyncIndicator('syncing');
-  try {
-    await db.collection('menu').doc('grocery').set({
-      items: groceryItems,
-      updatedAt: new Date().toISOString()
-    });
-    showSyncIndicator('ok');
-  } catch (err) {
-    showSyncIndicator('error', err.message);
-  }
-}
-
 // ===== EXPORTACIÓN A EXCEL (.xlsx) =====
 function downloadXLS(filename, rows, sheetName) {
   const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -1884,10 +1691,7 @@ function downloadXLS(filename, rows, sheetName) {
 async function exportFullBackup() {
   showSyncIndicator('syncing');
   try {
-    const [plannerDoc, menuDoc] = await Promise.all([
-      db.collection('planner').doc('current_week').get(),
-      db.collection('menu').doc('weekly').get()
-    ]);
+    const plannerDoc = await db.collection('planner').doc('current_week').get();
 
     const backup = {
       exportedAt: new Date().toISOString(),
@@ -1900,9 +1704,7 @@ async function exportFullBackup() {
       recurringTransactions,
       budgets,
       icalEvents,
-      groceryItems,
-      planner: plannerDoc.exists ? plannerDoc.data() : null,
-      menu: menuDoc.exists ? menuDoc.data() : null
+      planner: plannerDoc.exists ? plannerDoc.data() : null
     };
 
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -1925,12 +1727,6 @@ function exportCategoryXLS(cat) {
     rows.push([t.title, t.desc || '', t.date || '', t.time || '', t.prio, (t.tags || []).join('; '), t.done ? 'Sí' : 'No']);
   });
   downloadXLS(`tareas-${catLabels[cat] || cat}.xlsx`, rows, 'Tareas');
-}
-
-function exportGroceryXLS() {
-  const rows = [['Artículo', 'Comprado']];
-  groceryItems.forEach(i => rows.push([i.text, i.checked ? 'Sí' : 'No']));
-  downloadXLS('lista-supermercado.xlsx', rows, 'Supermercado');
 }
 
 // ===== SINCRONIZACIÓN CON ICAL =====
