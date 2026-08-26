@@ -43,6 +43,7 @@ function initAuth() {
       document.getElementById('login-screen').style.display = 'none';
       subscribeToFirestore();
       initAlertSystem();
+      initTimelineTicker();
     } else {
       document.getElementById('login-screen').style.display = 'flex';
       lucide.createIcons();
@@ -89,7 +90,7 @@ let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
 let selectedDrivePrio = 'medio';
-let currentView = 'dashboard';
+let currentView = 'timeline';
 
 // ===== SISTEMA DE ALERTAS IN-APP (sin permisos, funciona en iOS/Mac) =====
 let alertTickInterval = null;
@@ -100,6 +101,178 @@ function initAlertSystem() {
   // Actualizar cada minuto
   if (alertTickInterval) clearInterval(alertTickInterval);
   alertTickInterval = setInterval(updateAlertBadge, 60000);
+}
+
+// ===== TIMELINE (VISTA POR HORAS) =====
+let timelineDate = new Date();
+let timelineFilterCat = 'all';
+let timelineViewMode = 'timeline';
+let timelineTickInterval = null;
+
+const TIMELINE_START_HOUR = 7;
+const TIMELINE_END_HOUR = 24;
+const TIMELINE_HOUR_HEIGHT = 60; // px por hora
+const TIMELINE_EVENT_MINUTES = 30; // duración fija asumida por tarea
+
+function initTimelineTicker() {
+  if (timelineTickInterval) clearInterval(timelineTickInterval);
+  timelineTickInterval = setInterval(() => {
+    if (currentView === 'timeline' && timelineViewMode === 'timeline') updateTimelineNowLine();
+  }, 60000);
+}
+
+function shiftTimelineDay(delta) {
+  timelineDate.setDate(timelineDate.getDate() + delta);
+  renderTimeline();
+}
+
+function goToTimelineToday() {
+  timelineDate = new Date();
+  renderTimeline();
+}
+
+function setTimelineFilterCat(cat) {
+  timelineFilterCat = cat;
+  document.querySelectorAll('.timeline-cat-pill').forEach(p => p.classList.toggle('active', p.dataset.cat === cat));
+  renderTimeline();
+}
+
+function toggleTimelineViewMode() {
+  timelineViewMode = timelineViewMode === 'timeline' ? 'list' : 'timeline';
+  const btnTimeline = document.getElementById('timeline-mode-btn-timeline');
+  const btnList = document.getElementById('timeline-mode-btn-list');
+  if (btnTimeline) btnTimeline.classList.toggle('active', timelineViewMode === 'timeline');
+  if (btnList) btnList.classList.toggle('active', timelineViewMode === 'list');
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const dateLabelEl = document.getElementById('timeline-date-label');
+  const dateStr = toLocalDateStr(timelineDate);
+  if (dateLabelEl) {
+    let label = timelineDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+    dateLabelEl.textContent = label;
+  }
+
+  let filtered = tasks.filter(t => t.date === dateStr);
+  if (timelineFilterCat !== 'all') filtered = filtered.filter(t => t.cat === timelineFilterCat);
+
+  const allDayTasks = filtered.filter(t => !t.time).sort(sortByTime);
+  const timedTasks = filtered.filter(t => t.time).sort(sortByTime);
+
+  // Franja "Todo el día"
+  const alldaySection = document.getElementById('timeline-allday-section');
+  const alldayList = document.getElementById('timeline-allday-list');
+  if (alldaySection && alldayList) {
+    if (allDayTasks.length === 0) {
+      alldaySection.style.display = 'none';
+      alldayList.innerHTML = '';
+    } else {
+      alldaySection.style.display = 'block';
+      alldayList.innerHTML = '';
+      allDayTasks.forEach(t => {
+        const chip = document.createElement('div');
+        chip.className = `timeline-allday-chip cat-${t.cat} prio-${t.prio}`;
+        chip.textContent = t.title;
+        chip.onclick = () => editTask(t.id);
+        alldayList.appendChild(chip);
+      });
+    }
+  }
+
+  const gridWrap = document.getElementById('timeline-grid-wrap');
+  const listContainer = document.getElementById('timeline-list-container');
+
+  if (timelineViewMode === 'list') {
+    if (gridWrap) gridWrap.style.display = 'none';
+    if (listContainer) {
+      listContainer.style.display = 'block';
+      listContainer.innerHTML = '';
+      const allSorted = [...allDayTasks, ...timedTasks];
+      if (allSorted.length === 0) {
+        listContainer.innerHTML = '<p class="empty-state">No hay tareas para este día.</p>';
+      } else {
+        allSorted.forEach(t => listContainer.appendChild(buildTaskCard(t)));
+      }
+    }
+    refreshIcons();
+    return;
+  }
+
+  if (gridWrap) gridWrap.style.display = '';
+  if (listContainer) listContainer.style.display = 'none';
+
+  renderTimelineGrid(timedTasks);
+  refreshIcons();
+}
+
+function renderTimelineGrid(timedTasks) {
+  const grid = document.getElementById('timeline-grid');
+  if (!grid) return;
+
+  const totalHours = TIMELINE_END_HOUR - TIMELINE_START_HOUR;
+  grid.innerHTML = '';
+
+  const hoursCol = document.createElement('div');
+  hoursCol.className = 'timeline-hours-col';
+  for (let h = TIMELINE_START_HOUR; h <= TIMELINE_END_HOUR; h++) {
+    const row = document.createElement('div');
+    row.className = 'timeline-hour-row';
+    row.style.height = TIMELINE_HOUR_HEIGHT + 'px';
+    const label = document.createElement('span');
+    label.className = 'timeline-hour-label';
+    label.textContent = `${String(h % 24).padStart(2, '0')}:00`;
+    row.appendChild(label);
+    hoursCol.appendChild(row);
+  }
+
+  const eventsCol = document.createElement('div');
+  eventsCol.className = 'timeline-events-col';
+  eventsCol.style.height = `${totalHours * TIMELINE_HOUR_HEIGHT}px`;
+
+  timedTasks.forEach(t => {
+    const [hh, mm] = t.time.split(':').map(Number);
+    const hourOffset = (hh + mm / 60) - TIMELINE_START_HOUR;
+    if (hourOffset < 0 || hourOffset > totalHours) return;
+
+    const block = document.createElement('div');
+    block.className = `timeline-event-block cat-${t.cat} prio-${t.prio}`;
+    block.style.top = `${hourOffset * TIMELINE_HOUR_HEIGHT}px`;
+    block.style.height = `${(TIMELINE_EVENT_MINUTES / 60) * TIMELINE_HOUR_HEIGHT}px`;
+    block.innerHTML = `<span class="timeline-event-time">${t.time}</span> ${t.title}`;
+    block.onclick = () => editTask(t.id);
+    eventsCol.appendChild(block);
+  });
+
+  grid.appendChild(hoursCol);
+  grid.appendChild(eventsCol);
+
+  updateTimelineNowLine();
+}
+
+/** Recalcula (o quita) la línea roja de "ahora"; solo se muestra si timelineDate es hoy */
+function updateTimelineNowLine() {
+  const eventsCol = document.querySelector('#timeline-grid .timeline-events-col');
+  if (!eventsCol) return;
+
+  let line = eventsCol.querySelector('.timeline-now-line');
+  const isToday = toLocalDateStr(timelineDate) === toLocalDateStr(new Date());
+  const now = new Date();
+  const hourOffset = (now.getHours() + now.getMinutes() / 60) - TIMELINE_START_HOUR;
+  const totalHours = TIMELINE_END_HOUR - TIMELINE_START_HOUR;
+
+  if (!isToday || hourOffset < 0 || hourOffset > totalHours) {
+    if (line) line.remove();
+    return;
+  }
+
+  if (!line) {
+    line = document.createElement('div');
+    line.className = 'timeline-now-line';
+    eventsCol.appendChild(line);
+  }
+  line.style.top = `${hourOffset * TIMELINE_HOUR_HEIGHT}px`;
 }
 
 /** Clasifica las tareas con fecha+hora en: vencidas, hoy-próximas, futuras */
@@ -650,6 +823,7 @@ function subscribeToFirestore() {
     console.log("Tareas recibidas:", tasks.length);
     renderAll();
     if (currentView === 'calendario') renderCalendar();
+    else if (currentView === 'timeline') renderTimeline();
     else if (!['dashboard', 'notas', 'drive', 'dinero'].includes(currentView)) renderCategoryList(currentView);
     showSyncIndicator('ok');
     // Re-check del badge al recibir cambios de Firestore
@@ -767,6 +941,7 @@ function showView(view) {
   if (targetNav) targetNav.classList.add('active');
 
   const titles = {
+    timeline:  'Timeline',
     dashboard: 'Dashboard',
     trabajo:   'Trabajo',
     casa:      'Casa',
@@ -783,7 +958,8 @@ function showView(view) {
   };
   document.getElementById('page-title').textContent = titles[view] || 'MeliOrganizer';
 
-  if (view === 'dashboard') renderDashboard();
+  if (view === 'timeline') renderTimeline();
+  else if (view === 'dashboard') renderDashboard();
   else if (view === 'notas') renderNotas();
   else if (view === 'drive') renderDrives();
   else if (view === 'leads') renderLeads();
