@@ -18,6 +18,14 @@
   --amarillo: #ffd166;
   --verde: #06d6a0;
   --shadow: 0 8px 32px rgba(124,106,255,0.15);
+
+  /* Colores por categoría, usados solo en el Timeline (no afectan Dashboard/tags existentes) */
+  --cat-personal: #43e97b;
+  --cat-sara:     #ff6b9d;
+  --cat-pandin:   #ff9a3c;
+  --cat-casa:     #4facfe;
+  --cat-familia:  #a78bfa;
+  --cat-trabajo:  #6c63ff;
 }
 
 :root[data-theme="light"] {
@@ -1506,7 +1514,7 @@ body {
   flex-shrink: 0;
 }
 
-/* ===== TIMELINE (VISTA POR HORAS) ===== */
+/* ===== TIMELINE (VISTA POR HORAS, CICLO 06:00-05:59) ===== */
 .timeline-header {
   display: flex;
   flex-wrap: wrap;
@@ -1659,7 +1667,7 @@ body {
   left: 6px;
   right: 6px;
   border-radius: 8px;
-  border-left-style: solid;
+  border-left: 4px solid transparent;
   padding: 3px 8px;
   font-size: 12px;
   font-weight: 600;
@@ -1671,19 +1679,14 @@ body {
 
 .timeline-event-time { font-size: 10.5px; font-weight: 700; opacity: 0.8; margin-right: 4px; }
 
-.timeline-event-block.prio-urgente,
-.timeline-allday-chip.prio-urgente { border-left-width: 5px; }
-.timeline-event-block.prio-medio,
-.timeline-allday-chip.prio-medio   { border-left-width: 3px; }
-.timeline-event-block.prio-bajo,
-.timeline-allday-chip.prio-bajo    { border-left-width: 2px; }
-
-.timeline-event-block.cat-trabajo,  .timeline-allday-chip.cat-trabajo  { background: #6c63ff22; border-left-color: #a89dff; }
-.timeline-event-block.cat-casa,     .timeline-allday-chip.cat-casa     { background: #4facfe22; border-left-color: #6cc3ff; }
-.timeline-event-block.cat-familia,  .timeline-allday-chip.cat-familia  { background: #f093fb22; border-left-color: #e080f5; }
-.timeline-event-block.cat-pandin,   .timeline-allday-chip.cat-pandin   { background: #ff9a3c22; border-left-color: #ffb86c; }
-.timeline-event-block.cat-sara,     .timeline-allday-chip.cat-sara     { background: #ff6b9d22; border-left-color: #ff6b9d; }
-.timeline-event-block.cat-personal, .timeline-allday-chip.cat-personal { background: #43e97b22; border-left-color: #4fe99b; }
+/* Color por categoría (no por prioridad) — mismo par fondo/borde para el bloque del timeline
+   y para el chip de "todo el día" */
+.timeline-event-personal { background: #43e97b22; border-left-color: var(--cat-personal); }
+.timeline-event-sara     { background: #ff6b9d22; border-left-color: var(--cat-sara); }
+.timeline-event-pandin   { background: #ff9a3c22; border-left-color: var(--cat-pandin); }
+.timeline-event-casa     { background: #4facfe22; border-left-color: var(--cat-casa); }
+.timeline-event-familia  { background: #a78bfa22; border-left-color: var(--cat-familia); }
+.timeline-event-trabajo  { background: #6c63ff22; border-left-color: var(--cat-trabajo); }
 
 .timeline-now-line {
   position: absolute;
