@@ -341,7 +341,7 @@ function renderAlertsPanel() {
 
   container.style.display = 'block';
 
-  const catLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
+  const catLabels = { trabajo: 'Trabajo', casa: 'Casa', familia: 'Familia', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
 
   function formatDT(task) {
     const datePart = task.date ? task.date.split('-').reverse().join('/') : '';
@@ -462,7 +462,7 @@ function showUndoToast(message, undoFn) {
 }
 
 // ===== BUSCADOR GLOBAL =====
-const searchCatLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
+const searchCatLabels = { trabajo: 'Trabajo', casa: 'Casa', familia: 'Familia', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
 
 function onGlobalSearch(query) {
   const box = document.getElementById('search-results');
@@ -726,7 +726,7 @@ function subscribeToFirestore() {
   });
 
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
-  const excelCategories = ['webdev', 'marketing', 'pandin', 'sara', 'personal', 'dinero'];
+  const excelCategories = ['trabajo', 'casa', 'familia', 'pandin', 'sara', 'personal', 'dinero'];
   const urlKeys = [...excelCategories.map(c => c + 'ExcelUrl'), 'whatsappUrl'];
   db.collection('config').doc('urls').onSnapshot(doc => {
     if (doc.exists) {
@@ -776,8 +776,9 @@ function showView(view) {
 
   const titles = {
     dashboard: 'Dashboard',
-    webdev:    'Web Dev',
-    marketing: 'Marketing Digital',
+    trabajo:   'Trabajo',
+    casa:      'Casa',
+    familia:   'Familia',
     pandin:    'Pandín',
     sara:      'Sara',
     personal:  'Vida Personal',
@@ -817,7 +818,7 @@ function renderAll() {
 }
 
 function updateStats() {
-  const cats = ['webdev', 'marketing', 'pandin', 'sara', 'personal'];
+  const cats = ['trabajo', 'casa', 'familia', 'pandin', 'sara', 'personal'];
   cats.forEach(cat => {
     const count = tasks.filter(t => t.cat === cat && !t.done).length;
     const el = document.getElementById('stat-' + cat);
@@ -988,8 +989,9 @@ function buildTaskCard(task) {
   };
 
   const tagLabels = {
-    webdev:    'Dev',
-    marketing: 'Marketing',
+    trabajo:   'Trabajo',
+    casa:      'Casa',
+    familia:   'Familia',
     pandin:    'Pandín',
     sara:      'Sara',
     personal:  'Personal'
@@ -1184,7 +1186,7 @@ function editTask(id) {
   document.getElementById('modal-title-text').textContent = 'Editar Tarea';
   document.getElementById('task-title').value = task.title || '';
   document.getElementById('task-desc').value = task.desc || '';
-  document.getElementById('task-cat').value = task.cat || 'webdev';
+  document.getElementById('task-cat').value = task.cat || 'personal';
   document.getElementById('task-date').value = task.date || '';
   document.getElementById('task-time').value = task.time || '';
   document.getElementById('task-tags').value = (task.tags || []).join(', ');
@@ -1917,7 +1919,7 @@ async function exportFullBackup() {
 }
 
 function exportCategoryXLS(cat) {
-  const catLabels = { webdev: 'Dev', marketing: 'Marketing', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
+  const catLabels = { trabajo: 'Trabajo', casa: 'Casa', familia: 'Familia', pandin: 'Pandín', sara: 'Sara', personal: 'Personal' };
   const rows = [['Título', 'Descripción', 'Fecha', 'Hora', 'Prioridad', 'Etiquetas', 'Completada']];
   tasks.filter(t => t.cat === cat).forEach(t => {
     rows.push([t.title, t.desc || '', t.date || '', t.time || '', t.prio, (t.tags || []).join('; '), t.done ? 'Sí' : 'No']);

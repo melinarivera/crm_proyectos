@@ -772,8 +772,9 @@ body {
   font-weight: 600;
 }
 
-.tag-webdev   { background: #6c63ff22; color: #a89dff; }
-.tag-marketing{ background: #f093fb22; color: #e080f5; }
+.tag-trabajo  { background: #6c63ff22; color: #a89dff; }
+.tag-casa     { background: #4facfe22; color: #6cc3ff; }
+.tag-familia  { background: #f093fb22; color: #e080f5; }
 .tag-master   { background: #4facfe22; color: #7ec8fd; }
 .tag-pandin   { background: #ff9a3c22; color: #ffb86c; }
 .tag-sara     { background: #ff6b9d22; color: #ff6b9d; }
