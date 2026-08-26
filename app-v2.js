@@ -103,16 +103,15 @@ function initAlertSystem() {
   alertTickInterval = setInterval(updateAlertBadge, 60000);
 }
 
-// ===== TIMELINE (VISTA POR HORAS, CICLO 06:00-05:59) =====
+// ===== TIMELINE (VISTA POR HORAS, DÍA CALENDARIO 00:00-23:59) =====
 let timelineDate = new Date();
 let timelineFilterCat = 'all';
 let timelineViewMode = 'timeline';
 let timelineTickInterval = null;
 
-// El "día de timeline" empieza a las 06:00 y termina a las 05:59 del día calendario siguiente.
-const TIMELINE_START_HOUR = 6;
 const TIMELINE_HOUR_HEIGHT = 60; // px por hora
 const TIMELINE_EVENT_MINUTES = 30; // duración fija asumida por tarea
+const TIMELINE_KNOWN_CATS = ['personal', 'sara', 'casa', 'familia', 'pandin', 'trabajo'];
 
 function initTimelineTicker() {
   if (timelineTickInterval) clearInterval(timelineTickInterval);
@@ -126,13 +125,8 @@ function shiftTimelineDay(delta) {
   renderTimeline();
 }
 
-/** Fecha D del día de timeline que contiene el instante actual: entre las 00:00 y las 05:59
- *  todavía pertenece al día de timeline que empezó AYER a las 06:00. */
 function getCurrentTimelineDate() {
-  const now = new Date();
-  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (now.getHours() < TIMELINE_START_HOUR) d.setDate(d.getDate() - 1);
-  return d;
+  return new Date();
 }
 
 function goToTimelineToday() {
@@ -155,34 +149,27 @@ function toggleTimelineViewMode() {
   renderTimeline();
 }
 
-/** 'HH:MM' -> valor de hora "de timeline": las horas 00-05 se tratan como 24-29 para que
- *  ordenen después de las 23:xx dentro de un día de timeline que empieza a las 06:00. */
-function timelineHourValue(time) {
-  const [hh, mm] = time.split(':').map(Number);
-  const virtualHour = hh < TIMELINE_START_HOUR ? hh + 24 : hh;
-  return virtualHour + mm / 60;
-}
-
-function sortByTimelineTime(a, b) {
-  if (!a.time && !b.time) return 0;
-  if (!a.time) return -1;
-  if (!b.time) return 1;
-  return timelineHourValue(a.time) - timelineHourValue(b.time);
-}
-
-/** Tareas de un "día de timeline" con fecha D: las de D con hora >= 06:00 (o sin hora, van a
- *  "todo el día"), más las de D+1 con hora < 06:00 (la madrugada de este mismo día de timeline).
- *  Devuelve la lista combinada ya ordenada por hora "de timeline". */
+/** Tareas de la fecha D (día calendario normal 00:00-23:59), ya ordenadas por hora. */
 function getTimelineDayTasks(dateD) {
   const dateStr = toLocalDateStr(dateD);
-  const nextDay = new Date(dateD);
-  nextDay.setDate(nextDay.getDate() + 1);
-  const nextDateStr = toLocalDateStr(nextDay);
+  return tasks.filter(t => t.date === dateStr).sort(sortByTime);
+}
 
-  const partA = tasks.filter(t => t.date === dateStr && (!t.time || t.time >= '06:00'));
-  const partB = tasks.filter(t => t.date === nextDateStr && t.time && t.time < '06:00');
+/** Clase CSS de color por categoría. Cualquier valor de categoría que no sea uno de los 6
+ *  conocidos (legacy, mal escrito, con espacios/mayúsculas distintas, etc.) cae en el estilo
+ *  neutro "otra" en vez de quedar sin color — así ningún bloque se ve invisible. */
+function timelineCatClass(cat) {
+  const normalized = (cat || '').toString().trim().toLowerCase();
+  return TIMELINE_KNOWN_CATS.includes(normalized) ? `timeline-event-${normalized}` : 'timeline-event-otra';
+}
 
-  return [...partA, ...partB].sort(sortByTimelineTime);
+/** Insignia de prioridad urgente: posicionada en la esquina del bloque del timeline,
+ *  o inline junto al título en la franja "todo el día". */
+function timelineUrgentBadge(inline) {
+  if (inline) {
+    return '<i data-lucide="alert-triangle" class="timeline-urgent-icon-inline" style="width:11px;height:11px;" title="Prioridad urgente"></i>';
+  }
+  return '<span class="timeline-urgent-badge" title="Prioridad urgente"><i data-lucide="alert-triangle" style="width:12px;height:12px;"></i></span>';
 }
 
 function renderTimeline() {
@@ -211,8 +198,8 @@ function renderTimeline() {
       alldayList.innerHTML = '';
       allDayTasks.forEach(t => {
         const chip = document.createElement('div');
-        chip.className = `timeline-allday-chip timeline-event-${t.cat}`;
-        chip.textContent = `${t.prio === 'urgente' ? '⚠️ ' : ''}${t.title}`;
+        chip.className = `timeline-allday-chip ${timelineCatClass(t.cat)}`;
+        chip.innerHTML = `${t.prio === 'urgente' ? timelineUrgentBadge(true) : ''}<span>${t.title}</span>`;
         chip.onclick = () => editTask(t.id);
         alldayList.appendChild(chip);
       });
@@ -252,8 +239,7 @@ function renderTimelineGrid(timedTasks) {
 
   const hoursCol = document.createElement('div');
   hoursCol.className = 'timeline-hours-col';
-  for (let i = 0; i < 24; i++) {
-    const h = (TIMELINE_START_HOUR + i) % 24;
+  for (let h = 0; h < 24; h++) {
     const row = document.createElement('div');
     row.className = 'timeline-hour-row';
     row.style.height = TIMELINE_HOUR_HEIGHT + 'px';
@@ -269,15 +255,15 @@ function renderTimelineGrid(timedTasks) {
   eventsCol.style.height = `${24 * TIMELINE_HOUR_HEIGHT}px`;
 
   timedTasks.forEach(t => {
-    const hourOffset = timelineHourValue(t.time) - TIMELINE_START_HOUR;
+    const [hh, mm] = t.time.split(':').map(Number);
+    const hourOffset = hh + mm / 60;
     if (hourOffset < 0 || hourOffset > 24) return;
 
     const block = document.createElement('div');
-    block.className = `timeline-event-block timeline-event-${t.cat}`;
+    block.className = `timeline-event-block ${timelineCatClass(t.cat)}`;
     block.style.top = `${hourOffset * TIMELINE_HOUR_HEIGHT}px`;
     block.style.height = `${(TIMELINE_EVENT_MINUTES / 60) * TIMELINE_HOUR_HEIGHT}px`;
-    const warnIcon = t.prio === 'urgente' ? '⚠️ ' : '';
-    block.innerHTML = `<span class="timeline-event-time">${t.time}</span> ${warnIcon}${t.title}`;
+    block.innerHTML = `<span class="timeline-event-time">${t.time}</span> ${t.title}${t.prio === 'urgente' ? timelineUrgentBadge(false) : ''}`;
     block.onclick = () => editTask(t.id);
     eventsCol.appendChild(block);
   });
@@ -288,24 +274,22 @@ function renderTimelineGrid(timedTasks) {
   updateTimelineNowLine();
 }
 
-/** Recalcula (o quita) la línea roja de "ahora". Solo se muestra si el día de timeline que
- *  se está viendo es el mismo que contiene el instante actual (ver getCurrentTimelineDate):
- *  entre las 00:00 y las 05:59 reales, eso es el día de timeline de AYER, no el de hoy. */
+/** Recalcula (o quita) la línea roja de "ahora"; se muestra siempre que la fecha del
+ *  timeline mostrada sea la fecha real de hoy (comparación simple de fecha). */
 function updateTimelineNowLine() {
   const eventsCol = document.querySelector('#timeline-grid .timeline-events-col');
   if (!eventsCol) return;
 
   let line = eventsCol.querySelector('.timeline-now-line');
-  const isCurrentTimelineDay = toLocalDateStr(timelineDate) === toLocalDateStr(getCurrentTimelineDate());
+  const isToday = toLocalDateStr(timelineDate) === toLocalDateStr(getCurrentTimelineDate());
 
-  if (!isCurrentTimelineDay) {
+  if (!isToday) {
     if (line) line.remove();
     return;
   }
 
   const now = new Date();
-  const nowTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const hourOffset = timelineHourValue(nowTime) - TIMELINE_START_HOUR;
+  const hourOffset = now.getHours() + now.getMinutes() / 60;
 
   if (!line) {
     line = document.createElement('div');
