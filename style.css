@@ -1110,6 +1110,21 @@ body {
 
 .btn-cancel:hover { background: var(--card); color: var(--text); }
 
+.btn-delete {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--rojo);
+  background: transparent;
+  color: var(--rojo);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: auto;
+}
+
+.btn-delete:hover { background: var(--rojo); color: #fff; }
+
 .btn-save {
   padding: 10px 24px;
   border-radius: 12px;
@@ -1676,8 +1691,39 @@ body {
   font-weight: 600;
   color: var(--text);
   overflow: hidden;
-  cursor: pointer;
+  cursor: grab;
   z-index: 2;
+  touch-action: none;
+  user-select: none;
+}
+
+.timeline-event-block.timeline-dragging {
+  opacity: 0.55;
+  cursor: grabbing;
+  z-index: 10;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+.timeline-drag-guide {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 2px dashed var(--accent2);
+  z-index: 9;
+  pointer-events: none;
+}
+
+.timeline-drag-guide span {
+  position: absolute;
+  left: 4px;
+  top: -9px;
+  background: var(--accent2);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 .timeline-event-time { font-size: 10.5px; font-weight: 700; opacity: 0.8; margin-right: 4px; }

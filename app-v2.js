@@ -264,7 +264,7 @@ function renderTimelineGrid(timedTasks) {
     block.style.top = `${hourOffset * TIMELINE_HOUR_HEIGHT}px`;
     block.style.height = `${(TIMELINE_EVENT_MINUTES / 60) * TIMELINE_HOUR_HEIGHT}px`;
     block.innerHTML = `<span class="timeline-event-time">${t.time}</span> ${t.title}${t.prio === 'urgente' ? timelineUrgentBadge(false) : ''}`;
-    block.onclick = () => editTask(t.id);
+    attachTimelineBlockDrag(block, t, eventsCol);
     eventsCol.appendChild(block);
   });
 
@@ -272,6 +272,90 @@ function renderTimelineGrid(timedTasks) {
   grid.appendChild(eventsCol);
 
   updateTimelineNowLine();
+}
+
+/** Arrastre vertical de un bloque del timeline para cambiar su hora (dentro del mismo día).
+ *  Sistema independiente del drag-and-drop de las listas de categoría (makeListDraggable,
+ *  que reordena por `order`): este usa Pointer Events sobre .timeline-event-block y solo
+ *  toca `task.time`, sin superponerse con aquel (elementos y contenedores distintos). */
+function attachTimelineBlockDrag(block, task, eventsCol) {
+  const DRAG_THRESHOLD_PX = 4; // distancia mínima para distinguir un arrastre de un click
+  const SNAP_MINUTES = 15;
+  const snapPx = (SNAP_MINUTES / 60) * TIMELINE_HOUR_HEIGHT;
+
+  let dragging = false;
+  let moved = false;
+  let startClientY = 0;
+  let startTop = 0;
+  let finalTop = 0;
+  let guideLine = null;
+
+  function topToTimeStr(top) {
+    const totalMinutes = Math.round((top / TIMELINE_HOUR_HEIGHT) * 60);
+    const hh = Math.floor(totalMinutes / 60);
+    const mm = totalMinutes % 60;
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  }
+
+  block.addEventListener('pointerdown', (e) => {
+    if (timelineViewMode !== 'timeline') return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    dragging = true;
+    moved = false;
+    startClientY = e.clientY;
+    startTop = parseFloat(block.style.top) || 0;
+    finalTop = startTop;
+    block.setPointerCapture(e.pointerId);
+  });
+
+  block.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const deltaY = e.clientY - startClientY;
+    if (!moved && Math.abs(deltaY) < DRAG_THRESHOLD_PX) return;
+    moved = true;
+    block.classList.add('timeline-dragging');
+
+    const blockHeight = parseFloat(block.style.height) || 0;
+    const maxTop = 24 * TIMELINE_HOUR_HEIGHT - blockHeight;
+    let newTop = startTop + deltaY;
+    newTop = Math.max(0, Math.min(newTop, maxTop));
+    finalTop = Math.round(newTop / snapPx) * snapPx;
+    block.style.top = `${finalTop}px`;
+
+    if (!guideLine) {
+      guideLine = document.createElement('div');
+      guideLine.className = 'timeline-drag-guide';
+      eventsCol.appendChild(guideLine);
+    }
+    guideLine.style.top = `${finalTop}px`;
+    guideLine.innerHTML = `<span>${topToTimeStr(finalTop)}</span>`;
+  });
+
+  async function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    block.classList.remove('timeline-dragging');
+    if (guideLine) { guideLine.remove(); guideLine = null; }
+
+    if (!moved) {
+      editTask(task.id);
+      return;
+    }
+
+    const newTime = topToTimeStr(finalTop);
+    if (newTime === task.time) return;
+
+    showSyncIndicator('syncing');
+    try {
+      await db.collection('tasks').doc(task.id).update({ time: newTime });
+      showSyncIndicator('ok');
+    } catch (err) {
+      showSyncIndicator('error', err.message);
+    }
+  }
+
+  block.addEventListener('pointerup', endDrag);
+  block.addEventListener('pointercancel', endDrag);
 }
 
 /** Recalcula (o quita) la línea roja de "ahora"; se muestra siempre que la fecha del
@@ -1351,7 +1435,18 @@ async function deleteTask(id) {
 function openModal() {
   document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('task-title').focus();
+  const isEditing = !!document.getElementById('editing-task-id').value;
+  const btnDelete = document.getElementById('btn-delete-task');
+  if (btnDelete) btnDelete.style.display = isEditing ? 'inline-block' : 'none';
   refreshIcons();
+}
+
+/** Elimina la tarea que se está editando en el modal, reutilizando deleteTask() existente. */
+function deleteTaskFromModal() {
+  const id = document.getElementById('editing-task-id').value;
+  if (!id) return;
+  deleteTask(id);
+  closeModalDirect();
 }
 
 function closeModalDirect() {
