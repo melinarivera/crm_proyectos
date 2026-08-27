@@ -137,7 +137,7 @@ function setTimelineSnapMinutes(minutes) {
 function shiftTimelineDay(delta) {
   timelineDate.setDate(timelineDate.getDate() + delta);
   renderTimeline();
-  scrollTimelineToMorning();
+  scrollTimelineToRelevantHour();
 }
 
 function getCurrentTimelineDate() {
@@ -147,15 +147,20 @@ function getCurrentTimelineDate() {
 function goToTimelineToday() {
   timelineDate = getCurrentTimelineDate();
   renderTimeline();
-  scrollTimelineToMorning();
+  scrollTimelineToRelevantHour();
 }
 
-/** Hace scroll para que la fila de las 06:00 quede cerca de la parte superior visible.
- *  Se llama solo al entrar a la vista o cambiar de día, no en cada re-render (para no
- *  interrumpir el scroll manual del usuario ante actualizaciones en vivo de Firestore). */
-function scrollTimelineToMorning() {
+/** Al entrar a la vista o cambiar de día: si el día mostrado es HOY, hace scroll a la hora
+ *  actual (la línea roja de "ahora"); para cualquier otro día, a las 06:00 como antes. No se
+ *  llama en cada re-render (para no interrumpir el scroll manual ante updates de Firestore). */
+function scrollTimelineToRelevantHour() {
   setTimeout(() => {
     if (timelineViewMode !== 'timeline') return;
+    const isToday = toLocalDateStr(timelineDate) === toLocalDateStr(new Date());
+    if (isToday) {
+      const nowLine = document.querySelector('.timeline-now-line');
+      if (nowLine) { nowLine.scrollIntoView({ block: 'center' }); return; }
+    }
     const row = document.querySelector(`.timeline-hour-row[data-hour="${TIMELINE_MORNING_HOUR}"]`);
     if (row) row.scrollIntoView({ block: 'start' });
   }, 50);
@@ -199,6 +204,55 @@ function timelineUrgentBadge(inline) {
   return '<span class="timeline-urgent-badge" title="Prioridad urgente"><i data-lucide="alert-triangle" style="width:12px;height:12px;"></i></span>';
 }
 
+/** Pequeño ícono que indica que la tarea tiene notas (campo `desc` no vacío). */
+function timelineNoteIcon(task) {
+  if (!task.desc || !task.desc.trim()) return '';
+  return '<i data-lucide="sticky-note" class="timeline-note-icon" style="width:10px;height:10px;" title="Tiene notas"></i>';
+}
+
+/** Distribuye tareas que se solapan en el tiempo en columnas lado a lado (como un
+ *  calendario), para que dos tareas a la misma hora se vean ambas en vez de superpuestas.
+ *  Devuelve los items con { task, startMin, endMin, col, totalCols }. */
+function layoutTimelineEvents(timedTasks) {
+  const items = timedTasks.map(t => {
+    const [hh, mm] = t.time.split(':').map(Number);
+    const startMin = hh * 60 + mm;
+    const durationMin = t.duration || TIMELINE_EVENT_MINUTES;
+    return { task: t, startMin, endMin: startMin + durationMin };
+  }).sort((a, b) => a.startMin - b.startMin);
+
+  // Agrupa en clusters de tareas que se solapan transitivamente entre sí.
+  const clusters = [];
+  let current = [];
+  let currentEnd = -Infinity;
+  items.forEach(item => {
+    if (current.length === 0 || item.startMin < currentEnd) {
+      current.push(item);
+      currentEnd = Math.max(currentEnd, item.endMin);
+    } else {
+      clusters.push(current);
+      current = [item];
+      currentEnd = item.endMin;
+    }
+  });
+  if (current.length) clusters.push(current);
+
+  const positioned = [];
+  clusters.forEach(cluster => {
+    const columnEnds = []; // fin de la última tarea asignada a cada columna
+    cluster.forEach(item => {
+      let col = columnEnds.findIndex(endMin => item.startMin >= endMin);
+      if (col === -1) { col = columnEnds.length; columnEnds.push(item.endMin); }
+      else columnEnds[col] = item.endMin;
+      item.col = col;
+    });
+    const totalCols = columnEnds.length;
+    cluster.forEach(item => positioned.push({ ...item, totalCols }));
+  });
+
+  return positioned;
+}
+
 function renderTimeline() {
   const dateLabelEl = document.getElementById('timeline-date-label');
   if (dateLabelEl) {
@@ -226,7 +280,7 @@ function renderTimeline() {
       allDayTasks.forEach(t => {
         const chip = document.createElement('div');
         chip.className = `timeline-allday-chip ${timelineCatClass(t.cat)}`;
-        chip.innerHTML = `${t.prio === 'urgente' ? timelineUrgentBadge(true) : ''}<span>${t.title}</span>`;
+        chip.innerHTML = `${t.prio === 'urgente' ? timelineUrgentBadge(true) : ''}${timelineNoteIcon(t)}<span>${t.title}</span>`;
         chip.onclick = () => editTask(t.id);
         alldayList.appendChild(chip);
       });
@@ -282,16 +336,26 @@ function renderTimelineGrid(timedTasks) {
   eventsCol.className = 'timeline-events-col';
   eventsCol.style.height = `${24 * TIMELINE_HOUR_HEIGHT}px`;
 
-  timedTasks.forEach(t => {
-    const [hh, mm] = t.time.split(':').map(Number);
-    const hourOffset = hh + mm / 60;
+  const positionedEvents = layoutTimelineEvents(timedTasks);
+
+  positionedEvents.forEach(({ task: t, startMin, endMin, col, totalCols }) => {
+    const hourOffset = startMin / 60;
     if (hourOffset < 0 || hourOffset > 24) return;
+
+    // Cuando hay solapamiento, las tareas se reparten en columnas lado a lado; si no, ocupan
+    // todo el ancho como antes (col=0, totalCols=1 reproduce el layout original exacto).
+    const GAP_PCT = totalCols > 1 ? 1.2 : 0;
+    const widthPct = (100 - GAP_PCT * (totalCols - 1)) / totalCols;
+    const leftPct = col * (widthPct + GAP_PCT);
 
     const block = document.createElement('div');
     block.className = `timeline-event-block ${timelineCatClass(t.cat)}`;
     block.style.top = `${hourOffset * TIMELINE_HOUR_HEIGHT}px`;
-    block.style.height = `${(TIMELINE_EVENT_MINUTES / 60) * TIMELINE_HOUR_HEIGHT}px`;
-    block.innerHTML = `<span class="timeline-event-time">${t.time}</span> ${t.title}${t.prio === 'urgente' ? timelineUrgentBadge(false) : ''}`;
+    block.style.height = `${((endMin - startMin) / 60) * TIMELINE_HOUR_HEIGHT}px`;
+    block.style.left = `calc(${leftPct}% + 6px)`;
+    block.style.width = `calc(${widthPct}% - 12px)`;
+    block.style.right = 'auto';
+    block.innerHTML = `<span class="timeline-event-time">${t.time}</span> ${timelineNoteIcon(t)}${t.title}${t.prio === 'urgente' ? timelineUrgentBadge(false) : ''}`;
     attachTimelineBlockDrag(block, t, eventsCol);
     eventsCol.appendChild(block);
   });
@@ -1133,7 +1197,7 @@ function showView(view) {
   };
   document.getElementById('page-title').textContent = titles[view] || 'MeliOrganizer';
 
-  if (view === 'timeline') { renderTimeline(); scrollTimelineToMorning(); }
+  if (view === 'timeline') { renderTimeline(); scrollTimelineToRelevantHour(); }
   else if (view === 'dashboard') renderDashboard();
   else if (view === 'notas') renderNotas();
   else if (view === 'drive') renderDrives();
@@ -1582,6 +1646,18 @@ function closeModalDirect() {
   document.getElementById('task-time').value = '';
   document.getElementById('task-tags').value = '';
   document.getElementById('task-repeat').value = '';
+  document.getElementById('task-duration').value = '30';
+  document.getElementById('task-duration-custom').value = '';
+  document.getElementById('task-duration-custom').style.display = 'none';
+}
+
+/** Presets de duración que ofrece el select; cualquier otro valor cae en "Personalizada…". */
+const TIMELINE_DURATION_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240];
+
+function onTaskDurationChange() {
+  const sel = document.getElementById('task-duration');
+  const custom = document.getElementById('task-duration-custom');
+  custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
 }
 
 function editTask(id) {
@@ -1599,6 +1675,20 @@ function editTask(id) {
   // La recurrencia no se edita todavía desde aquí (solo se crea al hacer una tarea nueva),
   // así que el select siempre arranca en "No se repite" al editar, sin importar la serie.
   document.getElementById('task-repeat').value = '';
+
+  const dur = task.duration || TIMELINE_EVENT_MINUTES;
+  const durationSel = document.getElementById('task-duration');
+  const durationCustom = document.getElementById('task-duration-custom');
+  if (TIMELINE_DURATION_PRESETS.includes(dur)) {
+    durationSel.value = String(dur);
+    durationCustom.style.display = 'none';
+    durationCustom.value = '';
+  } else {
+    durationSel.value = 'custom';
+    durationCustom.value = dur;
+    durationCustom.style.display = 'inline-block';
+  }
+
   selectPrio(task.prio || 'urgente');
 
   openModal();
@@ -1655,6 +1745,8 @@ async function saveTask() {
   const timeEl = document.getElementById('task-time');
   const tagsEl = document.getElementById('task-tags');
   const repeatEl = document.getElementById('task-repeat');
+  const durationEl = document.getElementById('task-duration');
+  const durationCustomEl = document.getElementById('task-duration-custom');
   const editingIdEl = document.getElementById('editing-task-id');
 
   const title = titleEl.value.trim();
@@ -1664,6 +1756,11 @@ async function saveTask() {
 
   const tags = tagsEl.value.split(',').map(t => t.trim()).filter(Boolean);
 
+  let duration = durationEl.value === 'custom'
+    ? parseInt(durationCustomEl.value, 10)
+    : parseInt(durationEl.value, 10);
+  if (!duration || duration < 5) duration = TIMELINE_EVENT_MINUTES;
+
   const taskData = {
     title,
     desc:    descEl.value.trim(),
@@ -1672,6 +1769,7 @@ async function saveTask() {
     time:    timeEl.value, // Capturamos la hora directamente del input
     tags,
     prio:    selectedPrio,
+    duration,
     updated: new Date().toISOString()
   };
 

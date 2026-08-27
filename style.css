@@ -20,12 +20,12 @@
   --shadow: 0 8px 32px rgba(124,106,255,0.15);
 
   /* Colores por categoría, usados solo en el Timeline (no afectan Dashboard/tags existentes) */
-  --cat-personal: #43e97b;
-  --cat-sara:     #ff6b9d;
+  --cat-personal: #93c5fd;
+  --cat-sara:     #5eead4;
   --cat-pandin:   #ff9a3c;
-  --cat-casa:     #4facfe;
-  --cat-familia:  #a78bfa;
-  --cat-trabajo:  #6c63ff;
+  --cat-casa:     #c4b5fd;
+  --cat-familia:  #86efac;
+  --cat-trabajo:  #fca5a5;
 }
 
 :root[data-theme="light"] {
@@ -1729,8 +1729,8 @@ body {
 
 .timeline-event-block {
   position: absolute;
-  left: 6px;
-  right: 6px;
+  /* left/width los fija el JS en cada render (renderTimelineGrid): permite que dos tareas
+     que se solapan en hora se repartan en columnas lado a lado en vez de superponerse. */
   border-radius: 8px;
   border-left: 4px solid transparent;
   padding: 3px 8px;
@@ -1788,15 +1788,23 @@ body {
   flex-shrink: 0;
 }
 
+.timeline-note-icon {
+  color: var(--text-sub);
+  opacity: 0.85;
+  margin-right: 3px;
+  vertical-align: -1px;
+  flex-shrink: 0;
+}
+
 /* Color por categoría (no por prioridad) — mismo par fondo/borde para el bloque del timeline
    y para el chip de "todo el día". "otra" es el estilo de respaldo para cualquier categoría
    que no sea una de las 6 conocidas (legacy, typo, etc.) para que nunca quede sin color. */
-.timeline-event-personal { background: #43e97b22; border-left-color: var(--cat-personal); }
-.timeline-event-sara     { background: #ff6b9d22; border-left-color: var(--cat-sara); }
+.timeline-event-personal { background: #93c5fd35; border-left-color: var(--cat-personal); }
+.timeline-event-sara     { background: #5eead435; border-left-color: var(--cat-sara); }
 .timeline-event-pandin   { background: #ff9a3c22; border-left-color: var(--cat-pandin); }
-.timeline-event-casa     { background: #4facfe22; border-left-color: var(--cat-casa); }
-.timeline-event-familia  { background: #a78bfa22; border-left-color: var(--cat-familia); }
-.timeline-event-trabajo  { background: #6c63ff22; border-left-color: var(--cat-trabajo); }
+.timeline-event-casa     { background: #c4b5fd35; border-left-color: var(--cat-casa); }
+.timeline-event-familia  { background: #86efac35; border-left-color: var(--cat-familia); }
+.timeline-event-trabajo  { background: #fca5a535; border-left-color: var(--cat-trabajo); }
 .timeline-event-otra     { background: #ffd16622; border-left-color: var(--otra); }
 
 .timeline-now-line {
