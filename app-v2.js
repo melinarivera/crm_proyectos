@@ -199,15 +199,15 @@ function timelineCatClass(cat) {
  *  o inline junto al título en la franja "todo el día". */
 function timelineUrgentBadge(inline) {
   if (inline) {
-    return '<i data-lucide="alert-triangle" class="timeline-urgent-icon-inline" style="width:11px;height:11px;" title="Prioridad urgente"></i>';
+    return '<i data-lucide="alert-triangle" class="timeline-urgent-icon-inline" style="width:13px;height:13px;" title="Prioridad urgente"></i>';
   }
-  return '<span class="timeline-urgent-badge" title="Prioridad urgente"><i data-lucide="alert-triangle" style="width:12px;height:12px;"></i></span>';
+  return '<span class="timeline-urgent-badge" title="Prioridad urgente"><i data-lucide="alert-triangle" style="width:14px;height:14px;"></i></span>';
 }
 
 /** Pequeño ícono que indica que la tarea tiene notas (campo `desc` no vacío). */
 function timelineNoteIcon(task) {
   if (!task.desc || !task.desc.trim()) return '';
-  return '<i data-lucide="sticky-note" class="timeline-note-icon" style="width:10px;height:10px;" title="Tiene notas"></i>';
+  return '<i data-lucide="sticky-note" class="timeline-note-icon" style="width:12px;height:12px;" title="Tiene notas"></i>';
 }
 
 /** Distribuye tareas que se solapan en el tiempo en columnas lado a lado (como un
