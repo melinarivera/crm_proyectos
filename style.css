@@ -2002,6 +2002,137 @@ body {
   .timeline-grid { grid-template-columns: 44px 1fr; }
 }
 
+/* ===== SALUD (hábitos) ===== */
+.habit-add-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.habit-emoji-picker {
+  display: flex;
+  gap: 4px;
+}
+
+.habit-emoji-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.habit-emoji-btn:hover { border-color: var(--accent); }
+
+.habit-emoji-btn.active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+}
+
+.habit-add-form input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.habit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.habit-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: border-color 0.15s ease;
+}
+
+.habit-card.done { border-color: var(--verde); }
+
+.habit-check {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.habit-check:hover { transform: scale(1.1); }
+
+.habit-card.done .habit-check { color: var(--verde); }
+
+.habit-info { flex: 1; min-width: 0; }
+
+.habit-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.habit-card.done .habit-title { color: var(--text-sub); text-decoration: line-through; }
+
+.habit-emoji { font-size: 16px; }
+
+.habit-week-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.habit-day-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.habit-day-dot.done { background: var(--accent); }
+
+.habit-day-dot.is-today { box-shadow: 0 0 0 2px var(--bg2), 0 0 0 3px var(--accent); }
+
+.habit-streak {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+  min-width: 40px;
+  text-align: center;
+}
+
+.habit-delete { flex-shrink: 0; }
+
 /* ===== DINERO ===== */
 .money-accounts-row {
   display: grid;

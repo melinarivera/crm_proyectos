@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>CRMeli – Tu Centro de Mando</title>
-  <meta name="description" content="App de organización personal para trabajo, casa, familia, Pandín y vida personal." />
+  <title>MeliVit – Salud y Hábitos</title>
+  <meta name="description" content="Seguimiento de medicación, vitaminas, ejercicio y alimentación, con rachas diarias." />
   <meta name="theme-color" content="#0d0d1a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="CRMeli" />
+  <meta name="apple-mobile-web-app-title" content="MeliVit" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" href="icons/icon-192.png" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.0" />
+  <link rel="stylesheet" href="style.css?v=3.1" />
   <script>
     (function() {
       var saved = localStorage.getItem('theme');
@@ -31,8 +31,8 @@
       <div style="width:64px;height:64px;background:linear-gradient(135deg,#6c63ff,#4facfe);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 32px rgba(108,99,255,0.35);">
         <i data-lucide="zap" style="color:#fff;width:32px;height:32px;"></i>
       </div>
-      <h1 style="color:#fff;font-family:Inter,sans-serif;font-size:28px;font-weight:800;margin:0 0 6px;">CRMeli</h1>
-      <p style="color:#5a5a7a;font-family:Inter,sans-serif;font-size:14px;margin:0;">Tu Centro de Mando</p>
+      <h1 style="color:#fff;font-family:Inter,sans-serif;font-size:28px;font-weight:800;margin:0 0 6px;">MeliVit</h1>
+      <p style="color:#5a5a7a;font-family:Inter,sans-serif;font-size:14px;margin:0;">Salud, hábitos y bienestar</p>
     </div>
     <button id="btn-google-login" onclick="signInWithGoogle()" style="display:flex;align-items:center;gap:12px;background:#fff;color:#1a1a35;border:none;border-radius:14px;padding:14px 28px;font-size:15px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,0.4);transition:opacity .2s;">
       <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
@@ -45,7 +45,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <span class="logo-bolt"><i data-lucide="zap"></i></span>
-      <span class="logo-text">CRMeli</span>
+      <span class="logo-text">MeliVit</span>
     </div>
     <nav class="sidebar-nav">
       <button class="nav-item" data-view="calendario" onclick="showView('calendario')">
@@ -54,38 +54,14 @@
       <button class="nav-item active" data-view="timeline" onclick="showView('timeline')">
         <i data-lucide="calendar-clock" class="nav-icon"></i><span>Timeline</span>
       </button>
-      <button class="nav-item" data-view="personal" onclick="showView('personal')">
-        <i data-lucide="heart" class="nav-icon"></i><span>Personal</span>
-      </button>
-      <button class="nav-item" data-view="sara" onclick="showView('sara')">
-        <i data-lucide="sparkles" class="nav-icon"></i><span>Sara</span>
-      </button>
-      <button class="nav-item" data-view="trabajo" onclick="showView('trabajo')">
-        <i data-lucide="briefcase" class="nav-icon"></i><span>Trabajo</span>
-      </button>
-      <button class="nav-item" data-view="casa" onclick="showView('casa')">
-        <i data-lucide="home" class="nav-icon"></i><span>Casa</span>
-      </button>
-      <button class="nav-item" data-view="familia" onclick="showView('familia')">
-        <i data-lucide="users" class="nav-icon"></i><span>Familia</span>
-      </button>
-      <button class="nav-item" data-view="leads" onclick="showView('leads')" style="display:none;">
-        <i data-lucide="magnet" class="nav-icon"></i><span>Gestión de Leads</span>
-      </button>
-      <button class="nav-item" data-view="pandin" onclick="showView('pandin')">
-        <i data-lucide="baby" class="nav-icon"></i><span>Pandín</span>
+      <button class="nav-item" data-view="salud" onclick="showView('salud')">
+        <i data-lucide="heart-pulse" class="nav-icon"></i><span>Salud</span>
       </button>
       <button class="nav-item" data-view="drive" onclick="showView('drive')">
         <i data-lucide="hard-drive" class="nav-icon"></i><span>Drive</span>
       </button>
-      <button class="nav-item" data-view="dinero" onclick="showView('dinero')">
-        <i data-lucide="euro" class="nav-icon"></i><span>Dinero</span>
-      </button>
       <button class="nav-item" data-view="notas" onclick="showView('notas')">
         <i data-lucide="sticky-note" class="nav-icon"></i><span>Notas Rápidas</span>
-      </button>
-      <button class="nav-item" data-view="planner" onclick="showView('planner')" style="display:none;">
-        <i data-lucide="calendar-days" class="nav-icon"></i><span>Planner Semanal</span>
       </button>
     </nav>
     <div class="sidebar-date" id="sidebar-date"></div>
@@ -105,11 +81,11 @@
     <!-- HEADER -->
     <header class="topbar">
       <div class="topbar-left">
-        <h1 class="page-title" id="page-title">CRMeli</h1>
+        <h1 class="page-title" id="page-title">MeliVit</h1>
       </div>
       <div class="topbar-search">
         <i data-lucide="search" style="width:15px;height:15px;"></i>
-        <input type="text" id="global-search" placeholder="Buscar tareas, notas, drives, leads..." oninput="onGlobalSearch(this.value)" onfocus="onGlobalSearch(this.value)">
+        <input type="text" id="global-search" placeholder="Buscar tareas, notas, drives, hábitos..." oninput="onGlobalSearch(this.value)" onfocus="onGlobalSearch(this.value)">
         <div class="search-results" id="search-results"></div>
       </div>
       <div class="topbar-right">
@@ -191,6 +167,33 @@
       </div>
 
       <div class="task-list full-list" id="timeline-list-container" style="display:none;"></div>
+    </section>
+
+    <!-- SALUD VIEW (hábitos: medicación, vitaminas, ejercicio, alimentación) -->
+    <section class="view" id="view-salud">
+      <div class="view-header">
+        <span class="view-emoji">💊</span>
+        <div>
+          <h2>Salud</h2>
+          <p class="view-sub">Medicación, vitaminas, ejercicio y alimentación — marca lo de hoy y sostené la racha.</p>
+        </div>
+      </div>
+
+      <form class="habit-add-form" id="habit-add-form" onsubmit="event.preventDefault(); addHabit();">
+        <div class="habit-emoji-picker" id="habit-emoji-picker">
+          <button type="button" class="habit-emoji-btn active" data-emoji="💊" onclick="selectHabitEmoji('💊', this)">💊</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🌿" onclick="selectHabitEmoji('🌿', this)">🌿</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🏃" onclick="selectHabitEmoji('🏃', this)">🏃</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🥗" onclick="selectHabitEmoji('🥗', this)">🥗</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="💧" onclick="selectHabitEmoji('💧', this)">💧</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="😴" onclick="selectHabitEmoji('😴', this)">😴</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="✨" onclick="selectHabitEmoji('✨', this)">✨</button>
+        </div>
+        <input type="text" id="habit-title-input" placeholder="Ej: Vitamina D, Caminar 30 min, Tomar antibiótico..." maxlength="60" />
+        <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar hábito</button>
+      </form>
+
+      <div class="habit-list" id="habit-list"></div>
     </section>
 
     <!-- DASHBOARD VIEW -->
@@ -889,7 +892,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="app-v2.js?v=3.14"></script>
+  <script src="app-v2.js?v=3.15"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

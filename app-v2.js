@@ -86,10 +86,12 @@ let accounts = [];
 let transactions = [];
 let recurringTransactions = [];
 let budgets = [];
+let habits = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
 let selectedDrivePrio = 'medio';
+let selectedHabitEmoji = '💊';
 let currentView = 'timeline';
 
 // ===== SISTEMA DE ALERTAS IN-APP (sin permisos, funciona en iOS/Mac) =====
@@ -702,7 +704,7 @@ function requestNotificationPermission() {
   Notification.requestPermission().then(perm => {
     updateNotifButtonState();
     if (perm === 'granted') {
-      new Notification('CRMeli', { body: 'Notificaciones activadas. Te avisaré de tareas vencidas o de hoy.' });
+      new Notification('MeliVit', { body: 'Notificaciones activadas. Te avisaré de tareas vencidas o de hoy.' });
     } else if (perm === 'denied') {
       alert('Bloqueaste las notificaciones. Actívalas desde los ajustes del navegador si cambias de idea.');
     }
@@ -1017,6 +1019,12 @@ function onGlobalSearch(query) {
     }
   });
 
+  habits.forEach(h => {
+    if (h.title && h.title.toLowerCase().includes(q)) {
+      results.push({ icon: 'heart-pulse', label: h.title, meta: 'Salud', action: () => showView('salud') });
+    }
+  });
+
   // Los movimientos de Dinero no se indexan en el buscador si la sección está protegida con PIN
   if (!dineroPinHash || isDineroUnlocked()) {
     transactions.forEach(t => {
@@ -1264,6 +1272,11 @@ function subscribeToFirestore() {
     if (currentView === 'dinero') renderMoney();
   });
 
+  db.collection('config').doc('habits').onSnapshot(doc => {
+    habits = doc.exists ? (doc.data().items || []) : [];
+    if (currentView === 'salud') renderHabits();
+  });
+
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
   const excelCategories = ['trabajo', 'casa', 'familia', 'pandin', 'sara', 'personal', 'dinero'];
   const urlKeys = [...excelCategories.map(c => c + 'ExcelUrl'), 'whatsappUrl'];
@@ -1327,9 +1340,10 @@ function showView(view) {
     leads:     'Leads',
     planner:   'Planner Semanal',
     calendario:'Calendario',
-    dinero:    'Dinero'
+    dinero:    'Dinero',
+    salud:     'Salud'
   };
-  document.getElementById('page-title').textContent = titles[view] || 'MeliOrganizer';
+  document.getElementById('page-title').textContent = titles[view] || 'MeliVit';
 
   if (view === 'timeline') { renderTimeline(); scrollTimelineToRelevantHour(); }
   else if (view === 'dashboard') renderDashboard();
@@ -1343,6 +1357,7 @@ function showView(view) {
     maybeAutoSyncICal();
   }
   else if (view === 'dinero') renderMoney();
+  else if (view === 'salud') renderHabits();
   else renderCategoryList(view);
   refreshIcons();
 }
@@ -2519,7 +2534,7 @@ const ICS_CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 let icalFeedUrl = localStorage.getItem('icalFeedUrl') || '';
 let icsUploadTimer = null;
 
-// --- EXPORTAR: tareas de CRMeli -> feed .ics público en Firebase Storage ---
+// --- EXPORTAR: tareas de MeliVit -> feed .ics público en Firebase Storage ---
 function escapeICSText(str) {
   return String(str || '')
     .replace(/\\/g, '\\\\')
@@ -2542,9 +2557,9 @@ function buildICSFromTasks() {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//CRMeli//Tareas//ES',
+    'PRODID:-//MeliVit//Tareas//ES',
     'CALSCALE:GREGORIAN',
-    'X-WR-CALNAME:CRMeli - Tareas'
+    'X-WR-CALNAME:MeliVit - Tareas'
   ];
 
   tasks.filter(t => t.date).forEach(t => {
@@ -3398,6 +3413,123 @@ function renderBudgetList() {
         <div class="meter-track"><div class="meter-fill ${over ? 'over' : pct >= 70 ? 'warn' : ''}" style="width:${pct}%;"></div></div>
         <span class="meter-value">${formatMoney(spent, b.currency)} / ${formatMoney(b.limit, b.currency)}</span>
         <button class="task-btn" onclick="deleteBudget('${b.category}')" title="Eliminar presupuesto"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+      </div>
+    `;
+  }).join('');
+  refreshIcons();
+}
+
+// --- Salud: hábitos diarios (medicación, vitaminas, ejercicio, alimentación) ---
+// Igual que budgets: un solo doc de config con un array, sin colección aparte —
+// el volumen es chico (un puñado de hábitos) y así se evita un segundo listener.
+function selectHabitEmoji(emoji, btn) {
+  selectedHabitEmoji = emoji;
+  document.querySelectorAll('.habit-emoji-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function addHabit() {
+  const input = document.getElementById('habit-title-input');
+  const title = input.value.trim();
+  if (!title) return;
+
+  const id = 'habit-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+  const next = [...habits, { id, title, emoji: selectedHabitEmoji, completedDates: [] }];
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('habits').set({ items: next });
+    input.value = '';
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+/** Marca/desmarca el hábito como hecho HOY (no reescribe historial de otros días). */
+async function toggleHabitToday(id) {
+  const todayStr = toLocalDateStr(new Date());
+  const next = habits.map(h => {
+    if (h.id !== id) return h;
+    const dates = h.completedDates || [];
+    const already = dates.includes(todayStr);
+    return { ...h, completedDates: already ? dates.filter(d => d !== todayStr) : [...dates, todayStr] };
+  });
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('habits').set({ items: next });
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+async function deleteHabit(id) {
+  if (!confirm('¿Eliminar este hábito y todo su historial de rachas?')) return;
+  const next = habits.filter(h => h.id !== id);
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('habits').set({ items: next });
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+/** Días consecutivos marcados, terminando hoy — o ayer si hoy todavía no se marcó,
+ *  para que la racha no se vea "rota" apenas amanece y aún no tocaste el check. */
+function computeHabitStreak(habit) {
+  const dates = new Set(habit.completedDates || []);
+  const cursor = new Date();
+  if (!dates.has(toLocalDateStr(cursor))) cursor.setDate(cursor.getDate() - 1);
+
+  let streak = 0;
+  while (dates.has(toLocalDateStr(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function habitWeekDotsHTML(habit) {
+  const dates = new Set(habit.completedDates || []);
+  let html = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = toLocalDateStr(d);
+    const done = dates.has(dateStr);
+    html += `<span class="habit-day-dot ${done ? 'done' : ''} ${i === 0 ? 'is-today' : ''}" title="${dateStr}"></span>`;
+  }
+  return html;
+}
+
+function renderHabits() {
+  const list = document.getElementById('habit-list');
+  if (!list) return;
+
+  if (habits.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no agregaste ningún hábito. Sumá el primero arriba (vitamina, medicación, ejercicio, comida...).</p>';
+    return;
+  }
+
+  const todayStr = toLocalDateStr(new Date());
+  list.innerHTML = habits.map(h => {
+    const done = (h.completedDates || []).includes(todayStr);
+    const streak = computeHabitStreak(h);
+    return `
+      <div class="habit-card ${done ? 'done' : ''}">
+        <button class="habit-check" onclick="toggleHabitToday('${h.id}')" title="${done ? 'Desmarcar hoy' : 'Marcar como hecho hoy'}">
+          <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
+        </button>
+        <div class="habit-info">
+          <div class="habit-title"><span class="habit-emoji">${h.emoji || '✨'}</span> ${h.title}</div>
+          <div class="habit-week-dots">${habitWeekDotsHTML(h)}</div>
+        </div>
+        <div class="habit-streak" title="Racha actual">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
+        <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar hábito"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
       </div>
     `;
   }).join('');

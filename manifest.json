@@ -1,7 +1,7 @@
 {
-  "name": "MeliOrganizer",
-  "short_name": "MeliOrg",
-  "description": "Tu centro de mando personal: web dev, marketing, máster, Pandín y vida personal.",
+  "name": "MeliVit",
+  "short_name": "MeliVit",
+  "description": "Seguimiento diario de medicación, vitaminas, ejercicio y alimentación, con rachas.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d0d1a",
