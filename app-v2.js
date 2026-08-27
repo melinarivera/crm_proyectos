@@ -630,12 +630,15 @@ function updateNotifButtonState() {
   label.textContent = Notification.permission === 'granted' ? 'Notificaciones activas' : 'Activar notificaciones';
 }
 
-/** Dispara notificaciones del navegador para tareas vencidas o de hoy, una vez por tarea */
+/** Dispara notificaciones del navegador para tareas vencidas o de hoy, una vez por tarea.
+ *  Las tareas con hora esperan a que esa hora llegue (bucket "overdue"); avisar ya en
+ *  "dueToday" las notificaba apenas amanecía el día, horas antes del evento real. Las
+ *  tareas sin hora no tienen un momento preciso que esperar, así que avisan al ser "hoy". */
 function checkBrowserNotifications() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const { overdue, dueToday } = classifyScheduledTasks();
   let changed = false;
-  [...overdue, ...dueToday].forEach(task => {
+  [...overdue, ...dueToday.filter(t => !t.time)].forEach(task => {
     if (!notifiedTaskIds.has(task.id)) {
       notifiedTaskIds.add(task.id);
       changed = true;
