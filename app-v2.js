@@ -89,9 +89,10 @@ let budgets = [];
 let habits = [];
 let diario = [];
 let medidas = [];
-let calorias = [];
 let hidratacion = {};
 let sueno = [];
+let tension = [];
+let citas = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
@@ -1021,8 +1022,8 @@ function onGlobalSearch(query) {
 
   habits.forEach(h => {
     if (h.title && h.title.toLowerCase().includes(q)) {
-      const meta = h.type === 'medicacion' ? 'Medicación' : 'Ejercicio / Rutina';
-      results.push({ icon: 'heart-pulse', label: h.title, meta, action: () => showView(h.type || 'ejercicio') });
+      const metaByType = { medicacion: 'Medicación', bienestar: 'Bienestar', ejercicio: 'Ejercicio / Rutina' };
+      results.push({ icon: 'heart-pulse', label: h.title, meta: metaByType[h.type] || 'Ejercicio / Rutina', action: () => showView(h.type || 'ejercicio') });
     }
   });
 
@@ -1282,7 +1283,8 @@ function subscribeToFirestore() {
   db.collection('config').doc('habits').onSnapshot(doc => {
     habits = doc.exists ? (doc.data().items || []) : [];
     if (currentView === 'ejercicio') renderHabits('ejercicio');
-    else if (currentView === 'medicacion') renderHabits('medicacion');
+    else if (currentView === 'bienestar') renderHabits('bienestar');
+    else if (currentView === 'medicacion') renderMedicationHabits();
   });
 
   db.collection('diario').orderBy('created', 'desc').onSnapshot(snap => {
@@ -1305,9 +1307,19 @@ function subscribeToFirestore() {
     if (currentView === 'sueno') renderSueno();
   });
 
-  db.collection('calorias').orderBy('created', 'desc').onSnapshot(snap => {
-    calorias = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    if (currentView === 'calorias') renderCalorias();
+  db.collection('config').doc('rutina').onSnapshot(doc => {
+    rutina = doc.exists ? doc.data() : { exercises: [], pdfUrl: '' };
+    if (currentView === 'ejercicio') renderRutina();
+  });
+
+  db.collection('tension').orderBy('date', 'desc').onSnapshot(snap => {
+    tension = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'tension') renderTension();
+  });
+
+  db.collection('citas').orderBy('date', 'asc').onSnapshot(snap => {
+    citas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'citas') renderCitas();
   });
 
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
@@ -1375,10 +1387,12 @@ function showView(view) {
     calendario:  'Calendario',
     dinero:      'Dinero',
     ejercicio:   'Ejercicio / Rutina',
+    bienestar:   'Bienestar',
     medicacion:  'Medicación',
+    tension:     'Tensión arterial',
+    citas:       'Citas médicas',
     diario:      'Diario',
     medidas:     'Medidas y peso',
-    calorias:    'Calorías',
     hidratacion: 'Hidratación',
     sueno:       'Sueño'
   };
@@ -1396,15 +1410,21 @@ function showView(view) {
     maybeAutoSyncICal();
   }
   else if (view === 'dinero') renderMoney();
-  else if (view === 'ejercicio') renderHabits('ejercicio');
-  else if (view === 'medicacion') renderHabits('medicacion');
+  else if (view === 'ejercicio') { renderHabits('ejercicio'); renderRutina(); }
+  else if (view === 'bienestar') renderHabits('bienestar');
+  else if (view === 'medicacion') renderMedicationHabits();
+  else if (view === 'tension') {
+    const dateEl = document.getElementById('tension-date');
+    if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
+    renderTension();
+  }
+  else if (view === 'citas') renderCitas();
   else if (view === 'diario') renderDiario();
   else if (view === 'medidas') {
     const dateEl = document.getElementById('medida-date');
     if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
     renderMedidas();
   }
-  else if (view === 'calorias') renderCalorias();
   else if (view === 'hidratacion') renderHidratacion();
   else if (view === 'sueno') {
     const dateEl = document.getElementById('sueno-date');
@@ -3472,19 +3492,12 @@ function renderBudgetList() {
   refreshIcons();
 }
 
-// --- Hábitos diarios, separados por tipo (Ejercicio/Rutina, Medicación) ---
+// --- Hábitos diarios, separados por tipo (Ejercicio, Bienestar, Medicación) ---
 // Igual que budgets: un solo doc de config con un array, sin colección aparte —
 // el volumen es chico (un puñado de hábitos) y así se evita un segundo listener.
-// Cada hábito guarda su `type` ('ejercicio' | 'medicacion') para que cada página
-// del menú solo muestre y agregue los suyos.
-let selectedHabitEmoji = { ejercicio: '🏃', medicacion: '💊' };
-
-function selectHabitEmoji(type, emoji, btn) {
-  selectedHabitEmoji[type] = emoji;
-  btn.parentElement.querySelectorAll('.habit-emoji-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
+// Cada hábito guarda su `type` para que cada página del menú solo muestre y
+// agregue los suyos. Sin emoji elegible por hábito — cada página ya tiene su
+// propio ícono de librería en el menú, no hace falta elegir uno por ítem.
 async function addHabit(type) {
   const input = document.getElementById('habit-title-input-' + type);
   if (!input) return;
@@ -3492,7 +3505,7 @@ async function addHabit(type) {
   if (!title) return;
 
   const id = 'habit-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-  const next = [...habits, { id, type, title, emoji: selectedHabitEmoji[type], completedDates: [] }];
+  const next = [...habits, { id, type, title, completedDates: [], completedSlots: [] }];
 
   showSyncIndicator('syncing');
   try {
@@ -3504,7 +3517,9 @@ async function addHabit(type) {
   }
 }
 
-/** Marca/desmarca el hábito como hecho HOY (no reescribe historial de otros días). */
+/** Marca/desmarca el hábito como hecho HOY (no reescribe historial de otros días).
+ *  Usado por Ejercicio y Bienestar, que son un solo check por día. Medicación usa
+ *  toggleMedSlot en su lugar, porque necesita mañana/noche por separado. */
 async function toggleHabitToday(id) {
   const todayStr = toLocalDateStr(new Date());
   const next = habits.map(h => {
@@ -3524,7 +3539,7 @@ async function toggleHabitToday(id) {
 }
 
 async function deleteHabit(id) {
-  if (!confirm('¿Eliminar este hábito y todo su historial de rachas?')) return;
+  if (!confirm('¿Eliminar esto y todo su historial de rachas?')) return;
   const next = habits.filter(h => h.id !== id);
 
   showSyncIndicator('syncing');
@@ -3584,11 +3599,109 @@ function renderHabits(type) {
           <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
         </button>
         <div class="habit-info">
-          <div class="habit-title"><span class="habit-emoji">${h.emoji || '✨'}</span> ${h.title}</div>
+          <div class="habit-title">${h.title}</div>
           <div class="habit-week-dots">${habitWeekDotsHTML(h)}</div>
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
         <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+      </div>
+    `;
+  }).join('');
+  refreshIcons();
+}
+
+// --- Medicación: mañana/noche por separado, en vez de un solo check diario.
+// Cada toma queda guardada como 'YYYY-MM-DD-AM' / 'YYYY-MM-DD-PM' en completedSlots,
+// así se puede consultar exactamente qué tomaste y cuándo, no solo "hoy sí/no". ---
+async function toggleMedSlot(id, slot) {
+  const todayStr = toLocalDateStr(new Date());
+  const key = `${todayStr}-${slot}`;
+  const next = habits.map(h => {
+    if (h.id !== id) return h;
+    const slots = h.completedSlots || [];
+    const already = slots.includes(key);
+    return { ...h, completedSlots: already ? slots.filter(s => s !== key) : [...slots, key] };
+  });
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('habits').set({ items: next });
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+/** Racha de días con mañana Y noche tomadas, terminando hoy o ayer si hoy todavía
+ *  está incompleto (mismo criterio que computeHabitStreak). */
+function computeMedStreak(habit) {
+  const slots = new Set(habit.completedSlots || []);
+  const bothDone = d => slots.has(`${d}-AM`) && slots.has(`${d}-PM`);
+  const cursor = new Date();
+  if (!bothDone(toLocalDateStr(cursor))) cursor.setDate(cursor.getDate() - 1);
+
+  let streak = 0;
+  while (bothDone(toLocalDateStr(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+/** Historial de los últimos 7 días con dos puntos por día (mañana/noche), para
+ *  poder consultar de un vistazo si se tomó o no un día puntual. */
+function medWeekHistoryHTML(habit) {
+  const slots = new Set(habit.completedSlots || []);
+  let html = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = toLocalDateStr(d);
+    const dayLabel = d.toLocaleDateString('es-ES', { weekday: 'narrow' }).toUpperCase();
+    const am = slots.has(`${dateStr}-AM`);
+    const pm = slots.has(`${dateStr}-PM`);
+    html += `
+      <div class="med-day-col ${i === 0 ? 'is-today' : ''}" title="${dateStr}">
+        <span class="med-day-label">${dayLabel}</span>
+        <span class="med-slot-dot ${am ? 'done' : ''}"></span>
+        <span class="med-slot-dot ${pm ? 'done' : ''}"></span>
+      </div>
+    `;
+  }
+  return html;
+}
+
+function renderMedicationHabits() {
+  const list = document.getElementById('habit-list-medicacion');
+  if (!list) return;
+
+  const meds = habits.filter(h => h.type === 'medicacion');
+  if (meds.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no agregaste ninguna medicación.</p>';
+    return;
+  }
+
+  const todayStr = toLocalDateStr(new Date());
+  list.innerHTML = meds.map(h => {
+    const amDone = (h.completedSlots || []).includes(`${todayStr}-AM`);
+    const pmDone = (h.completedSlots || []).includes(`${todayStr}-PM`);
+    const streak = computeMedStreak(h);
+    return `
+      <div class="med-card">
+        <div class="med-card-top">
+          <div class="med-title">${h.title}</div>
+          <div class="med-streak" title="Racha (mañana y noche)">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
+          <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+        </div>
+        <div class="med-slots">
+          <button class="med-slot-btn ${amDone ? 'done' : ''}" onclick="toggleMedSlot('${h.id}', 'AM')">
+            <i data-lucide="sunrise" style="width:14px;height:14px;"></i> Mañana${amDone ? ' ✓' : ''}
+          </button>
+          <button class="med-slot-btn ${pmDone ? 'done' : ''}" onclick="toggleMedSlot('${h.id}', 'PM')">
+            <i data-lucide="moon" style="width:14px;height:14px;"></i> Noche${pmDone ? ' ✓' : ''}
+          </button>
+        </div>
+        <div class="med-history">${medWeekHistoryHTML(h)}</div>
       </div>
     `;
   }).join('');
@@ -3855,76 +3968,265 @@ function renderSueno() {
   refreshIcons();
 }
 
-// --- Calorías (registro simple de comidas del día) ---
-async function addCaloria() {
-  const descEl = document.getElementById('caloria-desc');
-  const kcalEl = document.getElementById('caloria-kcal');
-  const desc = descEl.value.trim();
-  const kcal = parseFloat(kcalEl.value);
-  if (!desc || !kcal || kcal <= 0) { alert('Completa la comida y las calorías.'); return; }
+// --- Mi rutina de ejercicio (lista de ejercicios con series/repeticiones/YouTube,
+// más un PDF opcional). Un solo doc de config, mismo patrón que budgets/habits. ---
+let rutina = { exercises: [], pdfUrl: '' };
 
-  const data = { desc, kcal, date: toLocalDateStr(new Date()), created: new Date().toISOString() };
+async function addRutinaExercise() {
+  const nameEl = document.getElementById('rutina-ex-name');
+  const setsEl = document.getElementById('rutina-ex-sets');
+  const repsEl = document.getElementById('rutina-ex-reps');
+  const ytEl = document.getElementById('rutina-ex-youtube');
+  const name = nameEl.value.trim();
+  if (!name) return;
+
+  const id = 'ex-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+  const exercise = { id, name, sets: setsEl.value.trim(), reps: repsEl.value.trim(), youtube: ytEl.value.trim() };
+  const next = { ...rutina, exercises: [...(rutina.exercises || []), exercise] };
 
   showSyncIndicator('syncing');
   try {
-    await db.collection('calorias').add(data);
-    descEl.value = '';
-    kcalEl.value = '';
+    await db.collection('config').doc('rutina').set(next);
+    nameEl.value = ''; setsEl.value = ''; repsEl.value = ''; ytEl.value = '';
     showSyncIndicator('ok');
   } catch (err) {
     showSyncIndicator('error', err.message);
   }
 }
 
-async function deleteCaloria(id) {
+async function deleteRutinaExercise(id) {
+  const next = { ...rutina, exercises: (rutina.exercises || []).filter(e => e.id !== id) };
   showSyncIndicator('syncing');
   try {
-    await db.collection('calorias').doc(id).delete();
+    await db.collection('config').doc('rutina').set(next);
     showSyncIndicator('ok');
   } catch (err) {
     showSyncIndicator('error', err.message);
   }
 }
 
-/** Agrupa por día para mostrar el total junto a cada fecha, la de hoy primero. */
-function renderCalorias() {
-  const todayStr = toLocalDateStr(new Date());
-  const totalEl = document.getElementById('caloria-today-total');
-  if (totalEl) {
-    const todayTotal = calorias.filter(c => c.date === todayStr).reduce((s, c) => s + (c.kcal || 0), 0);
-    totalEl.textContent = `${todayTotal} kcal hoy`;
-  }
-
-  const list = document.getElementById('caloria-list');
-  if (!list) return;
-
-  if (calorias.length === 0) {
-    list.innerHTML = '<p class="empty-state">Todavía no registraste comidas.</p>';
+/** Sube el PDF a Storage (mismo mecanismo que el feed iCal y los comprobantes de
+ *  Dinero) y guarda su URL de descarga en el doc de rutina. */
+async function uploadRutinaPDF(fileInput) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') {
+    alert('Subí un archivo en formato PDF.');
+    fileInput.value = '';
     return;
   }
 
-  const byDate = {};
-  calorias.forEach(c => {
-    if (!byDate[c.date]) byDate[c.date] = [];
-    byDate[c.date].push(c);
-  });
-  const dates = Object.keys(byDate).sort().reverse();
+  showSyncIndicator('syncing');
+  try {
+    const ref = storage.ref('rutina/rutina.pdf');
+    await ref.put(file);
+    const pdfUrl = await ref.getDownloadURL();
+    await db.collection('config').doc('rutina').set({ ...rutina, pdfUrl });
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+  fileInput.value = '';
+}
 
-  list.innerHTML = dates.map(date => {
-    const entries = byDate[date];
-    const total = entries.reduce((s, c) => s + (c.kcal || 0), 0);
-    const dateLabel = date.split('-').reverse().join('/');
-    const rows = entries.map(c => `
-      <div class="caloria-row">
-        <span class="caloria-desc">${c.desc}</span>
-        <span class="caloria-kcal">${c.kcal} kcal</span>
-        <button class="nota-btn del" onclick="deleteCaloria('${c.id}')" title="Eliminar"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
-      </div>
-    `).join('');
+function renderRutina() {
+  const list = document.getElementById('rutina-list');
+  if (list) {
+    const exercises = rutina.exercises || [];
+    if (exercises.length === 0) {
+      list.innerHTML = '<p class="empty-state">Todavía no agregaste ejercicios a tu rutina.</p>';
+    } else {
+      list.innerHTML = exercises.map(e => {
+        const meta = [e.sets && `${e.sets} series`, e.reps && `${e.reps} repeticiones`].filter(Boolean).join(' · ');
+        return `
+          <div class="rutina-row">
+            <div class="rutina-info">
+              <div class="rutina-name">${e.name}</div>
+              ${meta ? `<div class="rutina-meta">${meta}</div>` : ''}
+            </div>
+            ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
+            <button class="nota-btn del" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  const pdfLink = document.getElementById('rutina-pdf-link');
+  if (pdfLink) {
+    if (rutina.pdfUrl) {
+      pdfLink.style.display = 'inline-flex';
+      pdfLink.href = rutina.pdfUrl;
+    } else {
+      pdfLink.style.display = 'none';
+    }
+  }
+  refreshIcons();
+}
+
+// --- Tensión arterial ---
+async function addTension() {
+  const dateEl = document.getElementById('tension-date');
+  const sysEl = document.getElementById('tension-sys');
+  const diaEl = document.getElementById('tension-dia');
+  const noteEl = document.getElementById('tension-note');
+  const editingId = document.getElementById('editing-tension-id').value;
+
+  const date = dateEl.value || toLocalDateStr(new Date());
+  const sys = parseInt(sysEl.value, 10);
+  const dia = parseInt(diaEl.value, 10);
+  if (!sys || !dia) { alert('Ingresa sistólica y diastólica.'); return; }
+
+  const data = { date, sys, dia, note: noteEl.value.trim(), updated: new Date().toISOString() };
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('tension').doc(editingId).update(data);
+    } else {
+      data.created = new Date().toISOString();
+      await db.collection('tension').add(data);
+    }
+    resetTensionForm();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editTension(id) {
+  const t = tension.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('editing-tension-id').value = id;
+  document.getElementById('tension-date').value = t.date || '';
+  document.getElementById('tension-sys').value = t.sys ?? '';
+  document.getElementById('tension-dia').value = t.dia ?? '';
+  document.getElementById('tension-note').value = t.note || '';
+}
+
+function resetTensionForm() {
+  document.getElementById('editing-tension-id').value = '';
+  document.getElementById('tension-date').value = toLocalDateStr(new Date());
+  document.getElementById('tension-sys').value = '';
+  document.getElementById('tension-dia').value = '';
+  document.getElementById('tension-note').value = '';
+}
+
+async function deleteTension(id) {
+  if (!confirm('¿Eliminar este registro de tensión?')) return;
+  showSyncIndicator('syncing');
+  await db.collection('tension').doc(id).delete();
+  showSyncIndicator('ok');
+}
+
+/** Resalta fuera de rango como referencia visual, no como diagnóstico médico
+ *  (≥140/90 "alta", <90/60 "baja", según los umbrales generales más citados). */
+function renderTension() {
+  const list = document.getElementById('tension-list');
+  if (!list) return;
+
+  if (tension.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no registraste tu tensión arterial.</p>';
+    return;
+  }
+
+  list.innerHTML = tension.map(t => {
+    const dateLabel = t.date ? t.date.split('-').reverse().join('/') : '';
+    let statusClass = '';
+    if (t.sys >= 140 || t.dia >= 90) statusClass = 'high';
+    else if (t.sys < 90 || t.dia < 60) statusClass = 'low';
     return `
-      <div class="caloria-day-card">
-        <div class="caloria-day-header"><span>${dateLabel}</span><span>${total} kcal</span></div>
-        ${rows}
+      <div class="medida-card">
+        <div class="medida-actions">
+          <button class="nota-btn" onclick="editTension('${t.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+          <button class="nota-btn del" onclick="deleteTension('${t.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+        </div>
+        <div class="medida-date">${dateLabel}</div>
+        <div class="medida-weight tension-value ${statusClass}">${t.sys}/${t.dia}</div>
+        ${t.note ? `<div class="medida-note">${t.note}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+  refreshIcons();
+}
+
+// --- Citas médicas y de análisis ---
+async function addCita() {
+  const dateEl = document.getElementById('cita-date');
+  const timeEl = document.getElementById('cita-time');
+  const titleEl = document.getElementById('cita-title');
+  const noteEl = document.getElementById('cita-note');
+  const editingId = document.getElementById('editing-cita-id').value;
+
+  const title = titleEl.value.trim();
+  if (!dateEl.value || !title) { alert('Ingresa al menos la fecha y el motivo de la cita.'); return; }
+
+  const data = { date: dateEl.value, time: timeEl.value, title, note: noteEl.value.trim(), updated: new Date().toISOString() };
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('citas').doc(editingId).update(data);
+    } else {
+      data.created = new Date().toISOString();
+      await db.collection('citas').add(data);
+    }
+    resetCitaForm();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editCita(id) {
+  const c = citas.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('editing-cita-id').value = id;
+  document.getElementById('cita-date').value = c.date || '';
+  document.getElementById('cita-time').value = c.time || '';
+  document.getElementById('cita-title').value = c.title || '';
+  document.getElementById('cita-note').value = c.note || '';
+}
+
+function resetCitaForm() {
+  document.getElementById('editing-cita-id').value = '';
+  document.getElementById('cita-date').value = '';
+  document.getElementById('cita-time').value = '';
+  document.getElementById('cita-title').value = '';
+  document.getElementById('cita-note').value = '';
+}
+
+async function deleteCita(id) {
+  if (!confirm('¿Eliminar esta cita?')) return;
+  showSyncIndicator('syncing');
+  await db.collection('citas').doc(id).delete();
+  showSyncIndicator('ok');
+}
+
+/** Orden ascendente (la más próxima primero); las que ya pasaron quedan atenuadas
+ *  en vez de desaparecer, para poder seguir consultándolas. */
+function renderCitas() {
+  const list = document.getElementById('cita-list');
+  if (!list) return;
+
+  if (citas.length === 0) {
+    list.innerHTML = '<p class="empty-state">Sin citas registradas.</p>';
+    return;
+  }
+
+  const todayStr = toLocalDateStr(new Date());
+  list.innerHTML = citas.map(c => {
+    const isPast = c.date && c.date < todayStr;
+    const dateLabel = c.date ? c.date.split('-').reverse().join('/') : '';
+    return `
+      <div class="medida-card ${isPast ? 'is-past' : ''}">
+        <div class="medida-actions">
+          <button class="nota-btn" onclick="editCita('${c.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+          <button class="nota-btn del" onclick="deleteCita('${c.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+        </div>
+        <div class="medida-date">${dateLabel}${c.time ? ' · ' + c.time : ''}</div>
+        <div class="medida-weight" style="font-size:14px;">${c.title}</div>
+        ${c.note ? `<div class="medida-note">${c.note}</div>` : ''}
       </div>
     `;
   }).join('');

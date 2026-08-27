@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.3" />
+  <link rel="stylesheet" href="style.css?v=3.4" />
   <script>
     (function() {
       var saved = localStorage.getItem('theme');
@@ -51,17 +51,23 @@
       <button class="nav-item active" data-view="ejercicio" onclick="showView('ejercicio')">
         <i data-lucide="dumbbell" class="nav-icon"></i><span>Ejercicio / Rutina</span>
       </button>
+      <button class="nav-item" data-view="bienestar" onclick="showView('bienestar')">
+        <i data-lucide="sparkles" class="nav-icon"></i><span>Bienestar</span>
+      </button>
       <button class="nav-item" data-view="medicacion" onclick="showView('medicacion')">
         <i data-lucide="pill" class="nav-icon"></i><span>Medicación</span>
+      </button>
+      <button class="nav-item" data-view="tension" onclick="showView('tension')">
+        <i data-lucide="activity" class="nav-icon"></i><span>Tensión arterial</span>
+      </button>
+      <button class="nav-item" data-view="citas" onclick="showView('citas')">
+        <i data-lucide="stethoscope" class="nav-icon"></i><span>Citas médicas</span>
       </button>
       <button class="nav-item" data-view="diario" onclick="showView('diario')">
         <i data-lucide="book-heart" class="nav-icon"></i><span>Diario</span>
       </button>
       <button class="nav-item" data-view="medidas" onclick="showView('medidas')">
         <i data-lucide="scale" class="nav-icon"></i><span>Medidas y peso</span>
-      </button>
-      <button class="nav-item" data-view="calorias" onclick="showView('calorias')">
-        <i data-lucide="flame" class="nav-icon"></i><span>Calorías</span>
       </button>
       <button class="nav-item" data-view="hidratacion" onclick="showView('hidratacion')">
         <i data-lucide="droplets" class="nav-icon"></i><span>Hidratación</span>
@@ -187,41 +193,104 @@
         </div>
       </div>
       <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('ejercicio');">
-        <div class="habit-emoji-picker" id="habit-emoji-picker-ejercicio">
-          <button type="button" class="habit-emoji-btn active" data-emoji="🏃" onclick="selectHabitEmoji('ejercicio', '🏃', this)">🏃</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🚴" onclick="selectHabitEmoji('ejercicio', '🚴', this)">🚴</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🏋️" onclick="selectHabitEmoji('ejercicio', '🏋️', this)">🏋️</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🧘" onclick="selectHabitEmoji('ejercicio', '🧘', this)">🧘</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🤸" onclick="selectHabitEmoji('ejercicio', '🤸', this)">🤸</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="⚽" onclick="selectHabitEmoji('ejercicio', '⚽', this)">⚽</button>
-        </div>
-        <input type="text" id="habit-title-input-ejercicio" placeholder="Ej: Caminar 30 min, Rutina de piernas..." maxlength="60" />
+        <input type="text" id="habit-title-input-ejercicio" placeholder="Ej: Trampolín fitness, Pesas, Caminar..." maxlength="60" />
         <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
       </form>
       <div class="habit-list" id="habit-list-ejercicio"></div>
+
+      <div class="rutina-section">
+        <h4 class="timeline-allday-title">Mi rutina (series, repeticiones y videos)</h4>
+        <form class="rutina-add-form" onsubmit="event.preventDefault(); addRutinaExercise();">
+          <input type="text" id="rutina-ex-name" placeholder="Ejercicio: ej. Sentadillas" />
+          <input type="text" id="rutina-ex-sets" placeholder="Series" style="width:80px;" />
+          <input type="text" id="rutina-ex-reps" placeholder="Repeticiones" style="width:110px;" />
+          <input type="url" id="rutina-ex-youtube" placeholder="Enlace de YouTube (opcional)" />
+          <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
+        </form>
+        <div class="rutina-list" id="rutina-list"></div>
+
+        <div class="rutina-pdf-row">
+          <label class="btn-add rutina-pdf-upload">
+            <i data-lucide="upload" style="width:15px;height:15px;"></i> Subir PDF de mi rutina
+            <input type="file" accept="application/pdf" onchange="uploadRutinaPDF(this)" style="display:none;">
+          </label>
+          <a href="#" id="rutina-pdf-link" class="btn-add rutina-pdf-open" target="_blank" rel="noopener" style="display:none;background:var(--card);border:1px solid var(--border);color:var(--text);">
+            <i data-lucide="file-text" style="width:15px;height:15px;"></i> Abrir mi PDF
+          </a>
+        </div>
+      </div>
     </section>
 
-    <!-- MEDICACIÓN -->
+    <!-- BIENESTAR -->
+    <section class="view" id="view-bienestar">
+      <div class="view-header">
+        <span class="view-emoji">🧘</span>
+        <div>
+          <h2>Bienestar</h2>
+          <p class="view-sub">Reiki, Kundalini, meditación — marcá lo de hoy y sostené la racha.</p>
+        </div>
+      </div>
+      <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('bienestar');">
+        <input type="text" id="habit-title-input-bienestar" placeholder="Ej: Reiki, Kundalini, Meditación 10 min..." maxlength="60" />
+        <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
+      </form>
+      <div class="habit-list" id="habit-list-bienestar"></div>
+    </section>
+
+    <!-- MEDICACIÓN (mañana / noche) -->
     <section class="view" id="view-medicacion">
       <div class="view-header">
         <span class="view-emoji">💊</span>
         <div>
           <h2>Medicación</h2>
-          <p class="view-sub">Marcá lo de hoy y sostené la racha.</p>
+          <p class="view-sub">Marcá mañana y noche por separado — cada una queda registrada por día.</p>
         </div>
       </div>
       <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('medicacion');">
-        <div class="habit-emoji-picker" id="habit-emoji-picker-medicacion">
-          <button type="button" class="habit-emoji-btn active" data-emoji="💊" onclick="selectHabitEmoji('medicacion', '💊', this)">💊</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🌡️" onclick="selectHabitEmoji('medicacion', '🌡️', this)">🌡️</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🩹" onclick="selectHabitEmoji('medicacion', '🩹', this)">🩹</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🧴" onclick="selectHabitEmoji('medicacion', '🧴', this)">🧴</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="💉" onclick="selectHabitEmoji('medicacion', '💉', this)">💉</button>
-        </div>
-        <input type="text" id="habit-title-input-medicacion" placeholder="Ej: Vitamina D, Antibiótico 8am..." maxlength="60" />
+        <input type="text" id="habit-title-input-medicacion" placeholder="Ej: Vitamina D, Antibiótico..." maxlength="60" />
         <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
       </form>
       <div class="habit-list" id="habit-list-medicacion"></div>
+    </section>
+
+    <!-- TENSIÓN ARTERIAL -->
+    <section class="view" id="view-tension">
+      <div class="view-header">
+        <span class="view-emoji">🩺</span>
+        <div>
+          <h2>Tensión arterial</h2>
+          <p class="view-sub">Registro de sistólica/diastólica por fecha.</p>
+        </div>
+      </div>
+      <form class="medida-add-form" onsubmit="event.preventDefault(); addTension();">
+        <input type="date" id="tension-date" />
+        <input type="number" id="tension-sys" min="0" placeholder="Sistólica" style="width:110px;" />
+        <input type="number" id="tension-dia" min="0" placeholder="Diastólica" style="width:110px;" />
+        <input type="text" id="tension-note" placeholder="Notas" maxlength="80" />
+        <input type="hidden" id="editing-tension-id" value="">
+        <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+      </form>
+      <div class="medida-list" id="tension-list"></div>
+    </section>
+
+    <!-- CITAS MÉDICAS -->
+    <section class="view" id="view-citas">
+      <div class="view-header">
+        <span class="view-emoji">📅</span>
+        <div>
+          <h2>Citas médicas</h2>
+          <p class="view-sub">Turnos con médicos y análisis.</p>
+        </div>
+      </div>
+      <form class="medida-add-form" onsubmit="event.preventDefault(); addCita();">
+        <input type="date" id="cita-date" />
+        <input type="time" id="cita-time" />
+        <input type="text" id="cita-title" placeholder="Ej: Análisis de sangre, Dr. Pérez - Cardiología" />
+        <input type="text" id="cita-note" placeholder="Notas" maxlength="120" />
+        <input type="hidden" id="editing-cita-id" value="">
+        <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+      </form>
+      <div class="medida-list" id="cita-list"></div>
     </section>
 
     <!-- DIARIO -->
@@ -268,24 +337,6 @@
         <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
       </form>
       <div class="medida-list" id="medida-list"></div>
-    </section>
-
-    <!-- CALORÍAS -->
-    <section class="view" id="view-calorias">
-      <div class="view-header">
-        <span class="view-emoji">🔥</span>
-        <div>
-          <h2>Calorías</h2>
-          <p class="view-sub">Anotá lo que comés y sumá las calorías del día.</p>
-        </div>
-      </div>
-      <div class="caloria-today-total" id="caloria-today-total">0 kcal hoy</div>
-      <form class="caloria-add-form" onsubmit="event.preventDefault(); addCaloria();">
-        <input type="text" id="caloria-desc" placeholder="Ej: Ensalada con pollo" />
-        <input type="number" id="caloria-kcal" placeholder="kcal" min="0" />
-        <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
-      </form>
-      <div class="caloria-list" id="caloria-list"></div>
     </section>
 
     <!-- HIDRATACIÓN -->
@@ -1024,7 +1075,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="app-v2.js?v=3.17"></script>
+  <script src="app-v2.js?v=3.18"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

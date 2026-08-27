@@ -2007,32 +2007,6 @@ body {
   margin-bottom: 20px;
 }
 
-.habit-emoji-picker {
-  display: flex;
-  gap: 4px;
-}
-
-.habit-emoji-btn {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg2);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.habit-emoji-btn:hover { border-color: var(--accent); }
-
-.habit-emoji-btn.active {
-  border-color: var(--accent);
-  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
-}
-
 .habit-add-form input[type="text"] {
   flex: 1;
   min-width: 200px;
@@ -2095,8 +2069,6 @@ body {
 }
 
 .habit-card.done .habit-title { color: var(--text-sub); text-decoration: line-through; }
-
-.habit-emoji { font-size: 16px; }
 
 .habit-week-dots {
   display: flex;
@@ -2345,15 +2317,14 @@ body {
 
 .medida-card:hover .medida-actions { opacity: 1; }
 
-/* --- Calorías --- */
-.caloria-today-total {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: 16px;
+/* --- Mi rutina de ejercicio --- */
+.rutina-section {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
 }
 
-.caloria-add-form {
+.rutina-add-form {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -2361,11 +2332,10 @@ body {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-.caloria-add-form input[type="text"],
-.caloria-add-form input[type="number"] {
+.rutina-add-form input {
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -2375,44 +2345,121 @@ body {
   font-size: 13px;
 }
 
-.caloria-add-form input[type="text"] { flex: 1; min-width: 180px; }
-.caloria-add-form input[type="number"] { width: 110px; }
+.rutina-add-form input[type="text"]:first-child,
+.rutina-add-form input[type="url"] { flex: 1; min-width: 160px; }
 
-.caloria-list {
+.rutina-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-.caloria-day-card {
+.rutina-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.rutina-info { flex: 1; min-width: 0; }
+.rutina-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.rutina-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+.rutina-youtube { flex-shrink: 0; color: var(--accent); display: flex; }
+
+.rutina-pdf-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rutina-pdf-upload { cursor: pointer; }
+
+/* --- Medicación (mañana/noche) --- */
+.med-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px 18px;
-}
-
-.caloria-day-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  padding-bottom: 10px;
   margin-bottom: 10px;
-  border-bottom: 1px solid var(--border);
 }
 
-.caloria-row {
+.med-card-top {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
-  color: var(--text-sub);
-  padding: 4px 0;
+  margin-bottom: 10px;
 }
 
-.caloria-desc { flex: 1; min-width: 0; color: var(--text); }
-.caloria-kcal { flex-shrink: 0; font-weight: 700; }
+.med-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); }
+.med-streak { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--text-sub); }
+
+.med-slots {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.med-slot-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text-sub);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.med-slot-btn.done {
+  border-color: var(--verde);
+  background: #06d6a01a;
+  color: var(--verde);
+}
+
+.med-history {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.med-day-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.med-day-col.is-today .med-day-label { color: var(--accent); }
+
+.med-day-label { font-size: 9px; font-weight: 700; color: var(--text-sub); }
+
+.med-slot-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.med-slot-dot.done { background: var(--accent); }
+
+/* --- Tensión arterial --- */
+.tension-value.high { color: var(--rojo); }
+.tension-value.low { color: var(--amarillo); }
+
+/* --- Citas médicas --- */
+.medida-card.is-past { opacity: 0.5; }
 
 /* --- Hidratación --- */
 .hydration-card {
