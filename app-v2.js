@@ -129,21 +129,26 @@ function shiftTimelineMiniCalMonth(delta) {
  *  actualmente abierto en el timeline cada vez que se abre. */
 function toggleTimelineMiniCal() {
   const pop = document.getElementById('timeline-minical-popover');
+  const trigger = document.querySelector('.timeline-date-label-btn');
   if (!pop) return;
   const opening = pop.style.display !== 'block';
   if (opening) {
     syncTimelineMiniCalMonth();
     renderTimelineMiniCalendar();
     pop.style.display = 'block';
+    if (trigger) trigger.classList.add('open');
     refreshIcons();
   } else {
     pop.style.display = 'none';
+    if (trigger) trigger.classList.remove('open');
   }
 }
 
 function closeTimelineMiniCal() {
   const pop = document.getElementById('timeline-minical-popover');
+  const trigger = document.querySelector('.timeline-date-label-btn');
   if (pop) pop.style.display = 'none';
+  if (trigger) trigger.classList.remove('open');
 }
 
 function selectTimelineMiniCalDay(dateStr) {
@@ -1092,6 +1097,7 @@ document.addEventListener('click', (e) => {
   const trigger = document.querySelector('.timeline-date-label-btn');
   if (!pop.contains(e.target) && !(trigger && trigger.contains(e.target))) {
     pop.style.display = 'none';
+    if (trigger) trigger.classList.remove('open');
   }
 });
 

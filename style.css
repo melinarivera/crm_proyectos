@@ -1637,7 +1637,13 @@ body {
 
 .timeline-date-label-btn:hover { background: var(--bg2); }
 
-.timeline-date-label-btn i { color: var(--text-sub); flex-shrink: 0; }
+.timeline-date-label-btn i {
+  color: var(--text-sub);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.timeline-date-label-btn.open i { transform: rotate(180deg); }
 
 .timeline-cat-filter {
   display: flex;
