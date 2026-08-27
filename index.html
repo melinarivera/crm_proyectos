@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.1" />
+  <link rel="stylesheet" href="style.css?v=3.2" />
   <script>
     (function() {
       var saved = localStorage.getItem('theme');
@@ -136,12 +136,8 @@
         </div>
         <div class="timeline-cat-filter" id="timeline-cat-filter">
           <button class="timeline-cat-pill active" data-cat="all" onclick="setTimelineFilterCat('all')">Todas</button>
-          <button class="timeline-cat-pill" data-cat="personal" onclick="setTimelineFilterCat('personal')">Personal</button>
-          <button class="timeline-cat-pill" data-cat="sara" onclick="setTimelineFilterCat('sara')">Sara</button>
-          <button class="timeline-cat-pill" data-cat="casa" onclick="setTimelineFilterCat('casa')">Casa</button>
-          <button class="timeline-cat-pill" data-cat="familia" onclick="setTimelineFilterCat('familia')">Familia</button>
-          <button class="timeline-cat-pill" data-cat="pandin" onclick="setTimelineFilterCat('pandin')">Pandín</button>
-          <button class="timeline-cat-pill" data-cat="trabajo" onclick="setTimelineFilterCat('trabajo')">Trabajo</button>
+          <button class="timeline-cat-pill" data-cat="salud" onclick="setTimelineFilterCat('salud')">Salud</button>
+          <button class="timeline-cat-pill" data-cat="general" onclick="setTimelineFilterCat('general')">General</button>
         </div>
         <div class="timeline-mode-toggle">
           <button class="timeline-mode-btn active" id="timeline-mode-btn-timeline" onclick="toggleTimelineViewMode()">
@@ -175,25 +171,74 @@
         <span class="view-emoji">💊</span>
         <div>
           <h2>Salud</h2>
-          <p class="view-sub">Medicación, vitaminas, ejercicio y alimentación — marca lo de hoy y sostené la racha.</p>
+          <p class="view-sub">Hábitos, cómo te sentís y tu evolución de peso, todo en un solo lugar.</p>
         </div>
       </div>
 
-      <form class="habit-add-form" id="habit-add-form" onsubmit="event.preventDefault(); addHabit();">
-        <div class="habit-emoji-picker" id="habit-emoji-picker">
-          <button type="button" class="habit-emoji-btn active" data-emoji="💊" onclick="selectHabitEmoji('💊', this)">💊</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🌿" onclick="selectHabitEmoji('🌿', this)">🌿</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🏃" onclick="selectHabitEmoji('🏃', this)">🏃</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="🥗" onclick="selectHabitEmoji('🥗', this)">🥗</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="💧" onclick="selectHabitEmoji('💧', this)">💧</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="😴" onclick="selectHabitEmoji('😴', this)">😴</button>
-          <button type="button" class="habit-emoji-btn" data-emoji="✨" onclick="selectHabitEmoji('✨', this)">✨</button>
-        </div>
-        <input type="text" id="habit-title-input" placeholder="Ej: Vitamina D, Caminar 30 min, Tomar antibiótico..." maxlength="60" />
-        <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar hábito</button>
-      </form>
+      <div class="salud-tabs">
+        <button class="salud-tab-btn active" data-tab="habitos" onclick="setSaludTab('habitos')">
+          <i data-lucide="heart-pulse" style="width:14px;height:14px;"></i> Hábitos
+        </button>
+        <button class="salud-tab-btn" data-tab="diario" onclick="setSaludTab('diario')">
+          <i data-lucide="book-heart" style="width:14px;height:14px;"></i> Diario
+        </button>
+        <button class="salud-tab-btn" data-tab="medidas" onclick="setSaludTab('medidas')">
+          <i data-lucide="scale" style="width:14px;height:14px;"></i> Medidas y peso
+        </button>
+      </div>
 
-      <div class="habit-list" id="habit-list"></div>
+      <!-- HÁBITOS -->
+      <div class="salud-tab-panel" data-tab="habitos" id="salud-panel-habitos">
+        <form class="habit-add-form" id="habit-add-form" onsubmit="event.preventDefault(); addHabit();">
+          <div class="habit-emoji-picker" id="habit-emoji-picker">
+            <button type="button" class="habit-emoji-btn active" data-emoji="💊" onclick="selectHabitEmoji('💊', this)">💊</button>
+            <button type="button" class="habit-emoji-btn" data-emoji="🌿" onclick="selectHabitEmoji('🌿', this)">🌿</button>
+            <button type="button" class="habit-emoji-btn" data-emoji="🏃" onclick="selectHabitEmoji('🏃', this)">🏃</button>
+            <button type="button" class="habit-emoji-btn" data-emoji="🥗" onclick="selectHabitEmoji('🥗', this)">🥗</button>
+            <button type="button" class="habit-emoji-btn" data-emoji="💧" onclick="selectHabitEmoji('💧', this)">💧</button>
+            <button type="button" class="habit-emoji-btn" data-emoji="😴" onclick="selectHabitEmoji('😴', this)">😴</button>
+            <button type="button" class="habit-emoji-btn" data-emoji="✨" onclick="selectHabitEmoji('✨', this)">✨</button>
+          </div>
+          <input type="text" id="habit-title-input" placeholder="Ej: Vitamina D, Caminar 30 min, Tomar antibiótico..." maxlength="60" />
+          <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar hábito</button>
+        </form>
+
+        <div class="habit-list" id="habit-list"></div>
+      </div>
+
+      <!-- DIARIO -->
+      <div class="salud-tab-panel" data-tab="diario" id="salud-panel-diario" style="display:none;">
+        <form class="diario-add-form" onsubmit="event.preventDefault(); addDiarioEntry();">
+          <div class="diario-mood-picker" id="diario-mood-picker">
+            <button type="button" class="diario-mood-btn" data-diario-mood="genial" onclick="selectDiarioMood('genial')" title="Genial">😄</button>
+            <button type="button" class="diario-mood-btn active" data-diario-mood="bien" onclick="selectDiarioMood('bien')" title="Bien">🙂</button>
+            <button type="button" class="diario-mood-btn" data-diario-mood="regular" onclick="selectDiarioMood('regular')" title="Regular">😐</button>
+            <button type="button" class="diario-mood-btn" data-diario-mood="mal" onclick="selectDiarioMood('mal')" title="Mal">😔</button>
+            <button type="button" class="diario-mood-btn" data-diario-mood="terrible" onclick="selectDiarioMood('terrible')" title="Terrible">😣</button>
+          </div>
+          <textarea id="diario-input" rows="3" placeholder="¿Cómo te sentiste hoy?"></textarea>
+          <input type="hidden" id="editing-diario-id" value="">
+          <div class="diario-form-actions">
+            <button type="button" class="btn-cancel" id="btn-cancel-diario" style="display:none;" onclick="resetDiarioForm()">Cancelar</button>
+            <button type="submit" class="btn-add" id="btn-save-diario"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+          </div>
+        </form>
+
+        <div class="diario-list" id="diario-list"></div>
+      </div>
+
+      <!-- MEDIDAS Y PESO -->
+      <div class="salud-tab-panel" data-tab="medidas" id="salud-panel-medidas" style="display:none;">
+        <form class="medida-add-form" onsubmit="event.preventDefault(); addMedida();">
+          <input type="date" id="medida-date" />
+          <input type="number" id="medida-weight" step="0.1" min="0" placeholder="Peso (kg)" />
+          <input type="text" id="medida-note" placeholder="Notas: cintura, cadera..." maxlength="80" />
+          <input type="hidden" id="editing-medida-id" value="">
+          <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+        </form>
+
+        <div class="medida-list" id="medida-list"></div>
+      </div>
     </section>
 
     <!-- DASHBOARD VIEW -->
@@ -755,7 +800,7 @@
       <div class="form-group"><label>Título *</label><input type="text" id="task-title" placeholder="¿Qué necesitas hacer?" /></div>
       <div class="form-group"><label>Descripción</label><textarea id="task-desc" placeholder="Detalles..." rows="2"></textarea></div>
       <div class="form-row">
-        <div class="form-group"><label>Categoría</label><select id="task-cat"><option value="trabajo">Trabajo</option><option value="casa">Casa</option><option value="familia">Familia</option><option value="pandin">Pandín</option><option value="sara">Sara</option><option value="personal">Personal</option></select></div>
+        <div class="form-group"><label>Categoría</label><select id="task-cat"><option value="salud">Salud</option><option value="general">General</option></select></div>
         <div class="form-group"><label>Fecha</label><input type="date" id="task-date" /></div>
         <div class="form-group"><label>Hora</label><input type="time" id="task-time" /></div>
       </div>
@@ -892,7 +937,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="app-v2.js?v=3.15"></script>
+  <script src="app-v2.js?v=3.16"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

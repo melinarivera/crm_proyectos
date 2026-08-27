@@ -87,6 +87,8 @@ let transactions = [];
 let recurringTransactions = [];
 let budgets = [];
 let habits = [];
+let diario = [];
+let medidas = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
@@ -205,7 +207,7 @@ let timelineSnapMinutes = [15, 30].includes(parseInt(localStorage.getItem('timel
 
 const TIMELINE_HOUR_HEIGHT = 60; // px por hora
 const TIMELINE_EVENT_MINUTES = 30; // duración fija asumida por tarea
-const TIMELINE_KNOWN_CATS = ['personal', 'sara', 'casa', 'familia', 'pandin', 'trabajo'];
+const TIMELINE_KNOWN_CATS = ['salud', 'general'];
 const TIMELINE_MORNING_HOUR = 6; // hora a la que se hace scroll automático al entrar/cambiar de día
 
 function initTimelineTicker() {
@@ -1025,6 +1027,12 @@ function onGlobalSearch(query) {
     }
   });
 
+  diario.forEach(d => {
+    if (d.text && d.text.toLowerCase().includes(q)) {
+      results.push({ icon: 'book-heart', label: d.text.slice(0, 60), meta: 'Diario', action: () => { showView('salud'); setSaludTab('diario'); } });
+    }
+  });
+
   // Los movimientos de Dinero no se indexan en el buscador si la sección está protegida con PIN
   if (!dineroPinHash || isDineroUnlocked()) {
     transactions.forEach(t => {
@@ -1277,6 +1285,16 @@ function subscribeToFirestore() {
     if (currentView === 'salud') renderHabits();
   });
 
+  db.collection('diario').orderBy('created', 'desc').onSnapshot(snap => {
+    diario = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'salud') renderDiario();
+  });
+
+  db.collection('medidas').orderBy('date', 'desc').onSnapshot(snap => {
+    medidas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'salud') renderMedidas();
+  });
+
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
   const excelCategories = ['trabajo', 'casa', 'familia', 'pandin', 'sara', 'personal', 'dinero'];
   const urlKeys = [...excelCategories.map(c => c + 'ExcelUrl'), 'whatsappUrl'];
@@ -1357,7 +1375,7 @@ function showView(view) {
     maybeAutoSyncICal();
   }
   else if (view === 'dinero') renderMoney();
-  else if (view === 'salud') renderHabits();
+  else if (view === 'salud') setSaludTab(saludTab);
   else renderCategoryList(view);
   refreshIcons();
 }
@@ -1842,7 +1860,7 @@ function editTask(id) {
   document.getElementById('modal-title-text').textContent = 'Editar Tarea';
   document.getElementById('task-title').value = task.title || '';
   document.getElementById('task-desc').value = task.desc || '';
-  document.getElementById('task-cat').value = task.cat || 'personal';
+  document.getElementById('task-cat').value = task.cat || 'general';
   document.getElementById('task-date').value = task.date || '';
   document.getElementById('task-time').value = task.time || '';
   document.getElementById('task-tags').value = (task.tags || []).join(', ');
@@ -3530,6 +3548,208 @@ function renderHabits() {
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
         <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar hábito"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+      </div>
+    `;
+  }).join('');
+  refreshIcons();
+}
+
+// --- Salud: tabs (Hábitos / Diario / Medidas viven todas bajo la misma sección
+// de menú, para no volver a llenar el sidebar de ítems apenas lo dejamos limpio) ---
+let saludTab = 'habitos';
+
+function setSaludTab(tab) {
+  saludTab = tab;
+  document.querySelectorAll('.salud-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.salud-tab-panel').forEach(p => p.style.display = p.dataset.tab === tab ? 'block' : 'none');
+
+  if (tab === 'diario') renderDiario();
+  else if (tab === 'medidas') {
+    const dateEl = document.getElementById('medida-date');
+    if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
+    renderMedidas();
+  } else {
+    renderHabits();
+  }
+}
+
+// --- Salud: Diario (cómo me sentí) ---
+const DIARIO_MOODS = [
+  { key: 'genial',   emoji: '😄', label: 'Genial' },
+  { key: 'bien',     emoji: '🙂', label: 'Bien' },
+  { key: 'regular',  emoji: '😐', label: 'Regular' },
+  { key: 'mal',      emoji: '😔', label: 'Mal' },
+  { key: 'terrible', emoji: '😣', label: 'Terrible' }
+];
+let selectedDiarioMood = 'bien';
+
+function selectDiarioMood(mood) {
+  selectedDiarioMood = mood;
+  document.querySelectorAll('[data-diario-mood]').forEach(b => b.classList.toggle('active', b.dataset.diarioMood === mood));
+}
+
+async function addDiarioEntry() {
+  const input = document.getElementById('diario-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const editingId = document.getElementById('editing-diario-id').value;
+  const data = { text, mood: selectedDiarioMood, updated: new Date().toISOString() };
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('diario').doc(editingId).update(data);
+    } else {
+      data.created = new Date().toISOString();
+      await db.collection('diario').add(data);
+    }
+    resetDiarioForm();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editDiarioEntry(id) {
+  const entry = diario.find(d => d.id === id);
+  if (!entry) return;
+  document.getElementById('editing-diario-id').value = id;
+  document.getElementById('diario-input').value = entry.text;
+  selectDiarioMood(entry.mood || 'bien');
+  document.getElementById('btn-save-diario').innerHTML = '<i data-lucide="check" style="width:15px;height:15px;"></i> Actualizar';
+  document.getElementById('btn-cancel-diario').style.display = 'inline-block';
+  document.getElementById('diario-input').focus();
+  refreshIcons();
+}
+
+function resetDiarioForm() {
+  document.getElementById('editing-diario-id').value = '';
+  document.getElementById('diario-input').value = '';
+  selectDiarioMood('bien');
+  document.getElementById('btn-save-diario').innerHTML = '<i data-lucide="save" style="width:15px;height:15px;"></i> Guardar';
+  document.getElementById('btn-cancel-diario').style.display = 'none';
+}
+
+async function deleteDiarioEntry(id) {
+  if (!confirm('¿Eliminar esta entrada del diario?')) return;
+  showSyncIndicator('syncing');
+  await db.collection('diario').doc(id).delete();
+  showSyncIndicator('ok');
+}
+
+function renderDiario() {
+  const list = document.getElementById('diario-list');
+  if (!list) return;
+
+  if (diario.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no escribiste ninguna entrada.</p>';
+    return;
+  }
+
+  list.innerHTML = diario.map(d => {
+    const moodInfo = DIARIO_MOODS.find(m => m.key === d.mood) || DIARIO_MOODS[1];
+    const dateStr = d.created
+      ? new Date(d.created).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `
+      <div class="diario-card">
+        <div class="diario-card-actions">
+          <button class="nota-btn" onclick="editDiarioEntry('${d.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+          <button class="nota-btn del" onclick="deleteDiarioEntry('${d.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+        </div>
+        <div class="diario-mood">${moodInfo.emoji}</div>
+        <div class="diario-text">${d.text}</div>
+        <div class="diario-date">${dateStr}</div>
+      </div>
+    `;
+  }).join('');
+  refreshIcons();
+}
+
+// --- Salud: Medidas y peso ---
+async function addMedida() {
+  const dateEl = document.getElementById('medida-date');
+  const weightEl = document.getElementById('medida-weight');
+  const noteEl = document.getElementById('medida-note');
+  const editingId = document.getElementById('editing-medida-id').value;
+
+  const date = dateEl.value || toLocalDateStr(new Date());
+  const weight = parseFloat(weightEl.value);
+  if (!weight || weight <= 0) { alert('Ingresa un peso válido.'); return; }
+
+  const data = { date, weight, note: noteEl.value.trim(), updated: new Date().toISOString() };
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('medidas').doc(editingId).update(data);
+    } else {
+      data.created = new Date().toISOString();
+      await db.collection('medidas').add(data);
+    }
+    resetMedidaForm();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editMedida(id) {
+  const m = medidas.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('editing-medida-id').value = id;
+  document.getElementById('medida-date').value = m.date || '';
+  document.getElementById('medida-weight').value = m.weight ?? '';
+  document.getElementById('medida-note').value = m.note || '';
+}
+
+function resetMedidaForm() {
+  document.getElementById('editing-medida-id').value = '';
+  document.getElementById('medida-date').value = toLocalDateStr(new Date());
+  document.getElementById('medida-weight').value = '';
+  document.getElementById('medida-note').value = '';
+}
+
+async function deleteMedida(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  showSyncIndicator('syncing');
+  await db.collection('medidas').doc(id).delete();
+  showSyncIndicator('ok');
+}
+
+/** Lista ordenada por fecha desc; la flechita compara contra el registro anterior
+ *  en el tiempo (el siguiente elemento del array, justamente por ese orden). */
+function renderMedidas() {
+  const list = document.getElementById('medida-list');
+  if (!list) return;
+
+  if (medidas.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no registraste peso ni medidas.</p>';
+    return;
+  }
+
+  list.innerHTML = medidas.map((m, i) => {
+    const prev = medidas[i + 1];
+    let deltaHTML = '';
+    if (prev && typeof m.weight === 'number' && typeof prev.weight === 'number') {
+      const diff = m.weight - prev.weight;
+      if (Math.abs(diff) >= 0.05) {
+        const up = diff > 0;
+        deltaHTML = `<span class="medida-delta ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(diff).toFixed(1)} kg</span>`;
+      }
+    }
+    const dateLabel = m.date ? m.date.split('-').reverse().join('/') : '';
+    return `
+      <div class="medida-card">
+        <div class="medida-actions">
+          <button class="nota-btn" onclick="editMedida('${m.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+          <button class="nota-btn del" onclick="deleteMedida('${m.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+        </div>
+        <div class="medida-date">${dateLabel}</div>
+        <div class="medida-weight">${typeof m.weight === 'number' ? m.weight.toFixed(1) + ' kg' : '—'}</div>
+        ${deltaHTML}
+        ${m.note ? `<div class="medida-note">${m.note}</div>` : ''}
       </div>
     `;
   }).join('');

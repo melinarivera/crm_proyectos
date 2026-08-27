@@ -20,12 +20,8 @@
   --shadow: 0 8px 32px rgba(124,106,255,0.15);
 
   /* Colores por categoría, usados solo en el Timeline (no afectan Dashboard/tags existentes) */
-  --cat-personal: #5eead4;
-  --cat-sara:     #93c5fd;
-  --cat-pandin:   #ff9a3c;
-  --cat-casa:     #d8b4fe;
-  --cat-familia:  #86efac;
-  --cat-trabajo:  #fca5a5;
+  --cat-salud:   #06d6a0;
+  --cat-general: #93c5fd;
 }
 
 :root[data-theme="light"] {
@@ -1967,12 +1963,8 @@ body {
 /* Color por categoría (no por prioridad) — mismo par fondo/borde para el bloque del timeline
    y para el chip de "todo el día". "otra" es el estilo de respaldo para cualquier categoría
    que no sea una de las 6 conocidas (legacy, typo, etc.) para que nunca quede sin color. */
-.timeline-event-personal { background: #5eead435; border-left-color: var(--cat-personal); }
-.timeline-event-sara     { background: #93c5fd35; border-left-color: var(--cat-sara); }
-.timeline-event-pandin   { background: #ff9a3c22; border-left-color: var(--cat-pandin); }
-.timeline-event-casa     { background: #d8b4fe35; border-left-color: var(--cat-casa); }
-.timeline-event-familia  { background: #86efac35; border-left-color: var(--cat-familia); }
-.timeline-event-trabajo  { background: #fca5a535; border-left-color: var(--cat-trabajo); }
+.timeline-event-salud    { background: #06d6a035; border-left-color: var(--cat-salud); }
+.timeline-event-general  { background: #93c5fd35; border-left-color: var(--cat-general); }
 .timeline-event-otra     { background: #ffd16622; border-left-color: var(--otra); }
 
 .timeline-now-line {
@@ -2132,6 +2124,226 @@ body {
 }
 
 .habit-delete { flex-shrink: 0; }
+
+.salud-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.salud-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-sub);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: -1px;
+}
+
+.salud-tab-btn:hover { color: var(--text); }
+
+.salud-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* --- Diario --- */
+.diario-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.diario-mood-picker { display: flex; gap: 6px; }
+
+.diario-mood-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.diario-mood-btn:hover { border-color: var(--accent); }
+
+.diario-mood-btn.active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  transform: scale(1.08);
+}
+
+.diario-add-form textarea {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.diario-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.diario-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diario-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.diario-mood { font-size: 22px; flex-shrink: 0; }
+
+.diario-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.diario-date {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-sub);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.diario-card-actions {
+  position: absolute;
+  top: 10px; right: 12px;
+  display: flex;
+  gap: 4px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.diario-card:hover .diario-card-actions { opacity: 1; }
+
+/* --- Medidas y peso --- */
+.medida-add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.medida-add-form input[type="date"],
+.medida-add-form input[type="number"],
+.medida-add-form input[type="text"] {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.medida-add-form input[type="number"] { width: 120px; }
+.medida-add-form input[type="text"] { flex: 1; min-width: 160px; }
+
+.medida-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.medida-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+
+.medida-date {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  min-width: 70px;
+}
+
+.medida-weight {
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 70px;
+}
+
+.medida-delta {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.medida-delta.up { color: var(--rojo); background: #ff4d6d1a; }
+.medida-delta.down { color: var(--verde); background: #06d6a01a; }
+
+.medida-note {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medida-actions {
+  order: 99;
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.medida-card:hover .medida-actions { opacity: 1; }
 
 /* ===== DINERO ===== */
 .money-accounts-row {
