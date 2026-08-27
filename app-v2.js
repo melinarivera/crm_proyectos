@@ -109,20 +109,35 @@ let timelineFilterCat = 'all';
 let timelineViewMode = 'timeline';
 let timelineTickInterval = null;
 
+// Intervalo de snapping (min) compartido por el arrastre de bloques y el click-para-crear;
+// el usuario elige 15 o 30 desde el toggle del header y se recuerda entre sesiones.
+let timelineSnapMinutes = [15, 30].includes(parseInt(localStorage.getItem('timelineSnapMinutes'), 10))
+  ? parseInt(localStorage.getItem('timelineSnapMinutes'), 10)
+  : 15;
+
 const TIMELINE_HOUR_HEIGHT = 60; // px por hora
 const TIMELINE_EVENT_MINUTES = 30; // duración fija asumida por tarea
 const TIMELINE_KNOWN_CATS = ['personal', 'sara', 'casa', 'familia', 'pandin', 'trabajo'];
+const TIMELINE_MORNING_HOUR = 6; // hora a la que se hace scroll automático al entrar/cambiar de día
 
 function initTimelineTicker() {
   if (timelineTickInterval) clearInterval(timelineTickInterval);
   timelineTickInterval = setInterval(() => {
     if (currentView === 'timeline' && timelineViewMode === 'timeline') updateTimelineNowLine();
   }, 60000);
+  document.querySelectorAll('.timeline-snap-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.snap) === timelineSnapMinutes));
+}
+
+function setTimelineSnapMinutes(minutes) {
+  timelineSnapMinutes = minutes;
+  localStorage.setItem('timelineSnapMinutes', String(minutes));
+  document.querySelectorAll('.timeline-snap-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.snap) === minutes));
 }
 
 function shiftTimelineDay(delta) {
   timelineDate.setDate(timelineDate.getDate() + delta);
   renderTimeline();
+  scrollTimelineToMorning();
 }
 
 function getCurrentTimelineDate() {
@@ -132,6 +147,18 @@ function getCurrentTimelineDate() {
 function goToTimelineToday() {
   timelineDate = getCurrentTimelineDate();
   renderTimeline();
+  scrollTimelineToMorning();
+}
+
+/** Hace scroll para que la fila de las 06:00 quede cerca de la parte superior visible.
+ *  Se llama solo al entrar a la vista o cambiar de día, no en cada re-render (para no
+ *  interrumpir el scroll manual del usuario ante actualizaciones en vivo de Firestore). */
+function scrollTimelineToMorning() {
+  setTimeout(() => {
+    if (timelineViewMode !== 'timeline') return;
+    const row = document.querySelector(`.timeline-hour-row[data-hour="${TIMELINE_MORNING_HOUR}"]`);
+    if (row) row.scrollIntoView({ block: 'start' });
+  }, 50);
 }
 
 function setTimelineFilterCat(cat) {
@@ -242,6 +269,7 @@ function renderTimelineGrid(timedTasks) {
   for (let h = 0; h < 24; h++) {
     const row = document.createElement('div');
     row.className = 'timeline-hour-row';
+    row.dataset.hour = h;
     row.style.height = TIMELINE_HOUR_HEIGHT + 'px';
     const label = document.createElement('span');
     label.className = 'timeline-hour-label';
@@ -268,10 +296,50 @@ function renderTimelineGrid(timedTasks) {
     eventsCol.appendChild(block);
   });
 
+  attachTimelineEmptySpaceCreate(eventsCol);
+
   grid.appendChild(hoursCol);
   grid.appendChild(eventsCol);
 
   updateTimelineNowLine();
+}
+
+/** Click/tap en el espacio vacío del grid (no sobre un bloque existente) abre el modal de
+ *  Nueva Tarea con la fecha del día visto y la hora calculada según la posición Y, snapeada
+ *  al mismo intervalo que el arrastre (timelineSnapMinutes). Usa el mismo criterio de umbral
+ *  que el drag para no confundir un arrastre con un click. */
+function attachTimelineEmptySpaceCreate(eventsCol) {
+  const CLICK_MOVE_THRESHOLD_PX = 4;
+  let downX = 0, downY = 0, downTarget = null;
+
+  eventsCol.addEventListener('pointerdown', (e) => {
+    downX = e.clientX;
+    downY = e.clientY;
+    downTarget = e.target;
+  });
+
+  eventsCol.addEventListener('pointerup', (e) => {
+    if (timelineViewMode !== 'timeline') return;
+    if (e.target.closest('.timeline-event-block')) return; // el bloque maneja su propio click/drag
+    if (downTarget && downTarget.closest && downTarget.closest('.timeline-event-block')) return;
+
+    const deltaX = e.clientX - downX;
+    const deltaY = e.clientY - downY;
+    if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > CLICK_MOVE_THRESHOLD_PX) return; // fue un arrastre
+
+    const rect = eventsCol.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const snapPx = (timelineSnapMinutes / 60) * TIMELINE_HOUR_HEIGHT;
+    const maxTop = 24 * TIMELINE_HOUR_HEIGHT - snapPx;
+    const snappedTop = Math.max(0, Math.min(Math.round(offsetY / snapPx) * snapPx, maxTop));
+    const totalMinutes = Math.round((snappedTop / TIMELINE_HOUR_HEIGHT) * 60);
+    const timeStr = `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
+
+    closeModalDirect();
+    document.getElementById('task-date').value = toLocalDateStr(timelineDate);
+    document.getElementById('task-time').value = timeStr;
+    openModal();
+  });
 }
 
 /** Arrastre vertical de un bloque del timeline para cambiar su hora (dentro del mismo día).
@@ -280,8 +348,6 @@ function renderTimelineGrid(timedTasks) {
  *  toca `task.time`, sin superponerse con aquel (elementos y contenedores distintos). */
 function attachTimelineBlockDrag(block, task, eventsCol) {
   const DRAG_THRESHOLD_PX = 4; // distancia mínima para distinguir un arrastre de un click
-  const SNAP_MINUTES = 15;
-  const snapPx = (SNAP_MINUTES / 60) * TIMELINE_HOUR_HEIGHT;
 
   let dragging = false;
   let moved = false;
@@ -317,6 +383,7 @@ function attachTimelineBlockDrag(block, task, eventsCol) {
 
     const blockHeight = parseFloat(block.style.height) || 0;
     const maxTop = 24 * TIMELINE_HOUR_HEIGHT - blockHeight;
+    const snapPx = (timelineSnapMinutes / 60) * TIMELINE_HOUR_HEIGHT;
     let newTop = startTop + deltaY;
     newTop = Math.max(0, Math.min(newTop, maxTop));
     finalTop = Math.round(newTop / snapPx) * snapPx;
@@ -1066,7 +1133,7 @@ function showView(view) {
   };
   document.getElementById('page-title').textContent = titles[view] || 'MeliOrganizer';
 
-  if (view === 'timeline') renderTimeline();
+  if (view === 'timeline') { renderTimeline(); scrollTimelineToMorning(); }
   else if (view === 'dashboard') renderDashboard();
   else if (view === 'notas') renderNotas();
   else if (view === 'drive') renderDrives();
@@ -1417,9 +1484,65 @@ async function toggleDone(id) {
   }
 }
 
+/** Muestra el pequeño modal de alcance para tareas repetitivas y resuelve con
+ *  'only' | 'future' | null (null = el usuario canceló, no hacer nada). */
+function askRecurringScope() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('modal-recurring-scope-overlay');
+    const btnOnly = document.getElementById('btn-recurring-scope-only');
+    const btnFuture = document.getElementById('btn-recurring-scope-future');
+    const btnCancel = document.getElementById('btn-recurring-scope-cancel');
+
+    const cleanup = (result) => {
+      overlay.classList.remove('open');
+      btnOnly.onclick = null;
+      btnFuture.onclick = null;
+      btnCancel.onclick = null;
+      resolve(result);
+    };
+
+    btnOnly.onclick = () => cleanup('only');
+    btnFuture.onclick = () => cleanup('future');
+    btnCancel.onclick = () => cleanup(null);
+    overlay.classList.add('open');
+  });
+}
+
 async function deleteTask(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
+
+  let scope = 'only';
+  if (task.recurringGroupId) {
+    scope = await askRecurringScope();
+    if (!scope) return; // cancelado
+  }
+
+  if (scope === 'future') {
+    const toDelete = tasks.filter(t => t.recurringGroupId === task.recurringGroupId && t.date >= task.date);
+    showSyncIndicator('syncing');
+    try {
+      const batch = db.batch();
+      toDelete.forEach(t => batch.delete(db.collection('tasks').doc(t.id)));
+      await batch.commit();
+      showSyncIndicator('ok');
+      showUndoToast(`${toDelete.length} tareas eliminadas`, async () => {
+        showSyncIndicator('syncing');
+        const undoBatch = db.batch();
+        toDelete.forEach(t => {
+          const { id: _drop, ...data } = t;
+          undoBatch.set(db.collection('tasks').doc(t.id), data);
+        });
+        await undoBatch.commit();
+        showSyncIndicator('ok');
+      });
+    } catch (err) {
+      showSyncIndicator('error', err.message);
+    }
+    return;
+  }
+
+  // 'only' (tarea suelta, o "solo esta tarea" de una serie): comportamiento original
   showSyncIndicator('syncing');
   await db.collection('tasks').doc(id).delete();
   showSyncIndicator('ok');
@@ -1458,6 +1581,7 @@ function closeModalDirect() {
   document.getElementById('task-date').value = '';
   document.getElementById('task-time').value = '';
   document.getElementById('task-tags').value = '';
+  document.getElementById('task-repeat').value = '';
 }
 
 function editTask(id) {
@@ -1472,6 +1596,9 @@ function editTask(id) {
   document.getElementById('task-date').value = task.date || '';
   document.getElementById('task-time').value = task.time || '';
   document.getElementById('task-tags').value = (task.tags || []).join(', ');
+  // La recurrencia no se edita todavía desde aquí (solo se crea al hacer una tarea nueva),
+  // así que el select siempre arranca en "No se repite" al editar, sin importar la serie.
+  document.getElementById('task-repeat').value = '';
   selectPrio(task.prio || 'urgente');
 
   openModal();
@@ -1483,6 +1610,43 @@ function selectPrio(prio) {
   document.querySelector(`[data-prio="${prio}"]`).classList.add('active-sema');
 }
 
+function generateRecurringGroupId() {
+  return `rec-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/** Crea las ocurrencias de una serie repetitiva en un solo batch de Firestore.
+ *  daily: 90 ocurrencias (siguientes 90 días) · weekly: 26 (siguientes 26 semanas) ·
+ *  monthly: 12 (siguientes 12 meses) — la fecha elegida en el modal cuenta como la primera. */
+async function createRecurringTaskSeries(baseData, repeatType) {
+  const OCCURRENCES = { daily: 90, weekly: 26, monthly: 12 };
+  const count = OCCURRENCES[repeatType];
+  if (!count) {
+    await db.collection('tasks').add(baseData);
+    return;
+  }
+
+  const groupId = generateRecurringGroupId();
+  const [y, mo, d] = baseData.date.split('-').map(Number);
+  const baseDateObj = new Date(y, mo - 1, d);
+
+  const batch = db.batch();
+  for (let i = 0; i < count; i++) {
+    const occDate = new Date(baseDateObj);
+    if (repeatType === 'daily') occDate.setDate(occDate.getDate() + i);
+    else if (repeatType === 'weekly') occDate.setDate(occDate.getDate() + i * 7);
+    else if (repeatType === 'monthly') occDate.setMonth(occDate.getMonth() + i);
+
+    const docRef = db.collection('tasks').doc();
+    batch.set(docRef, {
+      ...baseData,
+      date: toLocalDateStr(occDate),
+      recurringGroupId: groupId,
+      recurringType: repeatType
+    });
+  }
+  await batch.commit();
+}
+
 async function saveTask() {
   const titleEl = document.getElementById('task-title');
   const descEl = document.getElementById('task-desc');
@@ -1490,6 +1654,7 @@ async function saveTask() {
   const dateEl = document.getElementById('task-date');
   const timeEl = document.getElementById('task-time');
   const tagsEl = document.getElementById('task-tags');
+  const repeatEl = document.getElementById('task-repeat');
   const editingIdEl = document.getElementById('editing-task-id');
 
   const title = titleEl.value.trim();
@@ -1512,16 +1677,43 @@ async function saveTask() {
 
   console.log("Guardando tarea:", taskData); // Debug log
 
-  showSyncIndicator('syncing');
-
   try {
     if (editingId) {
-      await db.collection('tasks').doc(editingId).update(taskData);
+      const originalTask = tasks.find(t => t.id === editingId);
+      const groupId = originalTask && originalTask.recurringGroupId;
+
+      if (groupId) {
+        const scope = await askRecurringScope();
+        if (!scope) return; // cancelado: se deja el modal abierto, sin tocar nada
+
+        showSyncIndicator('syncing');
+        if (scope === 'future') {
+          // Al aplicar a "esta y todas las futuras" no propagamos la fecha editada —
+          // cada ocurrencia conserva su propio día, solo cambian título/hora/cat/etc.
+          const { date: _ignoredDate, ...fieldsWithoutDate } = taskData;
+          const toUpdate = tasks.filter(t => t.recurringGroupId === groupId && t.date >= originalTask.date);
+          const batch = db.batch();
+          toUpdate.forEach(t => batch.update(db.collection('tasks').doc(t.id), fieldsWithoutDate));
+          await batch.commit();
+        } else {
+          await db.collection('tasks').doc(editingId).update(taskData);
+        }
+      } else {
+        showSyncIndicator('syncing');
+        await db.collection('tasks').doc(editingId).update(taskData);
+      }
     } else {
       taskData.done = false;
       taskData.created = new Date().toISOString();
-      await db.collection('tasks').add(taskData);
+      showSyncIndicator('syncing');
+      const repeatType = repeatEl.value;
+      if (repeatType) {
+        await createRecurringTaskSeries(taskData, repeatType);
+      } else {
+        await db.collection('tasks').add(taskData);
+      }
     }
+    showSyncIndicator('ok');
     closeModalDirect();
   } catch (err) {
     showSyncIndicator('error', err.message);

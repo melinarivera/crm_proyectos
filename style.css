@@ -1125,6 +1125,31 @@ body {
 
 .btn-delete:hover { background: var(--rojo); color: #fff; }
 
+.modal-small { max-width: 380px; }
+
+.modal-scope-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-scope-actions button { width: 100%; }
+
+.btn-delete-solid {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  background: var(--rojo);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete-solid:hover { background: #e0435f; }
+
 .btn-save {
   padding: 10px 24px;
   border-radius: 12px;
@@ -1604,6 +1629,27 @@ body {
 
 .timeline-mode-btn.active { background: var(--accent); color: #fff; }
 
+.timeline-snap-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.timeline-snap-btn {
+  padding: 8px 12px;
+  background: var(--card);
+  color: var(--text-sub);
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.timeline-snap-btn.active { background: var(--accent2); color: #fff; }
+
 .timeline-allday-section {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1678,6 +1724,7 @@ body {
 .timeline-events-col {
   position: relative;
   border-left: 1px solid var(--border);
+  cursor: copy;
 }
 
 .timeline-event-block {
@@ -1759,6 +1806,7 @@ body {
   height: 2px;
   background: var(--rojo);
   z-index: 5;
+  pointer-events: none;
 }
 
 .timeline-now-line::before {

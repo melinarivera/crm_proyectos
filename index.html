@@ -163,6 +163,10 @@
             <i data-lucide="list" style="width:14px;height:14px;"></i> Lista
           </button>
         </div>
+        <div class="timeline-snap-toggle" title="Intervalo de arrastre y creación rápida">
+          <button class="timeline-snap-btn" data-snap="15" onclick="setTimelineSnapMinutes(15)">15m</button>
+          <button class="timeline-snap-btn" data-snap="30" onclick="setTimelineSnapMinutes(30)">30m</button>
+        </div>
       </div>
 
       <div class="timeline-allday-section" id="timeline-allday-section" style="display:none;">
@@ -749,7 +753,29 @@
           <button class="sema-btn verde" data-prio="bajo" onclick="selectPrio('bajo')"><span class="sema-dot-sm dot-bajo"></span> Bajo</button>
         </div>
       </div>
+      <div class="form-group">
+        <label>Repetir</label>
+        <select id="task-repeat">
+          <option value="">No se repite</option>
+          <option value="daily">Cada día</option>
+          <option value="weekly">Cada semana</option>
+          <option value="monthly">Cada mes</option>
+        </select>
+      </div>
       <div class="modal-actions"><button class="btn-delete" id="btn-delete-task" onclick="deleteTaskFromModal()" style="display:none;">Eliminar</button><button class="btn-cancel" onclick="closeModalDirect()">Cancelar</button><button class="btn-save" onclick="saveTask()">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- RECURRING SCOPE MODAL -->
+  <div class="modal-overlay" id="modal-recurring-scope-overlay" onclick="document.getElementById('btn-recurring-scope-cancel').click()">
+    <div class="modal modal-small" onclick="event.stopPropagation()">
+      <h2 class="modal-title">Tarea repetitiva</h2>
+      <p class="view-sub" style="margin-top:-14px;">Esta tarea es parte de una serie. ¿Qué quieres hacer?</p>
+      <div class="modal-scope-actions">
+        <button class="btn-save" id="btn-recurring-scope-only">Solo esta tarea</button>
+        <button class="btn-delete-solid" id="btn-recurring-scope-future">Esta y todas las futuras</button>
+        <button class="btn-cancel" id="btn-recurring-scope-cancel">Cancelar</button>
+      </div>
     </div>
   </div>
 
