@@ -1725,6 +1725,88 @@ body {
   cursor: pointer;
 }
 
+.timeline-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 20px;
+  align-items: start;
+}
+
+.timeline-main { min-width: 0; }
+
+.timeline-minical {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.timeline-minical-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.timeline-minical-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.timeline-minical-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.timeline-minical-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.minical-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.minical-cell.empty { cursor: default; }
+
+.minical-cell:not(.empty):hover { background: var(--bg2); }
+
+.minical-cell.is-today { box-shadow: 0 0 0 1px var(--accent); }
+
+.minical-cell.is-selected {
+  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  color: var(--accent);
+}
+
+.minical-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 .timeline-grid-wrap {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1870,6 +1952,8 @@ body {
   .timeline-header { flex-direction: column; align-items: stretch; }
   .timeline-date-label { min-width: 0; }
   .timeline-grid { grid-template-columns: 44px 1fr; }
+  .timeline-layout { grid-template-columns: 1fr; }
+  .timeline-minical { position: static; }
 }
 
 /* ===== DINERO ===== */
