@@ -772,12 +772,27 @@
       </div>
       <div class="form-group">
         <label>Repetir</label>
-        <select id="task-repeat">
+        <select id="task-repeat" onchange="onTaskRepeatChange()">
           <option value="">No se repite</option>
           <option value="daily">Cada día</option>
           <option value="weekly">Cada semana</option>
           <option value="monthly">Cada mes</option>
+          <option value="customdays">Días específicos de la semana</option>
         </select>
+        <div id="repeat-days-picker" class="repeat-day-picker" style="display:none;">
+          <button type="button" class="repeat-day-btn" data-day="1" onclick="toggleRepeatDay(1, this)">L</button>
+          <button type="button" class="repeat-day-btn" data-day="2" onclick="toggleRepeatDay(2, this)">M</button>
+          <button type="button" class="repeat-day-btn" data-day="3" onclick="toggleRepeatDay(3, this)">X</button>
+          <button type="button" class="repeat-day-btn" data-day="4" onclick="toggleRepeatDay(4, this)">J</button>
+          <button type="button" class="repeat-day-btn" data-day="5" onclick="toggleRepeatDay(5, this)">V</button>
+          <button type="button" class="repeat-day-btn" data-day="6" onclick="toggleRepeatDay(6, this)">S</button>
+          <button type="button" class="repeat-day-btn" data-day="0" onclick="toggleRepeatDay(0, this)">D</button>
+        </div>
+        <input type="hidden" id="task-repeat-days" value="">
+        <div id="repeat-until-group" style="display:none;margin-top:10px;">
+          <label>Repetir hasta (opcional)</label>
+          <input type="date" id="task-repeat-until" />
+        </div>
       </div>
       <div class="modal-actions"><button class="btn-delete" id="btn-delete-task" onclick="deleteTaskFromModal()" style="display:none;">Eliminar</button><button class="btn-cancel" onclick="closeModalDirect()">Cancelar</button><button class="btn-save" onclick="saveTask()">Guardar</button></div>
     </div>

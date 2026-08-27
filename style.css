@@ -1093,6 +1093,35 @@ body {
 .sema-btn.amarillo.active-sema{ border-color: var(--amarillo); background: #ffd16633; }
 .sema-btn.verde.active-sema   { border-color: var(--verde); background: #06d6a033; }
 
+.repeat-day-picker {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.repeat-day-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-sub);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.repeat-day-btn:hover { border-color: var(--accent); color: var(--text); }
+
+.repeat-day-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;

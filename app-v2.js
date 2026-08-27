@@ -476,9 +476,25 @@ function attachTimelineBlockDrag(block, task, eventsCol) {
     const newTime = topToTimeStr(finalTop);
     if (newTime === task.time) return;
 
+    let scope = 'only';
+    if (task.recurringGroupId) {
+      scope = await askRecurringScope();
+      if (!scope) {
+        block.style.top = `${startTop}px`; // cancelado: revertir la posición visual
+        return;
+      }
+    }
+
     showSyncIndicator('syncing');
     try {
-      await db.collection('tasks').doc(task.id).update({ time: newTime });
+      if (scope === 'future' && task.recurringGroupId) {
+        const toUpdate = tasks.filter(t => t.recurringGroupId === task.recurringGroupId && t.date >= task.date);
+        const batch = db.batch();
+        toUpdate.forEach(t => batch.update(db.collection('tasks').doc(t.id), { time: newTime }));
+        await batch.commit();
+      } else {
+        await db.collection('tasks').doc(task.id).update({ time: newTime });
+      }
       showSyncIndicator('ok');
     } catch (err) {
       showSyncIndicator('error', err.message);
@@ -1645,10 +1661,35 @@ function closeModalDirect() {
   document.getElementById('task-date').value = '';
   document.getElementById('task-time').value = '';
   document.getElementById('task-tags').value = '';
-  document.getElementById('task-repeat').value = '';
   document.getElementById('task-duration').value = '30';
   document.getElementById('task-duration-custom').value = '';
   document.getElementById('task-duration-custom').style.display = 'none';
+  resetRepeatFields();
+}
+
+/** Limpia el selector de "Repetir" y sus controles asociados (días de la semana, fecha límite). */
+function resetRepeatFields() {
+  document.getElementById('task-repeat').value = '';
+  document.getElementById('task-repeat-until').value = '';
+  document.getElementById('task-repeat-days').value = '';
+  document.querySelectorAll('.repeat-day-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('repeat-days-picker').style.display = 'none';
+  document.getElementById('repeat-until-group').style.display = 'none';
+}
+
+/** Muestra/oculta el picker de días y el campo de fecha límite según el tipo de repetición elegido. */
+function onTaskRepeatChange() {
+  const val = document.getElementById('task-repeat').value;
+  document.getElementById('repeat-days-picker').style.display = val === 'customdays' ? 'flex' : 'none';
+  document.getElementById('repeat-until-group').style.display = val ? 'block' : 'none';
+}
+
+function toggleRepeatDay(day, btn) {
+  btn.classList.toggle('active');
+  const hidden = document.getElementById('task-repeat-days');
+  const days = new Set(hidden.value ? hidden.value.split(',').map(Number) : []);
+  if (days.has(day)) days.delete(day); else days.add(day);
+  hidden.value = [...days].join(',');
 }
 
 /** Presets de duración que ofrece el select; cualquier otro valor cae en "Personalizada…". */
@@ -1674,7 +1715,7 @@ function editTask(id) {
   document.getElementById('task-tags').value = (task.tags || []).join(', ');
   // La recurrencia no se edita todavía desde aquí (solo se crea al hacer una tarea nueva),
   // así que el select siempre arranca en "No se repite" al editar, sin importar la serie.
-  document.getElementById('task-repeat').value = '';
+  resetRepeatFields();
 
   const dur = task.duration || TIMELINE_EVENT_MINUTES;
   const durationSel = document.getElementById('task-duration');
@@ -1705,34 +1746,61 @@ function generateRecurringGroupId() {
 }
 
 /** Crea las ocurrencias de una serie repetitiva en un solo batch de Firestore.
- *  daily: 90 ocurrencias (siguientes 90 días) · weekly: 26 (siguientes 26 semanas) ·
- *  monthly: 12 (siguientes 12 meses) — la fecha elegida en el modal cuenta como la primera. */
-async function createRecurringTaskSeries(baseData, repeatType) {
-  const OCCURRENCES = { daily: 90, weekly: 26, monthly: 12 };
-  const count = OCCURRENCES[repeatType];
-  if (!count) {
+ *  daily/weekly/monthly/customdays generan ocurrencias hasta `options.until` (si se indica) o,
+ *  si no hay fecha límite, hasta un horizonte por defecto (90 días, 182 días, 12 meses, 90 días
+ *  respectivamente). `options.days` (0=domingo..6=sábado) es obligatorio para 'customdays'.
+ *  La fecha elegida en el modal cuenta como la primera ocurrencia. */
+async function createRecurringTaskSeries(baseData, repeatType, options = {}) {
+  const VALID_TYPES = ['daily', 'weekly', 'monthly', 'customdays'];
+  const { until = null, days = null } = options;
+
+  if (!VALID_TYPES.includes(repeatType) || (repeatType === 'customdays' && (!days || days.length === 0))) {
     await db.collection('tasks').add(baseData);
     return;
   }
 
-  const groupId = generateRecurringGroupId();
   const [y, mo, d] = baseData.date.split('-').map(Number);
   const baseDateObj = new Date(y, mo - 1, d);
 
-  const batch = db.batch();
-  for (let i = 0; i < count; i++) {
-    const occDate = new Date(baseDateObj);
-    if (repeatType === 'daily') occDate.setDate(occDate.getDate() + i);
-    else if (repeatType === 'weekly') occDate.setDate(occDate.getDate() + i * 7);
-    else if (repeatType === 'monthly') occDate.setMonth(occDate.getMonth() + i);
+  let untilObj;
+  if (until) {
+    const [uy, umo, ud] = until.split('-').map(Number);
+    untilObj = new Date(uy, umo - 1, ud);
+  } else {
+    untilObj = new Date(baseDateObj);
+    const DEFAULT_SPAN_DAYS = { daily: 90, weekly: 182, customdays: 90 };
+    if (repeatType === 'monthly') untilObj.setMonth(untilObj.getMonth() + 12);
+    else untilObj.setDate(untilObj.getDate() + DEFAULT_SPAN_DAYS[repeatType]);
+  }
 
-    const docRef = db.collection('tasks').doc();
-    batch.set(docRef, {
-      ...baseData,
-      date: toLocalDateStr(occDate),
-      recurringGroupId: groupId,
-      recurringType: repeatType
-    });
+  const MAX_OCCURRENCES = 366;
+  const groupId = generateRecurringGroupId();
+  const daySet = repeatType === 'customdays' ? new Set(days) : null;
+  const batch = db.batch();
+  let count = 0;
+  const cursor = new Date(baseDateObj);
+
+  while (cursor <= untilObj && count < MAX_OCCURRENCES) {
+    const include = repeatType === 'customdays' ? daySet.has(cursor.getDay()) : true;
+    if (include) {
+      const docRef = db.collection('tasks').doc();
+      batch.set(docRef, {
+        ...baseData,
+        date: toLocalDateStr(cursor),
+        recurringGroupId: groupId,
+        recurringType: repeatType
+      });
+      count++;
+    }
+
+    if (repeatType === 'monthly') cursor.setMonth(cursor.getMonth() + 1);
+    else if (repeatType === 'weekly') cursor.setDate(cursor.getDate() + 7);
+    else cursor.setDate(cursor.getDate() + 1); // daily y customdays avanzan día a día
+  }
+
+  if (count === 0) {
+    await db.collection('tasks').add(baseData);
+    return;
   }
   await batch.commit();
 }
@@ -1753,6 +1821,18 @@ async function saveTask() {
   if (!title) return;
 
   const editingId = editingIdEl.value;
+
+  const repeatType = repeatEl.value;
+  const repeatUntil = document.getElementById('task-repeat-until').value || null;
+  let repeatDays = null;
+  if (repeatType === 'customdays') {
+    const daysVal = document.getElementById('task-repeat-days').value;
+    repeatDays = daysVal ? daysVal.split(',').map(Number) : [];
+    if (repeatDays.length === 0) {
+      alert('Selecciona al menos un día de la semana para repetir.');
+      return;
+    }
+  }
 
   const tags = tagsEl.value.split(',').map(t => t.trim()).filter(Boolean);
 
@@ -1804,9 +1884,8 @@ async function saveTask() {
       taskData.done = false;
       taskData.created = new Date().toISOString();
       showSyncIndicator('syncing');
-      const repeatType = repeatEl.value;
       if (repeatType) {
-        await createRecurringTaskSeries(taskData, repeatType);
+        await createRecurringTaskSeries(taskData, repeatType, { until: repeatUntil, days: repeatDays });
       } else {
         await db.collection('tasks').add(taskData);
       }
