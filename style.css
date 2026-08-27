@@ -2345,6 +2345,114 @@ body {
 
 .medida-card:hover .medida-actions { opacity: 1; }
 
+/* --- Calorías --- */
+.caloria-today-total {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.caloria-add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.caloria-add-form input[type="text"],
+.caloria-add-form input[type="number"] {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.caloria-add-form input[type="text"] { flex: 1; min-width: 180px; }
+.caloria-add-form input[type="number"] { width: 110px; }
+
+.caloria-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.caloria-day-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+
+.caloria-day-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.caloria-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-sub);
+  padding: 4px 0;
+}
+
+.caloria-desc { flex: 1; min-width: 0; color: var(--text); }
+.caloria-kcal { flex-shrink: 0; font-weight: 700; }
+
+/* --- Hidratación --- */
+.hydration-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.hydration-count {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.hydration-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.hidratacion-history {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hidratacion-day-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-sub);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+
 /* ===== DINERO ===== */
 .money-accounts-row {
   display: grid;

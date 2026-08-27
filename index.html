@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.2" />
+  <link rel="stylesheet" href="style.css?v=3.3" />
   <script>
     (function() {
       var saved = localStorage.getItem('theme');
@@ -48,14 +48,26 @@
       <span class="logo-text">MeliVit</span>
     </div>
     <nav class="sidebar-nav">
-      <button class="nav-item" data-view="calendario" onclick="showView('calendario')">
-        <i data-lucide="calendar" class="nav-icon"></i><span>Calendario</span>
+      <button class="nav-item active" data-view="ejercicio" onclick="showView('ejercicio')">
+        <i data-lucide="dumbbell" class="nav-icon"></i><span>Ejercicio / Rutina</span>
       </button>
-      <button class="nav-item active" data-view="timeline" onclick="showView('timeline')">
-        <i data-lucide="calendar-clock" class="nav-icon"></i><span>Timeline</span>
+      <button class="nav-item" data-view="medicacion" onclick="showView('medicacion')">
+        <i data-lucide="pill" class="nav-icon"></i><span>Medicación</span>
       </button>
-      <button class="nav-item" data-view="salud" onclick="showView('salud')">
-        <i data-lucide="heart-pulse" class="nav-icon"></i><span>Salud</span>
+      <button class="nav-item" data-view="diario" onclick="showView('diario')">
+        <i data-lucide="book-heart" class="nav-icon"></i><span>Diario</span>
+      </button>
+      <button class="nav-item" data-view="medidas" onclick="showView('medidas')">
+        <i data-lucide="scale" class="nav-icon"></i><span>Medidas y peso</span>
+      </button>
+      <button class="nav-item" data-view="calorias" onclick="showView('calorias')">
+        <i data-lucide="flame" class="nav-icon"></i><span>Calorías</span>
+      </button>
+      <button class="nav-item" data-view="hidratacion" onclick="showView('hidratacion')">
+        <i data-lucide="droplets" class="nav-icon"></i><span>Hidratación</span>
+      </button>
+      <button class="nav-item" data-view="sueno" onclick="showView('sueno')">
+        <i data-lucide="moon" class="nav-icon"></i><span>Sueño</span>
       </button>
       <button class="nav-item" data-view="drive" onclick="showView('drive')">
         <i data-lucide="hard-drive" class="nav-icon"></i><span>Drive</span>
@@ -110,8 +122,8 @@
       </div>
     </header>
 
-    <!-- TIMELINE VIEW -->
-    <section class="view active" id="view-timeline">
+    <!-- TIMELINE VIEW (fuera del menú por ahora — código intacto por si se reactiva) -->
+    <section class="view" id="view-timeline">
       <div class="timeline-header">
         <div class="timeline-date-nav">
           <button class="btn-notif" onclick="shiftTimelineDay(-1)" title="Día anterior"><i data-lucide="chevron-left" style="width:16px;height:16px;"></i></button>
@@ -165,80 +177,155 @@
       <div class="task-list full-list" id="timeline-list-container" style="display:none;"></div>
     </section>
 
-    <!-- SALUD VIEW (hábitos: medicación, vitaminas, ejercicio, alimentación) -->
-    <section class="view" id="view-salud">
+    <!-- EJERCICIO / RUTINA -->
+    <section class="view active" id="view-ejercicio">
+      <div class="view-header">
+        <span class="view-emoji">🏃</span>
+        <div>
+          <h2>Ejercicio / Rutina</h2>
+          <p class="view-sub">Marcá lo de hoy y sostené la racha.</p>
+        </div>
+      </div>
+      <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('ejercicio');">
+        <div class="habit-emoji-picker" id="habit-emoji-picker-ejercicio">
+          <button type="button" class="habit-emoji-btn active" data-emoji="🏃" onclick="selectHabitEmoji('ejercicio', '🏃', this)">🏃</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🚴" onclick="selectHabitEmoji('ejercicio', '🚴', this)">🚴</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🏋️" onclick="selectHabitEmoji('ejercicio', '🏋️', this)">🏋️</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🧘" onclick="selectHabitEmoji('ejercicio', '🧘', this)">🧘</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🤸" onclick="selectHabitEmoji('ejercicio', '🤸', this)">🤸</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="⚽" onclick="selectHabitEmoji('ejercicio', '⚽', this)">⚽</button>
+        </div>
+        <input type="text" id="habit-title-input-ejercicio" placeholder="Ej: Caminar 30 min, Rutina de piernas..." maxlength="60" />
+        <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
+      </form>
+      <div class="habit-list" id="habit-list-ejercicio"></div>
+    </section>
+
+    <!-- MEDICACIÓN -->
+    <section class="view" id="view-medicacion">
       <div class="view-header">
         <span class="view-emoji">💊</span>
         <div>
-          <h2>Salud</h2>
-          <p class="view-sub">Hábitos, cómo te sentís y tu evolución de peso, todo en un solo lugar.</p>
+          <h2>Medicación</h2>
+          <p class="view-sub">Marcá lo de hoy y sostené la racha.</p>
         </div>
       </div>
+      <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('medicacion');">
+        <div class="habit-emoji-picker" id="habit-emoji-picker-medicacion">
+          <button type="button" class="habit-emoji-btn active" data-emoji="💊" onclick="selectHabitEmoji('medicacion', '💊', this)">💊</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🌡️" onclick="selectHabitEmoji('medicacion', '🌡️', this)">🌡️</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🩹" onclick="selectHabitEmoji('medicacion', '🩹', this)">🩹</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="🧴" onclick="selectHabitEmoji('medicacion', '🧴', this)">🧴</button>
+          <button type="button" class="habit-emoji-btn" data-emoji="💉" onclick="selectHabitEmoji('medicacion', '💉', this)">💉</button>
+        </div>
+        <input type="text" id="habit-title-input-medicacion" placeholder="Ej: Vitamina D, Antibiótico 8am..." maxlength="60" />
+        <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
+      </form>
+      <div class="habit-list" id="habit-list-medicacion"></div>
+    </section>
 
-      <div class="salud-tabs">
-        <button class="salud-tab-btn active" data-tab="habitos" onclick="setSaludTab('habitos')">
-          <i data-lucide="heart-pulse" style="width:14px;height:14px;"></i> Hábitos
-        </button>
-        <button class="salud-tab-btn" data-tab="diario" onclick="setSaludTab('diario')">
-          <i data-lucide="book-heart" style="width:14px;height:14px;"></i> Diario
-        </button>
-        <button class="salud-tab-btn" data-tab="medidas" onclick="setSaludTab('medidas')">
-          <i data-lucide="scale" style="width:14px;height:14px;"></i> Medidas y peso
-        </button>
+    <!-- DIARIO -->
+    <section class="view" id="view-diario">
+      <div class="view-header">
+        <span class="view-emoji">📔</span>
+        <div>
+          <h2>Diario</h2>
+          <p class="view-sub">¿Cómo te sentiste hoy?</p>
+        </div>
       </div>
+      <form class="diario-add-form" onsubmit="event.preventDefault(); addDiarioEntry();">
+        <div class="diario-mood-picker" id="diario-mood-picker">
+          <button type="button" class="diario-mood-btn" data-diario-mood="genial" onclick="selectDiarioMood('genial')" title="Genial">😄</button>
+          <button type="button" class="diario-mood-btn active" data-diario-mood="bien" onclick="selectDiarioMood('bien')" title="Bien">🙂</button>
+          <button type="button" class="diario-mood-btn" data-diario-mood="regular" onclick="selectDiarioMood('regular')" title="Regular">😐</button>
+          <button type="button" class="diario-mood-btn" data-diario-mood="mal" onclick="selectDiarioMood('mal')" title="Mal">😔</button>
+          <button type="button" class="diario-mood-btn" data-diario-mood="terrible" onclick="selectDiarioMood('terrible')" title="Terrible">😣</button>
+        </div>
+        <textarea id="diario-input" rows="3" placeholder="¿Cómo te sentiste hoy?"></textarea>
+        <input type="hidden" id="editing-diario-id" value="">
+        <div class="diario-form-actions">
+          <button type="button" class="btn-cancel" id="btn-cancel-diario" style="display:none;" onclick="resetDiarioForm()">Cancelar</button>
+          <button type="submit" class="btn-add" id="btn-save-diario"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+        </div>
+      </form>
+      <div class="diario-list" id="diario-list"></div>
+    </section>
 
-      <!-- HÁBITOS -->
-      <div class="salud-tab-panel" data-tab="habitos" id="salud-panel-habitos">
-        <form class="habit-add-form" id="habit-add-form" onsubmit="event.preventDefault(); addHabit();">
-          <div class="habit-emoji-picker" id="habit-emoji-picker">
-            <button type="button" class="habit-emoji-btn active" data-emoji="💊" onclick="selectHabitEmoji('💊', this)">💊</button>
-            <button type="button" class="habit-emoji-btn" data-emoji="🌿" onclick="selectHabitEmoji('🌿', this)">🌿</button>
-            <button type="button" class="habit-emoji-btn" data-emoji="🏃" onclick="selectHabitEmoji('🏃', this)">🏃</button>
-            <button type="button" class="habit-emoji-btn" data-emoji="🥗" onclick="selectHabitEmoji('🥗', this)">🥗</button>
-            <button type="button" class="habit-emoji-btn" data-emoji="💧" onclick="selectHabitEmoji('💧', this)">💧</button>
-            <button type="button" class="habit-emoji-btn" data-emoji="😴" onclick="selectHabitEmoji('😴', this)">😴</button>
-            <button type="button" class="habit-emoji-btn" data-emoji="✨" onclick="selectHabitEmoji('✨', this)">✨</button>
-          </div>
-          <input type="text" id="habit-title-input" placeholder="Ej: Vitamina D, Caminar 30 min, Tomar antibiótico..." maxlength="60" />
-          <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar hábito</button>
-        </form>
-
-        <div class="habit-list" id="habit-list"></div>
+    <!-- MEDIDAS Y PESO -->
+    <section class="view" id="view-medidas">
+      <div class="view-header">
+        <span class="view-emoji">⚖️</span>
+        <div>
+          <h2>Medidas y peso</h2>
+          <p class="view-sub">Tu evolución, con la diferencia contra el registro anterior.</p>
+        </div>
       </div>
+      <form class="medida-add-form" onsubmit="event.preventDefault(); addMedida();">
+        <input type="date" id="medida-date" />
+        <input type="number" id="medida-weight" step="0.1" min="0" placeholder="Peso (kg)" />
+        <input type="text" id="medida-note" placeholder="Notas: cintura, cadera..." maxlength="80" />
+        <input type="hidden" id="editing-medida-id" value="">
+        <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+      </form>
+      <div class="medida-list" id="medida-list"></div>
+    </section>
 
-      <!-- DIARIO -->
-      <div class="salud-tab-panel" data-tab="diario" id="salud-panel-diario" style="display:none;">
-        <form class="diario-add-form" onsubmit="event.preventDefault(); addDiarioEntry();">
-          <div class="diario-mood-picker" id="diario-mood-picker">
-            <button type="button" class="diario-mood-btn" data-diario-mood="genial" onclick="selectDiarioMood('genial')" title="Genial">😄</button>
-            <button type="button" class="diario-mood-btn active" data-diario-mood="bien" onclick="selectDiarioMood('bien')" title="Bien">🙂</button>
-            <button type="button" class="diario-mood-btn" data-diario-mood="regular" onclick="selectDiarioMood('regular')" title="Regular">😐</button>
-            <button type="button" class="diario-mood-btn" data-diario-mood="mal" onclick="selectDiarioMood('mal')" title="Mal">😔</button>
-            <button type="button" class="diario-mood-btn" data-diario-mood="terrible" onclick="selectDiarioMood('terrible')" title="Terrible">😣</button>
-          </div>
-          <textarea id="diario-input" rows="3" placeholder="¿Cómo te sentiste hoy?"></textarea>
-          <input type="hidden" id="editing-diario-id" value="">
-          <div class="diario-form-actions">
-            <button type="button" class="btn-cancel" id="btn-cancel-diario" style="display:none;" onclick="resetDiarioForm()">Cancelar</button>
-            <button type="submit" class="btn-add" id="btn-save-diario"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
-          </div>
-        </form>
-
-        <div class="diario-list" id="diario-list"></div>
+    <!-- CALORÍAS -->
+    <section class="view" id="view-calorias">
+      <div class="view-header">
+        <span class="view-emoji">🔥</span>
+        <div>
+          <h2>Calorías</h2>
+          <p class="view-sub">Anotá lo que comés y sumá las calorías del día.</p>
+        </div>
       </div>
+      <div class="caloria-today-total" id="caloria-today-total">0 kcal hoy</div>
+      <form class="caloria-add-form" onsubmit="event.preventDefault(); addCaloria();">
+        <input type="text" id="caloria-desc" placeholder="Ej: Ensalada con pollo" />
+        <input type="number" id="caloria-kcal" placeholder="kcal" min="0" />
+        <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
+      </form>
+      <div class="caloria-list" id="caloria-list"></div>
+    </section>
 
-      <!-- MEDIDAS Y PESO -->
-      <div class="salud-tab-panel" data-tab="medidas" id="salud-panel-medidas" style="display:none;">
-        <form class="medida-add-form" onsubmit="event.preventDefault(); addMedida();">
-          <input type="date" id="medida-date" />
-          <input type="number" id="medida-weight" step="0.1" min="0" placeholder="Peso (kg)" />
-          <input type="text" id="medida-note" placeholder="Notas: cintura, cadera..." maxlength="80" />
-          <input type="hidden" id="editing-medida-id" value="">
-          <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
-        </form>
-
-        <div class="medida-list" id="medida-list"></div>
+    <!-- HIDRATACIÓN -->
+    <section class="view" id="view-hidratacion">
+      <div class="view-header">
+        <span class="view-emoji">💧</span>
+        <div>
+          <h2>Hidratación</h2>
+          <p class="view-sub">Registrá cuántos vasos de agua tomaste hoy.</p>
+        </div>
       </div>
+      <div class="hydration-card">
+        <div class="hydration-count" id="hidratacion-count">0 / 8 vasos</div>
+        <div class="meter-track"><div class="meter-fill" id="hidratacion-fill" style="width:0%;"></div></div>
+        <div class="hydration-buttons">
+          <button class="task-btn" onclick="addHidratacionVaso(-1)" title="Restar un vaso"><i data-lucide="minus" style="width:16px;height:16px;"></i></button>
+          <button class="btn-add" onclick="addHidratacionVaso(1)"><i data-lucide="droplets" style="width:16px;height:16px;"></i> +1 vaso</button>
+        </div>
+      </div>
+      <h4 class="timeline-allday-title" style="margin-top:24px;">Últimos días</h4>
+      <div class="hidratacion-history" id="hidratacion-history"></div>
+    </section>
+
+    <!-- SUEÑO -->
+    <section class="view" id="view-sueno">
+      <div class="view-header">
+        <span class="view-emoji">😴</span>
+        <div>
+          <h2>Sueño</h2>
+          <p class="view-sub">Cuántas horas dormiste cada noche.</p>
+        </div>
+      </div>
+      <form class="medida-add-form" onsubmit="event.preventDefault(); addSueno();">
+        <input type="date" id="sueno-date" />
+        <input type="number" id="sueno-hours" step="0.5" min="0" placeholder="Horas dormidas" />
+        <input type="text" id="sueno-note" placeholder="Notas: desperté cansada..." maxlength="80" />
+        <input type="hidden" id="editing-sueno-id" value="">
+        <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+      </form>
+      <div class="medida-list" id="sueno-list"></div>
     </section>
 
     <!-- DASHBOARD VIEW -->
@@ -937,7 +1024,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="app-v2.js?v=3.16"></script>
+  <script src="app-v2.js?v=3.17"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

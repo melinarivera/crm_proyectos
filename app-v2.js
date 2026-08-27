@@ -89,12 +89,14 @@ let budgets = [];
 let habits = [];
 let diario = [];
 let medidas = [];
+let calorias = [];
+let hidratacion = {};
+let sueno = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
 let selectedDrivePrio = 'medio';
-let selectedHabitEmoji = '💊';
-let currentView = 'timeline';
+let currentView = 'ejercicio';
 
 // ===== SISTEMA DE ALERTAS IN-APP (sin permisos, funciona en iOS/Mac) =====
 let alertTickInterval = null;
@@ -1002,12 +1004,8 @@ function onGlobalSearch(query) {
 
   const results = [];
 
-  tasks.forEach(t => {
-    const tagsMatch = (t.tags || []).some(tg => tg.toLowerCase().includes(q));
-    if ((t.title && t.title.toLowerCase().includes(q)) || (t.desc && t.desc.toLowerCase().includes(q)) || tagsMatch) {
-      results.push({ icon: 'check-circle-2', label: t.title, meta: searchCatLabels[t.cat] || t.cat, action: () => showView(t.cat) });
-    }
-  });
+  // Las tareas con fecha (Timeline/Calendario) ya no tienen una vista propia en el
+  // menú, así que no se indexan acá — no hay a dónde navegar si aparecieran.
 
   notas.forEach(n => {
     if (n.text && n.text.toLowerCase().includes(q)) {
@@ -1023,13 +1021,14 @@ function onGlobalSearch(query) {
 
   habits.forEach(h => {
     if (h.title && h.title.toLowerCase().includes(q)) {
-      results.push({ icon: 'heart-pulse', label: h.title, meta: 'Salud', action: () => showView('salud') });
+      const meta = h.type === 'medicacion' ? 'Medicación' : 'Ejercicio / Rutina';
+      results.push({ icon: 'heart-pulse', label: h.title, meta, action: () => showView(h.type || 'ejercicio') });
     }
   });
 
   diario.forEach(d => {
     if (d.text && d.text.toLowerCase().includes(q)) {
-      results.push({ icon: 'book-heart', label: d.text.slice(0, 60), meta: 'Diario', action: () => { showView('salud'); setSaludTab('diario'); } });
+      results.push({ icon: 'book-heart', label: d.text.slice(0, 60), meta: 'Diario', action: () => showView('diario') });
     }
   });
 
@@ -1282,17 +1281,33 @@ function subscribeToFirestore() {
 
   db.collection('config').doc('habits').onSnapshot(doc => {
     habits = doc.exists ? (doc.data().items || []) : [];
-    if (currentView === 'salud') renderHabits();
+    if (currentView === 'ejercicio') renderHabits('ejercicio');
+    else if (currentView === 'medicacion') renderHabits('medicacion');
   });
 
   db.collection('diario').orderBy('created', 'desc').onSnapshot(snap => {
     diario = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    if (currentView === 'salud') renderDiario();
+    if (currentView === 'diario') renderDiario();
   });
 
   db.collection('medidas').orderBy('date', 'desc').onSnapshot(snap => {
     medidas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    if (currentView === 'salud') renderMedidas();
+    if (currentView === 'medidas') renderMedidas();
+  });
+
+  db.collection('config').doc('hidratacion').onSnapshot(doc => {
+    hidratacion = doc.exists ? (doc.data().days || {}) : {};
+    if (currentView === 'hidratacion') renderHidratacion();
+  });
+
+  db.collection('sueno').orderBy('date', 'desc').onSnapshot(snap => {
+    sueno = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'sueno') renderSueno();
+  });
+
+  db.collection('calorias').orderBy('created', 'desc').onSnapshot(snap => {
+    calorias = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'calorias') renderCalorias();
   });
 
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
@@ -1345,21 +1360,27 @@ function showView(view) {
   if (targetNav) targetNav.classList.add('active');
 
   const titles = {
-    timeline:  'Timeline',
-    dashboard: 'Dashboard',
-    trabajo:   'Trabajo',
-    casa:      'Casa',
-    familia:   'Familia',
-    pandin:    'Pandín',
-    sara:      'Sara',
-    personal:  'Vida Personal',
-    notas:     'Notas Rápidas',
-    drive:     'Drive',
-    leads:     'Leads',
-    planner:   'Planner Semanal',
-    calendario:'Calendario',
-    dinero:    'Dinero',
-    salud:     'Salud'
+    timeline:    'Timeline',
+    dashboard:   'Dashboard',
+    trabajo:     'Trabajo',
+    casa:        'Casa',
+    familia:     'Familia',
+    pandin:      'Pandín',
+    sara:        'Sara',
+    personal:    'Vida Personal',
+    notas:       'Notas Rápidas',
+    drive:       'Drive',
+    leads:       'Leads',
+    planner:     'Planner Semanal',
+    calendario:  'Calendario',
+    dinero:      'Dinero',
+    ejercicio:   'Ejercicio / Rutina',
+    medicacion:  'Medicación',
+    diario:      'Diario',
+    medidas:     'Medidas y peso',
+    calorias:    'Calorías',
+    hidratacion: 'Hidratación',
+    sueno:       'Sueño'
   };
   document.getElementById('page-title').textContent = titles[view] || 'MeliVit';
 
@@ -1375,7 +1396,21 @@ function showView(view) {
     maybeAutoSyncICal();
   }
   else if (view === 'dinero') renderMoney();
-  else if (view === 'salud') setSaludTab(saludTab);
+  else if (view === 'ejercicio') renderHabits('ejercicio');
+  else if (view === 'medicacion') renderHabits('medicacion');
+  else if (view === 'diario') renderDiario();
+  else if (view === 'medidas') {
+    const dateEl = document.getElementById('medida-date');
+    if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
+    renderMedidas();
+  }
+  else if (view === 'calorias') renderCalorias();
+  else if (view === 'hidratacion') renderHidratacion();
+  else if (view === 'sueno') {
+    const dateEl = document.getElementById('sueno-date');
+    if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
+    renderSueno();
+  }
   else renderCategoryList(view);
   refreshIcons();
 }
@@ -3437,22 +3472,27 @@ function renderBudgetList() {
   refreshIcons();
 }
 
-// --- Salud: hábitos diarios (medicación, vitaminas, ejercicio, alimentación) ---
+// --- Hábitos diarios, separados por tipo (Ejercicio/Rutina, Medicación) ---
 // Igual que budgets: un solo doc de config con un array, sin colección aparte —
 // el volumen es chico (un puñado de hábitos) y así se evita un segundo listener.
-function selectHabitEmoji(emoji, btn) {
-  selectedHabitEmoji = emoji;
-  document.querySelectorAll('.habit-emoji-btn').forEach(b => b.classList.remove('active'));
+// Cada hábito guarda su `type` ('ejercicio' | 'medicacion') para que cada página
+// del menú solo muestre y agregue los suyos.
+let selectedHabitEmoji = { ejercicio: '🏃', medicacion: '💊' };
+
+function selectHabitEmoji(type, emoji, btn) {
+  selectedHabitEmoji[type] = emoji;
+  btn.parentElement.querySelectorAll('.habit-emoji-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 }
 
-async function addHabit() {
-  const input = document.getElementById('habit-title-input');
+async function addHabit(type) {
+  const input = document.getElementById('habit-title-input-' + type);
+  if (!input) return;
   const title = input.value.trim();
   if (!title) return;
 
   const id = 'habit-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-  const next = [...habits, { id, title, emoji: selectedHabitEmoji, completedDates: [] }];
+  const next = [...habits, { id, type, title, emoji: selectedHabitEmoji[type], completedDates: [] }];
 
   showSyncIndicator('syncing');
   try {
@@ -3524,17 +3564,18 @@ function habitWeekDotsHTML(habit) {
   return html;
 }
 
-function renderHabits() {
-  const list = document.getElementById('habit-list');
+function renderHabits(type) {
+  const list = document.getElementById('habit-list-' + type);
   if (!list) return;
 
-  if (habits.length === 0) {
-    list.innerHTML = '<p class="empty-state">Todavía no agregaste ningún hábito. Sumá el primero arriba (vitamina, medicación, ejercicio, comida...).</p>';
+  const filtered = habits.filter(h => h.type === type);
+  if (filtered.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no agregaste nada acá. Sumá el primero arriba.</p>';
     return;
   }
 
   const todayStr = toLocalDateStr(new Date());
-  list.innerHTML = habits.map(h => {
+  list.innerHTML = filtered.map(h => {
     const done = (h.completedDates || []).includes(todayStr);
     const streak = computeHabitStreak(h);
     return `
@@ -3547,33 +3588,14 @@ function renderHabits() {
           <div class="habit-week-dots">${habitWeekDotsHTML(h)}</div>
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
-        <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar hábito"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+        <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
       </div>
     `;
   }).join('');
   refreshIcons();
 }
 
-// --- Salud: tabs (Hábitos / Diario / Medidas viven todas bajo la misma sección
-// de menú, para no volver a llenar el sidebar de ítems apenas lo dejamos limpio) ---
-let saludTab = 'habitos';
-
-function setSaludTab(tab) {
-  saludTab = tab;
-  document.querySelectorAll('.salud-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('.salud-tab-panel').forEach(p => p.style.display = p.dataset.tab === tab ? 'block' : 'none');
-
-  if (tab === 'diario') renderDiario();
-  else if (tab === 'medidas') {
-    const dateEl = document.getElementById('medida-date');
-    if (dateEl && !dateEl.value) dateEl.value = toLocalDateStr(new Date());
-    renderMedidas();
-  } else {
-    renderHabits();
-  }
-}
-
-// --- Salud: Diario (cómo me sentí) ---
+// --- Diario (cómo me sentí) ---
 const DIARIO_MOODS = [
   { key: 'genial',   emoji: '😄', label: 'Genial' },
   { key: 'bien',     emoji: '🙂', label: 'Bien' },
@@ -3754,6 +3776,204 @@ function renderMedidas() {
     `;
   }).join('');
   refreshIcons();
+}
+
+// --- Sueño (horas dormidas por noche) ---
+async function addSueno() {
+  const dateEl = document.getElementById('sueno-date');
+  const hoursEl = document.getElementById('sueno-hours');
+  const noteEl = document.getElementById('sueno-note');
+  const editingId = document.getElementById('editing-sueno-id').value;
+
+  const date = dateEl.value || toLocalDateStr(new Date());
+  const hours = parseFloat(hoursEl.value);
+  if (!hours || hours <= 0) { alert('Ingresa horas de sueño válidas.'); return; }
+
+  const data = { date, hours, note: noteEl.value.trim(), updated: new Date().toISOString() };
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('sueno').doc(editingId).update(data);
+    } else {
+      data.created = new Date().toISOString();
+      await db.collection('sueno').add(data);
+    }
+    resetSuenoForm();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editSueno(id) {
+  const s = sueno.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('editing-sueno-id').value = id;
+  document.getElementById('sueno-date').value = s.date || '';
+  document.getElementById('sueno-hours').value = s.hours ?? '';
+  document.getElementById('sueno-note').value = s.note || '';
+}
+
+function resetSuenoForm() {
+  document.getElementById('editing-sueno-id').value = '';
+  document.getElementById('sueno-date').value = toLocalDateStr(new Date());
+  document.getElementById('sueno-hours').value = '';
+  document.getElementById('sueno-note').value = '';
+}
+
+async function deleteSueno(id) {
+  if (!confirm('¿Eliminar este registro de sueño?')) return;
+  showSyncIndicator('syncing');
+  await db.collection('sueno').doc(id).delete();
+  showSyncIndicator('ok');
+}
+
+function renderSueno() {
+  const list = document.getElementById('sueno-list');
+  if (!list) return;
+
+  if (sueno.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no registraste horas de sueño.</p>';
+    return;
+  }
+
+  list.innerHTML = sueno.map(s => {
+    const dateLabel = s.date ? s.date.split('-').reverse().join('/') : '';
+    return `
+      <div class="medida-card">
+        <div class="medida-actions">
+          <button class="nota-btn" onclick="editSueno('${s.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+          <button class="nota-btn del" onclick="deleteSueno('${s.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+        </div>
+        <div class="medida-date">${dateLabel}</div>
+        <div class="medida-weight">${s.hours} h</div>
+        ${s.note ? `<div class="medida-note">${s.note}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+  refreshIcons();
+}
+
+// --- Calorías (registro simple de comidas del día) ---
+async function addCaloria() {
+  const descEl = document.getElementById('caloria-desc');
+  const kcalEl = document.getElementById('caloria-kcal');
+  const desc = descEl.value.trim();
+  const kcal = parseFloat(kcalEl.value);
+  if (!desc || !kcal || kcal <= 0) { alert('Completa la comida y las calorías.'); return; }
+
+  const data = { desc, kcal, date: toLocalDateStr(new Date()), created: new Date().toISOString() };
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('calorias').add(data);
+    descEl.value = '';
+    kcalEl.value = '';
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+async function deleteCaloria(id) {
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('calorias').doc(id).delete();
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+/** Agrupa por día para mostrar el total junto a cada fecha, la de hoy primero. */
+function renderCalorias() {
+  const todayStr = toLocalDateStr(new Date());
+  const totalEl = document.getElementById('caloria-today-total');
+  if (totalEl) {
+    const todayTotal = calorias.filter(c => c.date === todayStr).reduce((s, c) => s + (c.kcal || 0), 0);
+    totalEl.textContent = `${todayTotal} kcal hoy`;
+  }
+
+  const list = document.getElementById('caloria-list');
+  if (!list) return;
+
+  if (calorias.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no registraste comidas.</p>';
+    return;
+  }
+
+  const byDate = {};
+  calorias.forEach(c => {
+    if (!byDate[c.date]) byDate[c.date] = [];
+    byDate[c.date].push(c);
+  });
+  const dates = Object.keys(byDate).sort().reverse();
+
+  list.innerHTML = dates.map(date => {
+    const entries = byDate[date];
+    const total = entries.reduce((s, c) => s + (c.kcal || 0), 0);
+    const dateLabel = date.split('-').reverse().join('/');
+    const rows = entries.map(c => `
+      <div class="caloria-row">
+        <span class="caloria-desc">${c.desc}</span>
+        <span class="caloria-kcal">${c.kcal} kcal</span>
+        <button class="nota-btn del" onclick="deleteCaloria('${c.id}')" title="Eliminar"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
+      </div>
+    `).join('');
+    return `
+      <div class="caloria-day-card">
+        <div class="caloria-day-header"><span>${dateLabel}</span><span>${total} kcal</span></div>
+        ${rows}
+      </div>
+    `;
+  }).join('');
+  refreshIcons();
+}
+
+// --- Hidratación (vasos de agua por día) ---
+// Mismo patrón "un doc, un mapa" que budgets/habits: acá el mapa es fecha -> vasos.
+const HIDRATACION_GOAL = 8;
+
+async function addHidratacionVaso(delta) {
+  const todayStr = toLocalDateStr(new Date());
+  const current = hidratacion[todayStr] || 0;
+  const next = Math.max(0, current + delta);
+  const updatedDays = { ...hidratacion, [todayStr]: next };
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('hidratacion').set({ days: updatedDays });
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function renderHidratacion() {
+  const todayStr = toLocalDateStr(new Date());
+  const today = hidratacion[todayStr] || 0;
+  const pct = Math.min(100, Math.round((today / HIDRATACION_GOAL) * 100));
+
+  const countEl = document.getElementById('hidratacion-count');
+  const fillEl = document.getElementById('hidratacion-fill');
+  if (countEl) countEl.textContent = `${today} / ${HIDRATACION_GOAL} vasos`;
+  if (fillEl) fillEl.style.width = pct + '%';
+
+  const historyEl = document.getElementById('hidratacion-history');
+  if (!historyEl) return;
+
+  const days = Object.keys(hidratacion).filter(d => d !== todayStr).sort().reverse().slice(0, 13);
+  if (days.length === 0) {
+    historyEl.innerHTML = '<p class="empty-state">Sin historial todavía.</p>';
+    return;
+  }
+  historyEl.innerHTML = days.map(d => `
+    <div class="hidratacion-day-row">
+      <span>${d.split('-').reverse().join('/')}</span>
+      <span>${hidratacion[d]} vaso${hidratacion[d] === 1 ? '' : 's'}</span>
+    </div>
+  `).join('');
 }
 
 // --- Movimientos recurrentes ---
