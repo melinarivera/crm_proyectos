@@ -198,7 +198,8 @@ body {
   flex: 1;
   min-width: 0;
   padding: calc(28px + env(safe-area-inset-top)) 32px 28px;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   overflow-x: hidden;
 }
 
@@ -1588,18 +1589,26 @@ body {
 }
 
 /* ===== TIMELINE (VISTA POR HORAS, CICLO 06:00-05:59) ===== */
-.timeline-header {
+.timeline-top-row {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 20px;
   margin-bottom: 20px;
   position: sticky;
   top: 0;
   z-index: 20;
   background: var(--bg);
   padding: 8px 0;
+}
+
+.timeline-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 
 .timeline-date-nav {
@@ -1725,18 +1734,9 @@ body {
   cursor: pointer;
 }
 
-.timeline-layout {
-  display: grid;
-  grid-template-columns: 1fr 260px;
-  gap: 20px;
-  align-items: start;
-}
-
-.timeline-main { min-width: 0; }
-
 .timeline-minical {
-  position: sticky;
-  top: 0;
+  width: 260px;
+  flex-shrink: 0;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -1952,8 +1952,8 @@ body {
   .timeline-header { flex-direction: column; align-items: stretch; }
   .timeline-date-label { min-width: 0; }
   .timeline-grid { grid-template-columns: 44px 1fr; }
-  .timeline-layout { grid-template-columns: 1fr; }
-  .timeline-minical { position: static; }
+  .timeline-top-row { flex-direction: column; position: static; }
+  .timeline-minical { width: 100%; }
 }
 
 /* ===== DINERO ===== */
