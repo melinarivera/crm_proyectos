@@ -1958,8 +1958,10 @@ body {
   .timeline-header { flex-direction: column; align-items: stretch; }
   .timeline-date-label { min-width: 0; }
   .timeline-grid { grid-template-columns: 44px 1fr; }
-  .timeline-top-row { flex-direction: column; position: static; }
-  .timeline-minical { width: 100%; }
+  .timeline-top-row { flex-direction: column; }
+  /* En columna, si el mini calendario también quedara sticky se superpondría con el
+   * header (los dos con top:0 apilados) — en mobile solo el header queda fijo. */
+  .timeline-minical { width: 100%; position: static; }
 }
 
 /* ===== DINERO ===== */
