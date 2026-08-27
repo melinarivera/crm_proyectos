@@ -109,9 +109,10 @@ let timelineFilterCat = 'all';
 let timelineViewMode = 'timeline';
 let timelineTickInterval = null;
 
-// Mes mostrado en el mini calendario del costado del timeline. Sigue al día abierto
-// cuando se navega con las flechas de día u "Hoy"; navegarlo con sus propias flechas
-// de mes no mueve el día abierto, solo permite saltar a otro día con un clic.
+// Mes mostrado en el mini calendario emergente del timeline (popover anclado a la
+// fecha, no un panel fijo — así nunca compite por espacio ni por posición sticky con
+// el header). Sigue al día abierto cada vez que se abre el popover; navegarlo con sus
+// propias flechas de mes no mueve el día abierto, solo permite saltar a otro con un clic.
 let timelineMiniCalMonth = new Date();
 
 function syncTimelineMiniCalMonth() {
@@ -124,9 +125,31 @@ function shiftTimelineMiniCalMonth(delta) {
   renderTimelineMiniCalendar();
 }
 
+/** Abre/cierra el popover del mini calendario, sincronizando su mes con el día
+ *  actualmente abierto en el timeline cada vez que se abre. */
+function toggleTimelineMiniCal() {
+  const pop = document.getElementById('timeline-minical-popover');
+  if (!pop) return;
+  const opening = pop.style.display !== 'block';
+  if (opening) {
+    syncTimelineMiniCalMonth();
+    renderTimelineMiniCalendar();
+    pop.style.display = 'block';
+    refreshIcons();
+  } else {
+    pop.style.display = 'none';
+  }
+}
+
+function closeTimelineMiniCal() {
+  const pop = document.getElementById('timeline-minical-popover');
+  if (pop) pop.style.display = 'none';
+}
+
 function selectTimelineMiniCalDay(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   timelineDate = new Date(y, m - 1, d);
+  closeTimelineMiniCal();
   renderTimeline();
   scrollTimelineToRelevantHour();
 }
@@ -1058,6 +1081,17 @@ document.addEventListener('click', (e) => {
     const box = document.getElementById('search-results');
     if (box) box.classList.remove('open');
     wrapper.classList.remove('mobile-open');
+  }
+});
+
+// Cierra el popover del mini calendario del timeline al clickear fuera de él
+// (fuera del propio popover y fuera del botón de fecha que lo abre).
+document.addEventListener('click', (e) => {
+  const pop = document.getElementById('timeline-minical-popover');
+  if (!pop || pop.style.display !== 'block') return;
+  const trigger = document.querySelector('.timeline-date-label-btn');
+  if (!pop.contains(e.target) && !(trigger && trigger.contains(e.target))) {
+    pop.style.display = 'none';
   }
 });
 

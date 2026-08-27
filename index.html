@@ -139,48 +139,49 @@
 
     <!-- TIMELINE VIEW -->
     <section class="view active" id="view-timeline">
-      <div class="timeline-top-row">
-        <div class="timeline-header">
-          <div class="timeline-date-nav">
-            <button class="btn-notif" onclick="shiftTimelineDay(-1)" title="Día anterior"><i data-lucide="chevron-left" style="width:16px;height:16px;"></i></button>
+      <div class="timeline-header">
+        <div class="timeline-date-nav">
+          <button class="btn-notif" onclick="shiftTimelineDay(-1)" title="Día anterior"><i data-lucide="chevron-left" style="width:16px;height:16px;"></i></button>
+          <button class="timeline-date-label-btn" onclick="toggleTimelineMiniCal()" title="Ver calendario del mes">
             <span id="timeline-date-label" class="timeline-date-label"></span>
-            <button class="btn-notif" onclick="goToTimelineToday()" title="Ir a hoy">Hoy</button>
-            <button class="btn-notif" onclick="shiftTimelineDay(1)" title="Día siguiente"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
-          </div>
-          <div class="timeline-cat-filter" id="timeline-cat-filter">
-            <button class="timeline-cat-pill active" data-cat="all" onclick="setTimelineFilterCat('all')">Todas</button>
-            <button class="timeline-cat-pill" data-cat="personal" onclick="setTimelineFilterCat('personal')">Personal</button>
-            <button class="timeline-cat-pill" data-cat="sara" onclick="setTimelineFilterCat('sara')">Sara</button>
-            <button class="timeline-cat-pill" data-cat="casa" onclick="setTimelineFilterCat('casa')">Casa</button>
-            <button class="timeline-cat-pill" data-cat="familia" onclick="setTimelineFilterCat('familia')">Familia</button>
-            <button class="timeline-cat-pill" data-cat="pandin" onclick="setTimelineFilterCat('pandin')">Pandín</button>
-            <button class="timeline-cat-pill" data-cat="trabajo" onclick="setTimelineFilterCat('trabajo')">Trabajo</button>
-          </div>
-          <div class="timeline-mode-toggle">
-            <button class="timeline-mode-btn active" id="timeline-mode-btn-timeline" onclick="toggleTimelineViewMode()">
-              <i data-lucide="calendar-clock" style="width:14px;height:14px;"></i> Timeline
-            </button>
-            <button class="timeline-mode-btn" id="timeline-mode-btn-list" onclick="toggleTimelineViewMode()">
-              <i data-lucide="list" style="width:14px;height:14px;"></i> Lista
-            </button>
-          </div>
-          <div class="timeline-snap-toggle" title="Intervalo de arrastre y creación rápida">
-            <button class="timeline-snap-btn" data-snap="15" onclick="setTimelineSnapMinutes(15)">15m</button>
-            <button class="timeline-snap-btn" data-snap="30" onclick="setTimelineSnapMinutes(30)">30m</button>
+            <i data-lucide="chevron-down" style="width:13px;height:13px;"></i>
+          </button>
+          <button class="btn-notif" onclick="goToTimelineToday()" title="Ir a hoy">Hoy</button>
+          <button class="btn-notif" onclick="shiftTimelineDay(1)" title="Día siguiente"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
+
+          <div class="timeline-minical-popover" id="timeline-minical-popover" style="display:none;">
+            <div class="timeline-minical-header">
+              <button class="btn-notif" onclick="shiftTimelineMiniCalMonth(-1)" title="Mes anterior"><i data-lucide="chevron-left" style="width:14px;height:14px;"></i></button>
+              <span id="timeline-minical-label" class="timeline-minical-label"></span>
+              <button class="btn-notif" onclick="shiftTimelineMiniCalMonth(1)" title="Mes siguiente"><i data-lucide="chevron-right" style="width:14px;height:14px;"></i></button>
+            </div>
+            <div class="timeline-minical-weekdays">
+              <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+            </div>
+            <div class="timeline-minical-grid" id="timeline-minical-grid"></div>
           </div>
         </div>
-
-        <aside class="timeline-minical">
-          <div class="timeline-minical-header">
-            <button class="btn-notif" onclick="shiftTimelineMiniCalMonth(-1)" title="Mes anterior"><i data-lucide="chevron-left" style="width:14px;height:14px;"></i></button>
-            <span id="timeline-minical-label" class="timeline-minical-label"></span>
-            <button class="btn-notif" onclick="shiftTimelineMiniCalMonth(1)" title="Mes siguiente"><i data-lucide="chevron-right" style="width:14px;height:14px;"></i></button>
-          </div>
-          <div class="timeline-minical-weekdays">
-            <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
-          </div>
-          <div class="timeline-minical-grid" id="timeline-minical-grid"></div>
-        </aside>
+        <div class="timeline-cat-filter" id="timeline-cat-filter">
+          <button class="timeline-cat-pill active" data-cat="all" onclick="setTimelineFilterCat('all')">Todas</button>
+          <button class="timeline-cat-pill" data-cat="personal" onclick="setTimelineFilterCat('personal')">Personal</button>
+          <button class="timeline-cat-pill" data-cat="sara" onclick="setTimelineFilterCat('sara')">Sara</button>
+          <button class="timeline-cat-pill" data-cat="casa" onclick="setTimelineFilterCat('casa')">Casa</button>
+          <button class="timeline-cat-pill" data-cat="familia" onclick="setTimelineFilterCat('familia')">Familia</button>
+          <button class="timeline-cat-pill" data-cat="pandin" onclick="setTimelineFilterCat('pandin')">Pandín</button>
+          <button class="timeline-cat-pill" data-cat="trabajo" onclick="setTimelineFilterCat('trabajo')">Trabajo</button>
+        </div>
+        <div class="timeline-mode-toggle">
+          <button class="timeline-mode-btn active" id="timeline-mode-btn-timeline" onclick="toggleTimelineViewMode()">
+            <i data-lucide="calendar-clock" style="width:14px;height:14px;"></i> Timeline
+          </button>
+          <button class="timeline-mode-btn" id="timeline-mode-btn-list" onclick="toggleTimelineViewMode()">
+            <i data-lucide="list" style="width:14px;height:14px;"></i> Lista
+          </button>
+        </div>
+        <div class="timeline-snap-toggle" title="Intervalo de arrastre y creación rápida">
+          <button class="timeline-snap-btn" data-snap="15" onclick="setTimelineSnapMinutes(15)">15m</button>
+          <button class="timeline-snap-btn" data-snap="30" onclick="setTimelineSnapMinutes(30)">30m</button>
+        </div>
       </div>
 
       <div class="timeline-allday-section" id="timeline-allday-section" style="display:none;">
