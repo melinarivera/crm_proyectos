@@ -20,8 +20,8 @@
   --shadow: 0 8px 32px rgba(124,106,255,0.15);
 
   /* Colores por categoría, usados solo en el Timeline (no afectan Dashboard/tags existentes) */
-  --cat-personal: #93c5fd;
-  --cat-sara:     #5eead4;
+  --cat-personal: #5eead4;
+  --cat-sara:     #93c5fd;
   --cat-pandin:   #ff9a3c;
   --cat-casa:     #d8b4fe;
   --cat-familia:  #86efac;
@@ -1595,6 +1595,11 @@ body {
   align-items: center;
   gap: 12px;
   margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  padding: 8px 0;
 }
 
 .timeline-date-nav {
@@ -1832,8 +1837,8 @@ body {
 /* Color por categoría (no por prioridad) — mismo par fondo/borde para el bloque del timeline
    y para el chip de "todo el día". "otra" es el estilo de respaldo para cualquier categoría
    que no sea una de las 6 conocidas (legacy, typo, etc.) para que nunca quede sin color. */
-.timeline-event-personal { background: #93c5fd35; border-left-color: var(--cat-personal); }
-.timeline-event-sara     { background: #5eead435; border-left-color: var(--cat-sara); }
+.timeline-event-personal { background: #5eead435; border-left-color: var(--cat-personal); }
+.timeline-event-sara     { background: #93c5fd35; border-left-color: var(--cat-sara); }
 .timeline-event-pandin   { background: #ff9a3c22; border-left-color: var(--cat-pandin); }
 .timeline-event-casa     { background: #d8b4fe35; border-left-color: var(--cat-casa); }
 .timeline-event-familia  { background: #86efac35; border-left-color: var(--cat-familia); }

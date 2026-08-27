@@ -996,6 +996,19 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Navegación de día en el timeline con flechas del teclado (←/→), para no tener que
+// scrollear hasta arriba a buscar los botones cuando se está viendo horas más abajo.
+// Se ignora si el usuario está escribiendo en un input/textarea/select o hay un modal abierto.
+document.addEventListener('keydown', (e) => {
+  if (currentView !== 'timeline' || timelineViewMode !== 'timeline') return;
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  const tag = document.activeElement ? document.activeElement.tagName : '';
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || (document.activeElement && document.activeElement.isContentEditable)) return;
+  if (document.querySelector('.modal-overlay.open')) return;
+  e.preventDefault();
+  shiftTimelineDay(e.key === 'ArrowLeft' ? -1 : 1);
+});
+
 // ===== TEMA CLARO / OSCURO =====
 function initTheme() {
   const saved = localStorage.getItem('theme') || 'dark';
