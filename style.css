@@ -23,7 +23,7 @@
   --cat-personal: #93c5fd;
   --cat-sara:     #5eead4;
   --cat-pandin:   #ff9a3c;
-  --cat-casa:     #c4b5fd;
+  --cat-casa:     #d8b4fe;
   --cat-familia:  #86efac;
   --cat-trabajo:  #fca5a5;
 }
@@ -1802,7 +1802,7 @@ body {
 .timeline-event-personal { background: #93c5fd35; border-left-color: var(--cat-personal); }
 .timeline-event-sara     { background: #5eead435; border-left-color: var(--cat-sara); }
 .timeline-event-pandin   { background: #ff9a3c22; border-left-color: var(--cat-pandin); }
-.timeline-event-casa     { background: #c4b5fd35; border-left-color: var(--cat-casa); }
+.timeline-event-casa     { background: #d8b4fe35; border-left-color: var(--cat-casa); }
 .timeline-event-familia  { background: #86efac35; border-left-color: var(--cat-familia); }
 .timeline-event-trabajo  { background: #fca5a535; border-left-color: var(--cat-trabajo); }
 .timeline-event-otra     { background: #ffd16622; border-left-color: var(--otra); }
