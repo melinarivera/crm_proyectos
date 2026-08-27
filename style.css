@@ -1589,16 +1589,15 @@ body {
 }
 
 /* ===== TIMELINE (VISTA POR HORAS, CICLO 06:00-05:59) ===== */
+/* El header y el mini calendario se pegan arriba cada uno por su cuenta (no como un
+ * solo bloque compartido): si estuvieran agrupados, el bloque tomaría la altura del
+ * más alto de los dos (el calendario) y su fondo sólido taparía la grilla de abajo
+ * en toda esa altura aunque el header sea mucho más bajo, dejando un hueco enorme. */
 .timeline-top-row {
   display: flex;
   align-items: flex-start;
   gap: 20px;
   margin-bottom: 20px;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: var(--bg);
-  padding: 8px 0;
 }
 
 .timeline-header {
@@ -1609,6 +1608,11 @@ body {
   gap: 12px;
   flex: 1;
   min-width: 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  padding: 8px 0;
 }
 
 .timeline-date-nav {
@@ -1737,6 +1741,8 @@ body {
 .timeline-minical {
   width: 260px;
   flex-shrink: 0;
+  position: sticky;
+  top: 8px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
