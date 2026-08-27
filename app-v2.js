@@ -109,6 +109,64 @@ let timelineFilterCat = 'all';
 let timelineViewMode = 'timeline';
 let timelineTickInterval = null;
 
+// Mes mostrado en el mini calendario del costado del timeline. Sigue al día abierto
+// cuando se navega con las flechas de día u "Hoy"; navegarlo con sus propias flechas
+// de mes no mueve el día abierto, solo permite saltar a otro día con un clic.
+let timelineMiniCalMonth = new Date();
+
+function syncTimelineMiniCalMonth() {
+  timelineMiniCalMonth = new Date(timelineDate.getFullYear(), timelineDate.getMonth(), 1);
+}
+
+function shiftTimelineMiniCalMonth(delta) {
+  timelineMiniCalMonth.setDate(1);
+  timelineMiniCalMonth.setMonth(timelineMiniCalMonth.getMonth() + delta);
+  renderTimelineMiniCalendar();
+}
+
+function selectTimelineMiniCalDay(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  timelineDate = new Date(y, m - 1, d);
+  renderTimeline();
+  scrollTimelineToRelevantHour();
+}
+
+/** Mini calendario mensual junto al timeline, para saltar de día con un clic sin
+ *  perder de vista las tareas del día abierto (independiente del mes que muestre). */
+function renderTimelineMiniCalendar() {
+  const grid = document.getElementById('timeline-minical-grid');
+  const label = document.getElementById('timeline-minical-label');
+  if (!grid || !label) return;
+
+  const year = timelineMiniCalMonth.getFullYear();
+  const month = timelineMiniCalMonth.getMonth();
+  let monthLabel = timelineMiniCalMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  label.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+
+  const firstDay = new Date(year, month, 1);
+  const leadingBlanks = (firstDay.getDay() + 6) % 7;
+  const daysInMonthCount = new Date(year, month + 1, 0).getDate();
+  const todayStr = toLocalDateStr(new Date());
+  const selectedStr = toLocalDateStr(timelineDate);
+
+  grid.innerHTML = '';
+  for (let i = 0; i < leadingBlanks; i++) {
+    grid.appendChild(document.createElement('div')).className = 'minical-cell empty';
+  }
+  for (let day = 1; day <= daysInMonthCount; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const hasTasks = tasks.some(t => t.date === dateStr && !t.done);
+
+    const cell = document.createElement('div');
+    cell.className = 'minical-cell';
+    if (dateStr === todayStr) cell.classList.add('is-today');
+    if (dateStr === selectedStr) cell.classList.add('is-selected');
+    cell.innerHTML = `<span>${day}</span>${hasTasks ? '<span class="minical-dot"></span>' : ''}`;
+    cell.onclick = () => selectTimelineMiniCalDay(dateStr);
+    grid.appendChild(cell);
+  }
+}
+
 // Intervalo de snapping (min) compartido por el arrastre de bloques y el click-para-crear;
 // el usuario elige 15 o 30 desde el toggle del header y se recuerda entre sesiones.
 let timelineSnapMinutes = [15, 30].includes(parseInt(localStorage.getItem('timelineSnapMinutes'), 10))
@@ -136,6 +194,7 @@ function setTimelineSnapMinutes(minutes) {
 
 function shiftTimelineDay(delta) {
   timelineDate.setDate(timelineDate.getDate() + delta);
+  syncTimelineMiniCalMonth();
   renderTimeline();
   scrollTimelineToRelevantHour();
 }
@@ -146,6 +205,7 @@ function getCurrentTimelineDate() {
 
 function goToTimelineToday() {
   timelineDate = getCurrentTimelineDate();
+  syncTimelineMiniCalMonth();
   renderTimeline();
   scrollTimelineToRelevantHour();
 }
@@ -260,6 +320,8 @@ function renderTimeline() {
     label = label.charAt(0).toUpperCase() + label.slice(1);
     dateLabelEl.textContent = label;
   }
+
+  renderTimelineMiniCalendar();
 
   let filtered = getTimelineDayTasks(timelineDate);
   if (timelineFilterCat !== 'all') filtered = filtered.filter(t => t.cat === timelineFilterCat);
