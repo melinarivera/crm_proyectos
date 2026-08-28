@@ -42,7 +42,6 @@ function initAuth() {
       }
       document.getElementById('login-screen').style.display = 'none';
       subscribeToFirestore();
-      initAlertSystem();
       initTimelineTicker();
     } else {
       document.getElementById('login-screen').style.display = 'flex';
@@ -1215,8 +1214,6 @@ function subscribeToFirestore() {
     else if (currentView === 'timeline') renderTimeline();
     else if (!['dashboard', 'notas', 'drive', 'dinero'].includes(currentView)) renderCategoryList(currentView);
     showSyncIndicator('ok');
-    // Re-check del badge al recibir cambios de Firestore
-    updateAlertBadge();
     scheduleICSSync();
   }, err => {
     showSyncIndicator('error', err.message);
@@ -1438,7 +1435,6 @@ function showView(view) {
 function renderAll() {
   renderDashboard();
   updateStats();
-  updateAlertBadge();
 }
 
 function updateStats() {
