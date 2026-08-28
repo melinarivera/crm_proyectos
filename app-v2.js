@@ -3562,10 +3562,10 @@ function computeHabitStreak(habit) {
   return streak;
 }
 
-function habitWeekDotsHTML(habit) {
+function habitMonthDotsHTML(habit) {
   const dates = new Set(habit.completedDates || []);
   let html = '';
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const dateStr = toLocalDateStr(d);
@@ -3596,7 +3596,7 @@ function renderHabits(type) {
         </button>
         <div class="habit-info">
           <div class="habit-title">${h.title}</div>
-          <div class="habit-week-dots">${habitWeekDotsHTML(h)}</div>
+          <div class="habit-month-dots">${habitMonthDotsHTML(h)}</div>
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
         <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
@@ -3644,21 +3644,22 @@ function computeMedStreak(habit) {
   return streak;
 }
 
-/** Historial de los últimos 7 días con dos puntos por día (mañana/noche), para
- *  poder consultar de un vistazo si se tomó o no un día puntual. */
-function medWeekHistoryHTML(habit) {
+/** Historial de los últimos 30 días con dos puntos por día (mañana/noche), para
+ *  poder consultar de un vistazo si se tomó o no un día puntual. Muestra el número
+ *  del día (no la letra del día de semana) porque a escala de un mes es lo que
+ *  realmente ayuda a ubicar una fecha puntual. */
+function medMonthHistoryHTML(habit) {
   const slots = new Set(habit.completedSlots || []);
   let html = '';
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const dateStr = toLocalDateStr(d);
-    const dayLabel = d.toLocaleDateString('es-ES', { weekday: 'narrow' }).toUpperCase();
     const am = slots.has(`${dateStr}-AM`);
     const pm = slots.has(`${dateStr}-PM`);
     html += `
       <div class="med-day-col ${i === 0 ? 'is-today' : ''}" title="${dateStr}">
-        <span class="med-day-label">${dayLabel}</span>
+        <span class="med-day-label">${d.getDate()}</span>
         <span class="med-slot-dot ${am ? 'done' : ''}"></span>
         <span class="med-slot-dot ${pm ? 'done' : ''}"></span>
       </div>
@@ -3697,7 +3698,7 @@ function renderMedicationHabits() {
             <i data-lucide="moon" style="width:14px;height:14px;"></i> Noche${pmDone ? ' ✓' : ''}
           </button>
         </div>
-        <div class="med-history">${medWeekHistoryHTML(h)}</div>
+        <div class="med-history">${medMonthHistoryHTML(h)}</div>
       </div>
     `;
   }).join('');
@@ -4006,7 +4007,11 @@ async function deleteRutinaExercise(id) {
 async function uploadRutinaPDF(fileInput) {
   const file = fileInput.files[0];
   if (!file) return;
-  if (file.type !== 'application/pdf') {
+  // Algunos navegadores/dispositivos no reportan bien el MIME type de un PDF
+  // (queda como "" o "application/octet-stream"), así que la extensión del
+  // nombre de archivo alcanza como segunda validación.
+  const looksLikePDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (!looksLikePDF) {
     alert('Subí un archivo en formato PDF.');
     fileInput.value = '';
     return;
@@ -4261,7 +4266,7 @@ function renderHidratacion() {
   const historyEl = document.getElementById('hidratacion-history');
   if (!historyEl) return;
 
-  const days = Object.keys(hidratacion).filter(d => d !== todayStr).sort().reverse().slice(0, 13);
+  const days = Object.keys(hidratacion).filter(d => d !== todayStr).sort().reverse().slice(0, 29);
   if (days.length === 0) {
     historyEl.innerHTML = '<p class="empty-state">Sin historial todavía.</p>';
     return;
