@@ -3562,7 +3562,10 @@ function computeHabitStreak(habit) {
   return streak;
 }
 
-function habitMonthDotsHTML(habit) {
+/** Calendario de los últimos 30 días con el número del día, mismo estilo que el
+ *  historial mañana/noche de Medicación (medMonthHistoryHTML) pero con un solo
+ *  punto por día en vez de dos. */
+function habitMonthCalendarHTML(habit) {
   const dates = new Set(habit.completedDates || []);
   let html = '';
   for (let i = 29; i >= 0; i--) {
@@ -3570,7 +3573,12 @@ function habitMonthDotsHTML(habit) {
     d.setDate(d.getDate() - i);
     const dateStr = toLocalDateStr(d);
     const done = dates.has(dateStr);
-    html += `<span class="habit-day-dot ${done ? 'done' : ''} ${i === 0 ? 'is-today' : ''}" title="${dateStr}"></span>`;
+    html += `
+      <div class="habit-day-col ${i === 0 ? 'is-today' : ''}" title="${dateStr}">
+        <span class="habit-day-label">${d.getDate()}</span>
+        <span class="habit-day-dot ${done ? 'done' : ''}"></span>
+      </div>
+    `;
   }
   return html;
 }
@@ -3596,7 +3604,7 @@ function renderHabits(type) {
         </button>
         <div class="habit-info">
           <div class="habit-title">${h.title}</div>
-          <div class="habit-month-dots">${habitMonthDotsHTML(h)}</div>
+          <div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
         <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
@@ -4151,17 +4159,22 @@ function renderTension() {
 }
 
 // --- Citas médicas y de análisis ---
-async function addCita() {
-  const dateEl = document.getElementById('cita-date');
-  const timeEl = document.getElementById('cita-time');
-  const titleEl = document.getElementById('cita-title');
-  const noteEl = document.getElementById('cita-note');
-  const editingId = document.getElementById('editing-cita-id').value;
+/** Las citas se guardan con `person` ('meli' | 'sara') y cada quien tiene su
+ *  propio formulario/lista en la misma página — sin tabs, ambas visibles a
+ *  la vez. `person` solo se usa al crear; al editar una cita existente no
+ *  cambia de dueño. */
+async function addCita(person) {
+  const dateEl = document.getElementById('cita-date-' + person);
+  const timeEl = document.getElementById('cita-time-' + person);
+  const titleEl = document.getElementById('cita-title-' + person);
+  const noteEl = document.getElementById('cita-note-' + person);
+  const editingId = document.getElementById('editing-cita-id-' + person).value;
 
   const title = titleEl.value.trim();
   if (!dateEl.value || !title) { alert('Ingresa al menos la fecha y el motivo de la cita.'); return; }
 
   const data = { date: dateEl.value, time: timeEl.value, title, note: noteEl.value.trim(), updated: new Date().toISOString() };
+  if (!editingId) data.person = person;
 
   showSyncIndicator('syncing');
   try {
@@ -4171,7 +4184,7 @@ async function addCita() {
       data.created = new Date().toISOString();
       await db.collection('citas').add(data);
     }
-    resetCitaForm();
+    resetCitaForm(person);
     showSyncIndicator('ok');
   } catch (err) {
     showSyncIndicator('error', err.message);
@@ -4181,19 +4194,20 @@ async function addCita() {
 function editCita(id) {
   const c = citas.find(x => x.id === id);
   if (!c) return;
-  document.getElementById('editing-cita-id').value = id;
-  document.getElementById('cita-date').value = c.date || '';
-  document.getElementById('cita-time').value = c.time || '';
-  document.getElementById('cita-title').value = c.title || '';
-  document.getElementById('cita-note').value = c.note || '';
+  const person = c.person === 'sara' ? 'sara' : 'meli';
+  document.getElementById('editing-cita-id-' + person).value = id;
+  document.getElementById('cita-date-' + person).value = c.date || '';
+  document.getElementById('cita-time-' + person).value = c.time || '';
+  document.getElementById('cita-title-' + person).value = c.title || '';
+  document.getElementById('cita-note-' + person).value = c.note || '';
 }
 
-function resetCitaForm() {
-  document.getElementById('editing-cita-id').value = '';
-  document.getElementById('cita-date').value = '';
-  document.getElementById('cita-time').value = '';
-  document.getElementById('cita-title').value = '';
-  document.getElementById('cita-note').value = '';
+function resetCitaForm(person) {
+  document.getElementById('editing-cita-id-' + person).value = '';
+  document.getElementById('cita-date-' + person).value = '';
+  document.getElementById('cita-time-' + person).value = '';
+  document.getElementById('cita-title-' + person).value = '';
+  document.getElementById('cita-note-' + person).value = '';
 }
 
 async function deleteCita(id) {
@@ -4203,33 +4217,36 @@ async function deleteCita(id) {
   showSyncIndicator('ok');
 }
 
-/** Orden ascendente (la más próxima primero); las que ya pasaron quedan atenuadas
- *  en vez de desaparecer, para poder seguir consultándolas. */
-function renderCitas() {
-  const list = document.getElementById('cita-list');
-  if (!list) return;
-
-  if (citas.length === 0) {
-    list.innerHTML = '<p class="empty-state">Sin citas registradas.</p>';
-    return;
-  }
-
+function citaCardHTML(c) {
   const todayStr = toLocalDateStr(new Date());
-  list.innerHTML = citas.map(c => {
-    const isPast = c.date && c.date < todayStr;
-    const dateLabel = c.date ? c.date.split('-').reverse().join('/') : '';
-    return `
-      <div class="medida-card ${isPast ? 'is-past' : ''}">
-        <div class="medida-actions">
-          <button class="nota-btn" onclick="editCita('${c.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
-          <button class="nota-btn del" onclick="deleteCita('${c.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
-        </div>
-        <div class="medida-date">${dateLabel}${c.time ? ' · ' + c.time : ''}</div>
-        <div class="medida-weight" style="font-size:14px;">${c.title}</div>
-        ${c.note ? `<div class="medida-note">${c.note}</div>` : ''}
+  const isPast = c.date && c.date < todayStr;
+  const dateLabel = c.date ? c.date.split('-').reverse().join('/') : '';
+  return `
+    <div class="medida-card ${isPast ? 'is-past' : ''}">
+      <div class="medida-actions">
+        <button class="nota-btn" onclick="editCita('${c.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+        <button class="nota-btn del" onclick="deleteCita('${c.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
       </div>
-    `;
-  }).join('');
+      <div class="medida-date">${dateLabel}${c.time ? ' · ' + c.time : ''}</div>
+      <div class="medida-weight" style="font-size:14px;">${c.title}</div>
+      ${c.note ? `<div class="medida-note">${c.note}</div>` : ''}
+    </div>
+  `;
+}
+
+/** Orden ascendente (la más próxima primero); las que ya pasaron quedan atenuadas
+ *  en vez de desaparecer, para poder seguir consultándolas. Las citas guardadas
+ *  antes de separar por persona no tienen `person` — quedan del lado de Meli. */
+function renderCitas() {
+  ['meli', 'sara'].forEach(person => {
+    const list = document.getElementById('cita-list-' + person);
+    if (!list) return;
+
+    const filtered = citas.filter(c => (c.person === 'sara' ? 'sara' : 'meli') === person);
+    list.innerHTML = filtered.length === 0
+      ? '<p class="empty-state">Sin citas registradas.</p>'
+      : filtered.map(citaCardHTML).join('');
+  });
   refreshIcons();
 }
 

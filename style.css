@@ -2070,24 +2070,33 @@ body {
 
 .habit-card.done .habit-title { color: var(--text-sub); text-decoration: line-through; }
 
-.habit-month-dots {
+.habit-month-cal {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  max-width: 220px;
+  gap: 8px 6px;
 }
 
-.habit-day-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--border);
+.habit-day-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 16px;
   flex-shrink: 0;
 }
 
-.habit-day-dot.done { background: var(--accent); }
+.habit-day-col.is-today .habit-day-label { color: var(--accent); }
 
-.habit-day-dot.is-today { box-shadow: 0 0 0 2px var(--bg2), 0 0 0 3px var(--accent); }
+.habit-day-label { font-size: 9px; font-weight: 700; color: var(--text-sub); }
+
+.habit-day-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.habit-day-dot.done { background: var(--accent); }
 
 .habit-streak {
   flex-shrink: 0;
@@ -2238,6 +2247,8 @@ body {
   padding: 16px;
   margin-bottom: 20px;
 }
+
+.cita-person-block { margin-bottom: 28px; }
 
 .medida-add-form input[type="date"],
 .medida-add-form input[type="number"],

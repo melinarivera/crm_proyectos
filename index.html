@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.6" />
+  <link rel="stylesheet" href="style.css?v=3.7" />
   <script>
     (function() {
       var saved = localStorage.getItem('theme');
@@ -305,15 +305,32 @@
           <p class="view-sub">Turnos con médicos y análisis.</p>
         </div>
       </div>
-      <form class="medida-add-form" onsubmit="event.preventDefault(); addCita();">
-        <input type="date" id="cita-date" />
-        <input type="time" id="cita-time" />
-        <input type="text" id="cita-title" placeholder="Ej: Análisis de sangre, Dr. Pérez - Cardiología" />
-        <input type="text" id="cita-note" placeholder="Notas" maxlength="120" />
-        <input type="hidden" id="editing-cita-id" value="">
-        <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
-      </form>
-      <div class="medida-list" id="cita-list"></div>
+
+      <div class="cita-person-block">
+        <h4 class="timeline-allday-title">Meli</h4>
+        <form class="medida-add-form" onsubmit="event.preventDefault(); addCita('meli');">
+          <input type="date" id="cita-date-meli" />
+          <input type="time" id="cita-time-meli" />
+          <input type="text" id="cita-title-meli" placeholder="Ej: Análisis de sangre, Dr. Pérez - Cardiología" />
+          <input type="text" id="cita-note-meli" placeholder="Notas" maxlength="120" />
+          <input type="hidden" id="editing-cita-id-meli" value="">
+          <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+        </form>
+        <div class="medida-list" id="cita-list-meli"></div>
+      </div>
+
+      <div class="cita-person-block">
+        <h4 class="timeline-allday-title">Sara</h4>
+        <form class="medida-add-form" onsubmit="event.preventDefault(); addCita('sara');">
+          <input type="date" id="cita-date-sara" />
+          <input type="time" id="cita-time-sara" />
+          <input type="text" id="cita-title-sara" placeholder="Ej: Análisis de sangre, Dr. Pérez - Cardiología" />
+          <input type="text" id="cita-note-sara" placeholder="Notas" maxlength="120" />
+          <input type="hidden" id="editing-cita-id-sara" value="">
+          <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+        </form>
+        <div class="medida-list" id="cita-list-sara"></div>
+      </div>
 
       <div class="section-links-row">
         <button class="btn-add" onclick="openExternalLink('citasWordUrl','Word')" oncontextmenu="changeExternalLink('citasWordUrl','Word');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
@@ -1125,7 +1142,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="app-v2.js?v=3.21"></script>
+  <script src="app-v2.js?v=3.22"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
