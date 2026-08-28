@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.5" />
+  <link rel="stylesheet" href="style.css?v=3.6" />
   <script>
     (function() {
       var saved = localStorage.getItem('theme');
@@ -206,14 +206,13 @@
         </form>
         <div class="rutina-list" id="rutina-list"></div>
 
-        <div class="rutina-pdf-row">
-          <label class="btn-add rutina-pdf-upload">
-            <i data-lucide="upload" style="width:15px;height:15px;"></i> Subir PDF de mi rutina
-            <input type="file" accept="application/pdf" onchange="uploadRutinaPDF(this)" style="display:none;">
-          </label>
-          <a href="#" id="rutina-pdf-link" class="btn-add rutina-pdf-open" target="_blank" rel="noopener" style="display:none;background:var(--card);border:1px solid var(--border);color:var(--text);">
-            <i data-lucide="file-text" style="width:15px;height:15px;"></i> Abrir mi PDF
-          </a>
+        <div class="section-links-row">
+          <button class="btn-add" onclick="openExternalLink('ejercicioWordUrl','Word')" oncontextmenu="changeExternalLink('ejercicioWordUrl','Word');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+            <i data-lucide="file-text" style="width:15px;height:15px;"></i> Mi Word
+          </button>
+          <button class="btn-add" onclick="openExternalLink('ejercicioExcelUrl','Excel')" oncontextmenu="changeExternalLink('ejercicioExcelUrl','Excel');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+            <i data-lucide="table" style="width:15px;height:15px;"></i> Mi Excel
+          </button>
         </div>
       </div>
     </section>
@@ -232,6 +231,15 @@
         <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
       </form>
       <div class="habit-list" id="habit-list-bienestar"></div>
+
+      <div class="section-links-row">
+        <button class="btn-add" onclick="openExternalLink('bienestarWordUrl','Word')" oncontextmenu="changeExternalLink('bienestarWordUrl','Word');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="file-text" style="width:15px;height:15px;"></i> Mi Word
+        </button>
+        <button class="btn-add" onclick="openExternalLink('bienestarExcelUrl','Excel')" oncontextmenu="changeExternalLink('bienestarExcelUrl','Excel');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="table" style="width:15px;height:15px;"></i> Mi Excel
+        </button>
+      </div>
     </section>
 
     <!-- MEDICACIÓN (mañana / noche) -->
@@ -248,6 +256,15 @@
         <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
       </form>
       <div class="habit-list" id="habit-list-medicacion"></div>
+
+      <div class="section-links-row">
+        <button class="btn-add" onclick="openExternalLink('medicacionWordUrl','Word')" oncontextmenu="changeExternalLink('medicacionWordUrl','Word');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="file-text" style="width:15px;height:15px;"></i> Mi Word
+        </button>
+        <button class="btn-add" onclick="openExternalLink('medicacionExcelUrl','Excel')" oncontextmenu="changeExternalLink('medicacionExcelUrl','Excel');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="table" style="width:15px;height:15px;"></i> Mi Excel
+        </button>
+      </div>
     </section>
 
     <!-- TENSIÓN ARTERIAL -->
@@ -268,6 +285,15 @@
         <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
       </form>
       <div class="medida-list" id="tension-list"></div>
+
+      <div class="section-links-row">
+        <button class="btn-add" onclick="openExternalLink('tensionWordUrl','Word')" oncontextmenu="changeExternalLink('tensionWordUrl','Word');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="file-text" style="width:15px;height:15px;"></i> Mi Word
+        </button>
+        <button class="btn-add" onclick="openExternalLink('tensionExcelUrl','Excel')" oncontextmenu="changeExternalLink('tensionExcelUrl','Excel');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="table" style="width:15px;height:15px;"></i> Mi Excel
+        </button>
+      </div>
     </section>
 
     <!-- CITAS MÉDICAS -->
@@ -288,6 +314,15 @@
         <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
       </form>
       <div class="medida-list" id="cita-list"></div>
+
+      <div class="section-links-row">
+        <button class="btn-add" onclick="openExternalLink('citasWordUrl','Word')" oncontextmenu="changeExternalLink('citasWordUrl','Word');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="file-text" style="width:15px;height:15px;"></i> Mi Word
+        </button>
+        <button class="btn-add" onclick="openExternalLink('citasExcelUrl','Excel')" oncontextmenu="changeExternalLink('citasExcelUrl','Excel');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="table" style="width:15px;height:15px;"></i> Mi Excel
+        </button>
+      </div>
     </section>
 
     <!-- DIARIO -->
@@ -315,6 +350,15 @@
         </div>
       </form>
       <div class="diario-list" id="diario-list"></div>
+
+      <div class="section-links-row">
+        <button class="btn-add" onclick="openExternalLink('diarioWordUrl','Word')" oncontextmenu="changeExternalLink('diarioWordUrl','Word');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="file-text" style="width:15px;height:15px;"></i> Mi Word
+        </button>
+        <button class="btn-add" onclick="openExternalLink('diarioExcelUrl','Excel')" oncontextmenu="changeExternalLink('diarioExcelUrl','Excel');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="table" style="width:15px;height:15px;"></i> Mi Excel
+        </button>
+      </div>
     </section>
 
     <!-- MEDIDAS Y PESO -->
@@ -334,6 +378,15 @@
         <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
       </form>
       <div class="medida-list" id="medida-list"></div>
+
+      <div class="section-links-row">
+        <button class="btn-add" onclick="openExternalLink('medidasWordUrl','Word')" oncontextmenu="changeExternalLink('medidasWordUrl','Word');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="file-text" style="width:15px;height:15px;"></i> Mi Word
+        </button>
+        <button class="btn-add" onclick="openExternalLink('medidasExcelUrl','Excel')" oncontextmenu="changeExternalLink('medidasExcelUrl','Excel');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
+          <i data-lucide="table" style="width:15px;height:15px;"></i> Mi Excel
+        </button>
+      </div>
     </section>
 
     <!-- HIDRATACIÓN -->
@@ -1072,7 +1125,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="app-v2.js?v=3.20"></script>
+  <script src="app-v2.js?v=3.21"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

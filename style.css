@@ -2373,13 +2373,13 @@ body {
 .rutina-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
 .rutina-youtube { flex-shrink: 0; color: var(--accent); display: flex; }
 
-.rutina-pdf-row {
+/* Fila de "Mi Word" / "Mi Excel" — se repite en varias secciones de Salud */
+.section-links-row {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  margin-top: 20px;
 }
-
-.rutina-pdf-upload { cursor: pointer; }
 
 /* --- Medicación (mañana/noche) --- */
 .med-card {

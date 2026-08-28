@@ -1305,7 +1305,7 @@ function subscribeToFirestore() {
   });
 
   db.collection('config').doc('rutina').onSnapshot(doc => {
-    rutina = doc.exists ? doc.data() : { exercises: [], pdfUrl: '' };
+    rutina = doc.exists ? doc.data() : { exercises: [] };
     if (currentView === 'ejercicio') renderRutina();
   });
 
@@ -3965,9 +3965,9 @@ function renderSueno() {
   refreshIcons();
 }
 
-// --- Mi rutina de ejercicio (lista de ejercicios con series/repeticiones/YouTube,
-// más un PDF opcional). Un solo doc de config, mismo patrón que budgets/habits. ---
-let rutina = { exercises: [], pdfUrl: '' };
+// --- Mi rutina de ejercicio (lista de ejercicios con series/repeticiones/YouTube).
+// Un solo doc de config, mismo patrón que budgets/habits. ---
+let rutina = { exercises: [] };
 
 async function addRutinaExercise() {
   const nameEl = document.getElementById('rutina-ex-name');
@@ -4004,65 +4004,64 @@ async function deleteRutinaExercise(id) {
 
 /** Sube el PDF a Storage (mismo mecanismo que el feed iCal y los comprobantes de
  *  Dinero) y guarda su URL de descarga en el doc de rutina. */
-async function uploadRutinaPDF(fileInput) {
-  const file = fileInput.files[0];
-  if (!file) return;
-  // Algunos navegadores/dispositivos no reportan bien el MIME type de un PDF
-  // (queda como "" o "application/octet-stream"), así que la extensión del
-  // nombre de archivo alcanza como segunda validación.
-  const looksLikePDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-  if (!looksLikePDF) {
-    alert('Subí un archivo en formato PDF.');
-    fileInput.value = '';
-    return;
-  }
-
-  showSyncIndicator('syncing');
-  try {
-    const ref = storage.ref('rutina/rutina.pdf');
-    await ref.put(file);
-    const pdfUrl = await ref.getDownloadURL();
-    await db.collection('config').doc('rutina').set({ ...rutina, pdfUrl });
-    showSyncIndicator('ok');
-  } catch (err) {
-    showSyncIndicator('error', err.message);
-  }
-  fileInput.value = '';
-}
-
 function renderRutina() {
   const list = document.getElementById('rutina-list');
-  if (list) {
-    const exercises = rutina.exercises || [];
-    if (exercises.length === 0) {
-      list.innerHTML = '<p class="empty-state">Todavía no agregaste ejercicios a tu rutina.</p>';
-    } else {
-      list.innerHTML = exercises.map(e => {
-        const meta = [e.sets && `${e.sets} series`, e.reps && `${e.reps} repeticiones`].filter(Boolean).join(' · ');
-        return `
-          <div class="rutina-row">
-            <div class="rutina-info">
-              <div class="rutina-name">${e.name}</div>
-              ${meta ? `<div class="rutina-meta">${meta}</div>` : ''}
-            </div>
-            ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
-            <button class="nota-btn del" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
-          </div>
-        `;
-      }).join('');
-    }
-  }
+  if (!list) return;
 
-  const pdfLink = document.getElementById('rutina-pdf-link');
-  if (pdfLink) {
-    if (rutina.pdfUrl) {
-      pdfLink.style.display = 'inline-flex';
-      pdfLink.href = rutina.pdfUrl;
-    } else {
-      pdfLink.style.display = 'none';
-    }
+  const exercises = rutina.exercises || [];
+  if (exercises.length === 0) {
+    list.innerHTML = '<p class="empty-state">Todavía no agregaste ejercicios a tu rutina.</p>';
+  } else {
+    list.innerHTML = exercises.map(e => {
+      const meta = [e.sets && `${e.sets} series`, e.reps && `${e.reps} repeticiones`].filter(Boolean).join(' · ');
+      return `
+        <div class="rutina-row">
+          <div class="rutina-info">
+            <div class="rutina-name">${e.name}</div>
+            ${meta ? `<div class="rutina-meta">${meta}</div>` : ''}
+          </div>
+          ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
+          <button class="nota-btn del" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+        </div>
+      `;
+    }).join('');
   }
   refreshIcons();
+}
+
+// --- Enlaces externos (Word/Excel) por sección: mismo patrón ya probado que usa
+// Dinero para "Abrir mi Excel" — clic abre (o pide el link la primera vez), clic
+// derecho lo cambia. Evita depender de Firebase Storage (que venía dando
+// problemas con el PDF) para algo que en realidad solo necesita guardar una URL. ---
+function openExternalLink(key, docType) {
+  const url = globalUrls[key] || localStorage.getItem(key);
+  if (url) {
+    window.open(url, '_blank');
+  } else {
+    let newUrl = prompt(`Pegá el enlace a tu documento de ${docType} (Google Docs/Sheets, Word/Excel Online...):`);
+    if (newUrl !== null && newUrl.trim() !== '') {
+      newUrl = newUrl.trim();
+      if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
+      saveUrlConfig(key, newUrl);
+      window.open(newUrl, '_blank');
+    }
+  }
+}
+
+function changeExternalLink(key, docType) {
+  const currentUrl = globalUrls[key] || localStorage.getItem(key) || '';
+  let newUrl = prompt(`Actualizá el enlace a tu documento de ${docType}:`, currentUrl);
+  if (newUrl !== null) {
+    newUrl = newUrl.trim();
+    if (newUrl === '') {
+      saveUrlConfig(key, '');
+      alert('Enlace eliminado.');
+    } else {
+      if (!newUrl.startsWith('http')) newUrl = 'https://' + newUrl;
+      saveUrlConfig(key, newUrl);
+      alert('Enlace actualizado correctamente.');
+    }
+  }
 }
 
 // --- Tensión arterial ---
