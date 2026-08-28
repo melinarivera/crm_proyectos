@@ -3656,25 +3656,40 @@ async function toggleMedSlot(id, slot) {
   }
 }
 
-/** Racha de días con mañana Y noche tomadas, terminando hoy o ayer si hoy todavía
+/** Cuatro tomas por día en vez de dos. Los códigos 'AM'/'PM' de antes (cuando
+ *  solo había mañana/noche) se siguen reconociendo como alias de lectura de
+ *  MANANA/NOCHE, para no perder los checks ya guardados. */
+const MED_SLOTS = [
+  { key: 'MANANA',   legacy: 'AM', label: 'Mañana',   icon: 'sunrise' },
+  { key: 'MEDIODIA', legacy: null, label: 'Mediodía', icon: 'sun' },
+  { key: 'TARDE',    legacy: null, label: 'Tarde',    icon: 'sunset' },
+  { key: 'NOCHE',    legacy: 'PM', label: 'Noche',    icon: 'moon' }
+];
+
+function medSlotDone(slotsSet, dateStr, slotDef) {
+  if (slotsSet.has(`${dateStr}-${slotDef.key}`)) return true;
+  return slotDef.legacy ? slotsSet.has(`${dateStr}-${slotDef.legacy}`) : false;
+}
+
+/** Racha de días con las 4 tomas hechas, terminando hoy o ayer si hoy todavía
  *  está incompleto (mismo criterio que computeHabitStreak). */
 function computeMedStreak(habit) {
   const slots = new Set(habit.completedSlots || []);
-  const bothDone = d => slots.has(`${d}-AM`) && slots.has(`${d}-PM`);
+  const allDone = d => MED_SLOTS.every(s => medSlotDone(slots, d, s));
   const cursor = new Date();
-  if (!bothDone(toLocalDateStr(cursor))) cursor.setDate(cursor.getDate() - 1);
+  if (!allDone(toLocalDateStr(cursor))) cursor.setDate(cursor.getDate() - 1);
 
   let streak = 0;
-  while (bothDone(toLocalDateStr(cursor))) {
+  while (allDone(toLocalDateStr(cursor))) {
     streak++;
     cursor.setDate(cursor.getDate() - 1);
   }
   return streak;
 }
 
-/** Historial de los últimos 30 días con dos puntos por día (mañana/noche), para
- *  poder consultar de un vistazo si se tomó o no un día puntual. Muestra el número
- *  del día (no la letra del día de semana) porque a escala de un mes es lo que
+/** Historial de los últimos 30 días con cuatro puntos por día (mañana/mediodía/
+ *  tarde/noche), para poder consultar de un vistazo si se tomó o no un día
+ *  puntual. Muestra el número del día porque a escala de un mes es lo que
  *  realmente ayuda a ubicar una fecha puntual. */
 function medMonthHistoryHTML(habit) {
   const slots = new Set(habit.completedSlots || []);
@@ -3683,13 +3698,11 @@ function medMonthHistoryHTML(habit) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const dateStr = toLocalDateStr(d);
-    const am = slots.has(`${dateStr}-AM`);
-    const pm = slots.has(`${dateStr}-PM`);
+    const dots = MED_SLOTS.map(s => `<span class="med-slot-dot ${medSlotDone(slots, dateStr, s) ? 'done' : ''}"></span>`).join('');
     html += `
       <div class="med-day-col ${i === 0 ? 'is-today' : ''}" title="${dateStr}">
         <span class="med-day-label">${d.getDate()}</span>
-        <span class="med-slot-dot ${am ? 'done' : ''}"></span>
-        <span class="med-slot-dot ${pm ? 'done' : ''}"></span>
+        ${dots}
       </div>
     `;
   }
@@ -3708,24 +3721,24 @@ function renderMedicationHabits() {
 
   const todayStr = toLocalDateStr(new Date());
   list.innerHTML = meds.map(h => {
-    const amDone = (h.completedSlots || []).includes(`${todayStr}-AM`);
-    const pmDone = (h.completedSlots || []).includes(`${todayStr}-PM`);
+    const slots = new Set(h.completedSlots || []);
     const streak = computeMedStreak(h);
+    const slotsHTML = MED_SLOTS.map(s => {
+      const done = medSlotDone(slots, todayStr, s);
+      return `
+        <button class="med-slot-btn ${done ? 'done' : ''}" onclick="toggleMedSlot('${h.id}', '${s.key}')">
+          <i data-lucide="${done ? 'check' : s.icon}" style="width:13px;height:13px;"></i> ${s.label}
+        </button>
+      `;
+    }).join('');
     return `
       <div class="med-card">
         <div class="med-card-top">
           <div class="med-title">${h.title}</div>
-          <div class="med-streak" title="Racha (mañana y noche)">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+          <div class="med-streak" title="Racha (las 4 tomas)">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
           <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
         </div>
-        <div class="med-slots">
-          <button class="med-slot-btn ${amDone ? 'done' : ''}" onclick="toggleMedSlot('${h.id}', 'AM')">
-            <i data-lucide="${amDone ? 'check' : 'sunrise'}" style="width:14px;height:14px;"></i> Mañana
-          </button>
-          <button class="med-slot-btn ${pmDone ? 'done' : ''}" onclick="toggleMedSlot('${h.id}', 'PM')">
-            <i data-lucide="${pmDone ? 'check' : 'moon'}" style="width:14px;height:14px;"></i> Noche
-          </button>
-        </div>
+        <div class="med-slots">${slotsHTML}</div>
         <div class="med-history">${medMonthHistoryHTML(h)}</div>
       </div>
     `;

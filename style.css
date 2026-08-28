@@ -2454,23 +2454,25 @@ body {
 
 .med-slots {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
 .med-slot-btn {
-  flex: 1;
+  flex: 1 1 calc(50% - 8px);
+  min-width: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px;
+  gap: 5px;
+  padding: 9px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--bg2);
   color: var(--text-sub);
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
