@@ -92,6 +92,7 @@ let hidratacion = {};
 let sueno = [];
 let tension = [];
 let citas = [];
+let ciclo = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
@@ -1319,6 +1320,11 @@ function subscribeToFirestore() {
     if (currentView === 'citas') renderCitas();
   });
 
+  db.collection('ciclo').orderBy('startDate', 'desc').onSnapshot(snap => {
+    ciclo = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'ciclo') renderCiclo();
+  });
+
   // Enlaces de Excel y WhatsApp (Sincronización multidispositivo)
   const excelCategories = ['trabajo', 'casa', 'familia', 'pandin', 'sara', 'personal', 'dinero'];
   const urlKeys = [...excelCategories.map(c => c + 'ExcelUrl'), 'whatsappUrl'];
@@ -1388,6 +1394,7 @@ function showView(view) {
     medicacion:  'Medicación',
     tension:     'Tensión arterial',
     citas:       'Citas médicas',
+    ciclo:       'Ciclo menstrual',
     diario:      'Diario',
     medidas:     'Medidas y peso',
     hidratacion: 'Hidratación',
@@ -1416,6 +1423,7 @@ function showView(view) {
     renderTension();
   }
   else if (view === 'citas') renderCitas();
+  else if (view === 'ciclo') renderCiclo();
   else if (view === 'diario') renderDiario();
   else if (view === 'medidas') {
     const dateEl = document.getElementById('medida-date');
@@ -2181,6 +2189,18 @@ function editNota(id) {
   document.getElementById('btn-cancel-nota').style.display = 'block';
   document.getElementById('nota-input').focus();
   refreshIcons();
+}
+
+/** Atajo del botón "+" del topbar: antes creaba una tarea con fecha/categoría que
+ *  ya no tenía dónde verse (Timeline/Calendario salieron del menú); ahora lleva
+ *  directo a Notas Rápidas con el textarea listo para escribir. */
+function quickAddNota() {
+  showView('notas');
+  const input = document.getElementById('nota-input');
+  if (input) {
+    input.focus();
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }
 
 function resetNotaForm() {
@@ -3606,7 +3626,7 @@ function renderHabits(type) {
           <div class="habit-title">${h.title}</div>
           <div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>
         </div>
-        <div class="habit-streak" title="Racha actual">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
+        <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
         <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
       </div>
     `;
@@ -3695,15 +3715,15 @@ function renderMedicationHabits() {
       <div class="med-card">
         <div class="med-card-top">
           <div class="med-title">${h.title}</div>
-          <div class="med-streak" title="Racha (mañana y noche)">${streak > 0 ? `🔥 ${streak}` : '—'}</div>
+          <div class="med-streak" title="Racha (mañana y noche)">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
           <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
         </div>
         <div class="med-slots">
           <button class="med-slot-btn ${amDone ? 'done' : ''}" onclick="toggleMedSlot('${h.id}', 'AM')">
-            <i data-lucide="sunrise" style="width:14px;height:14px;"></i> Mañana${amDone ? ' ✓' : ''}
+            <i data-lucide="${amDone ? 'check' : 'sunrise'}" style="width:14px;height:14px;"></i> Mañana
           </button>
           <button class="med-slot-btn ${pmDone ? 'done' : ''}" onclick="toggleMedSlot('${h.id}', 'PM')">
-            <i data-lucide="moon" style="width:14px;height:14px;"></i> Noche${pmDone ? ' ✓' : ''}
+            <i data-lucide="${pmDone ? 'check' : 'moon'}" style="width:14px;height:14px;"></i> Noche
           </button>
         </div>
         <div class="med-history">${medMonthHistoryHTML(h)}</div>
@@ -3715,11 +3735,11 @@ function renderMedicationHabits() {
 
 // --- Diario (cómo me sentí) ---
 const DIARIO_MOODS = [
-  { key: 'genial',   emoji: '😄', label: 'Genial' },
-  { key: 'bien',     emoji: '🙂', label: 'Bien' },
-  { key: 'regular',  emoji: '😐', label: 'Regular' },
-  { key: 'mal',      emoji: '😔', label: 'Mal' },
-  { key: 'terrible', emoji: '😣', label: 'Terrible' }
+  { key: 'genial',   icon: 'laugh',  label: 'Genial' },
+  { key: 'bien',     icon: 'smile',  label: 'Bien' },
+  { key: 'regular',  icon: 'meh',    label: 'Regular' },
+  { key: 'mal',      icon: 'frown',  label: 'Mal' },
+  { key: 'terrible', icon: 'angry',  label: 'Terrible' }
 ];
 let selectedDiarioMood = 'bien';
 
@@ -3798,7 +3818,7 @@ function renderDiario() {
           <button class="nota-btn" onclick="editDiarioEntry('${d.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
           <button class="nota-btn del" onclick="deleteDiarioEntry('${d.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
         </div>
-        <div class="diario-mood">${moodInfo.emoji}</div>
+        <div class="diario-mood"><i data-lucide="${moodInfo.icon}"></i></div>
         <div class="diario-text">${d.text}</div>
         <div class="diario-date">${dateStr}</div>
       </div>
@@ -3986,7 +4006,7 @@ async function addRutinaExercise() {
   if (!name) return;
 
   const id = 'ex-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-  const exercise = { id, name, sets: setsEl.value.trim(), reps: repsEl.value.trim(), youtube: ytEl.value.trim() };
+  const exercise = { id, name, sets: setsEl.value.trim(), reps: repsEl.value.trim(), youtube: ytEl.value.trim(), completedDates: [] };
   const next = { ...rutina, exercises: [...(rutina.exercises || []), exercise] };
 
   showSyncIndicator('syncing');
@@ -4010,8 +4030,30 @@ async function deleteRutinaExercise(id) {
   }
 }
 
-/** Sube el PDF a Storage (mismo mecanismo que el feed iCal y los comprobantes de
- *  Dinero) y guarda su URL de descarga en el doc de rutina. */
+/** Marca/desmarca un ejercicio de la rutina como hecho HOY. Reutiliza
+ *  completedDates igual que los hábitos, así computeHabitStreak y
+ *  habitMonthCalendarHTML sirven sin cambios para el registro diario. */
+async function toggleRutinaExerciseToday(id) {
+  const todayStr = toLocalDateStr(new Date());
+  const next = {
+    ...rutina,
+    exercises: (rutina.exercises || []).map(e => {
+      if (e.id !== id) return e;
+      const dates = e.completedDates || [];
+      const already = dates.includes(todayStr);
+      return { ...e, completedDates: already ? dates.filter(d => d !== todayStr) : [...dates, todayStr] };
+    })
+  };
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('rutina').set(next);
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
 function renderRutina() {
   const list = document.getElementById('rutina-list');
   if (!list) return;
@@ -4019,21 +4061,30 @@ function renderRutina() {
   const exercises = rutina.exercises || [];
   if (exercises.length === 0) {
     list.innerHTML = '<p class="empty-state">Todavía no agregaste ejercicios a tu rutina.</p>';
-  } else {
-    list.innerHTML = exercises.map(e => {
-      const meta = [e.sets && `${e.sets} series`, e.reps && `${e.reps} repeticiones`].filter(Boolean).join(' · ');
-      return `
-        <div class="rutina-row">
-          <div class="rutina-info">
-            <div class="rutina-name">${e.name}</div>
-            ${meta ? `<div class="rutina-meta">${meta}</div>` : ''}
-          </div>
-          ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
-          <button class="nota-btn del" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
-        </div>
-      `;
-    }).join('');
+    refreshIcons();
+    return;
   }
+
+  const todayStr = toLocalDateStr(new Date());
+  list.innerHTML = exercises.map(e => {
+    const meta = [e.sets && `${e.sets} series`, e.reps && `${e.reps} repeticiones`].filter(Boolean).join(' · ');
+    const done = (e.completedDates || []).includes(todayStr);
+    const streak = computeHabitStreak(e);
+    return `
+      <div class="habit-card ${done ? 'done' : ''}">
+        <button class="habit-check" onclick="toggleRutinaExerciseToday('${e.id}')" title="${done ? 'Desmarcar hoy' : 'Marcar como hecho hoy'}">
+          <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
+        </button>
+        <div class="habit-info">
+          <div class="habit-title">${e.name}${meta ? `<span class="rutina-meta-inline"> · ${meta}</span>` : ''}</div>
+          <div class="habit-month-cal">${habitMonthCalendarHTML(e)}</div>
+        </div>
+        <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+        ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
+        <button class="task-btn habit-delete" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+      </div>
+    `;
+  }).join('');
   refreshIcons();
 }
 
@@ -4246,6 +4297,107 @@ function renderCitas() {
     list.innerHTML = filtered.length === 0
       ? '<p class="empty-state">Sin citas registradas.</p>'
       : filtered.map(citaCardHTML).join('');
+  });
+  refreshIcons();
+}
+
+/** Ciclo menstrual: solo registro de fechas por persona, sin vista de calendario
+ *  (pedido explícito) — un inicio, un fin opcional, y una nota opcional. Mismo
+ *  patrón que Citas médicas: dos bloques (Meli/Sara) en la misma página. */
+async function addCiclo(person) {
+  const startEl = document.getElementById('ciclo-start-' + person);
+  const endEl = document.getElementById('ciclo-end-' + person);
+  const noteEl = document.getElementById('ciclo-note-' + person);
+  const editingId = document.getElementById('editing-ciclo-id-' + person).value;
+
+  if (!startEl.value) { alert('Ingresa al menos la fecha de inicio.'); return; }
+
+  const data = { startDate: startEl.value, endDate: endEl.value || '', note: noteEl.value.trim(), updated: new Date().toISOString() };
+  if (!editingId) data.person = person;
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('ciclo').doc(editingId).update(data);
+    } else {
+      data.created = new Date().toISOString();
+      await db.collection('ciclo').add(data);
+    }
+    resetCicloForm(person);
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editCiclo(id) {
+  const c = ciclo.find(x => x.id === id);
+  if (!c) return;
+  const person = c.person === 'sara' ? 'sara' : 'meli';
+  document.getElementById('editing-ciclo-id-' + person).value = id;
+  document.getElementById('ciclo-start-' + person).value = c.startDate || '';
+  document.getElementById('ciclo-end-' + person).value = c.endDate || '';
+  document.getElementById('ciclo-note-' + person).value = c.note || '';
+}
+
+function resetCicloForm(person) {
+  document.getElementById('editing-ciclo-id-' + person).value = '';
+  document.getElementById('ciclo-start-' + person).value = '';
+  document.getElementById('ciclo-end-' + person).value = '';
+  document.getElementById('ciclo-note-' + person).value = '';
+}
+
+async function deleteCiclo(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  showSyncIndicator('syncing');
+  await db.collection('ciclo').doc(id).delete();
+  showSyncIndicator('ok');
+}
+
+/** Por persona, ordenado del más reciente al más antiguo. Cada tarjeta muestra la
+ *  duración (si hay fecha de fin) y los días desde el inicio anterior (duración
+ *  del ciclo), calculado contra el siguiente elemento del array por el orden desc. */
+function renderCiclo() {
+  ['meli', 'sara'].forEach(person => {
+    const list = document.getElementById('ciclo-list-' + person);
+    if (!list) return;
+
+    const filtered = ciclo.filter(c => (c.person === 'sara' ? 'sara' : 'meli') === person);
+    if (filtered.length === 0) {
+      list.innerHTML = '<p class="empty-state">Sin registros todavía.</p>';
+      return;
+    }
+
+    list.innerHTML = filtered.map((c, i) => {
+      const startLabel = c.startDate ? c.startDate.split('-').reverse().join('/') : '';
+      const endLabel = c.endDate ? c.endDate.split('-').reverse().join('/') : '';
+
+      let durationLabel = '';
+      if (c.startDate && c.endDate) {
+        const days = Math.round((new Date(c.endDate) - new Date(c.startDate)) / 86400000) + 1;
+        if (days > 0) durationLabel = `${days} día${days === 1 ? '' : 's'}`;
+      }
+
+      let cycleLabel = '';
+      const prev = filtered[i + 1];
+      if (prev && prev.startDate && c.startDate) {
+        const cycleDays = Math.round((new Date(c.startDate) - new Date(prev.startDate)) / 86400000);
+        if (cycleDays > 0) cycleLabel = `Ciclo: ${cycleDays} días`;
+      }
+
+      return `
+        <div class="medida-card">
+          <div class="medida-actions">
+            <button class="nota-btn" onclick="editCiclo('${c.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+            <button class="nota-btn del" onclick="deleteCiclo('${c.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+          </div>
+          <div class="medida-date">${startLabel}${endLabel ? ' → ' + endLabel : ''}</div>
+          <div class="medida-weight" style="font-size:14px;">${durationLabel || '—'}</div>
+          ${cycleLabel ? `<span class="medida-delta down">${cycleLabel}</span>` : ''}
+          ${c.note ? `<div class="medida-note">${c.note}</div>` : ''}
+        </div>
+      `;
+    }).join('');
   });
   refreshIcons();
 }

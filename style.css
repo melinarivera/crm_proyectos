@@ -575,7 +575,19 @@ body {
   margin-bottom: 24px;
 }
 
-.view-emoji { font-size: 36px; }
+.view-emoji {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-emoji i { width: 22px; height: 22px; color: var(--accent); }
+
 .view-header h2 {
   font-size: 22px;
   font-weight: 700;
@@ -2100,12 +2112,18 @@ body {
 
 .habit-streak {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
   font-size: 13px;
   font-weight: 700;
   color: var(--text-sub);
   min-width: 40px;
   text-align: center;
 }
+
+.habit-streak i { width: 13px; height: 13px; color: var(--pandin); }
 
 .habit-delete { flex-shrink: 0; }
 
@@ -2157,19 +2175,22 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 19px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--bg2);
+  color: var(--text-sub);
   cursor: pointer;
   transition: all 0.15s ease;
 }
+
+.diario-mood-btn i { width: 19px; height: 19px; }
 
 .diario-mood-btn:hover { border-color: var(--accent); }
 
 .diario-mood-btn.active {
   border-color: var(--accent);
   background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  color: var(--accent);
   transform: scale(1.08);
 }
 
@@ -2207,7 +2228,8 @@ body {
   gap: 12px;
 }
 
-.diario-mood { font-size: 22px; flex-shrink: 0; }
+.diario-mood { flex-shrink: 0; color: var(--accent); }
+.diario-mood i { width: 22px; height: 22px; }
 
 .diario-text {
   flex: 1;
@@ -2248,7 +2270,37 @@ body {
   margin-bottom: 20px;
 }
 
-.cita-person-block { margin-bottom: 28px; }
+.cita-person-block {
+  margin-bottom: 28px;
+  padding-left: 14px;
+  border-left: 3px solid var(--border);
+}
+
+.cita-person-title {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.cita-person-meli {
+  background: #7c6aff22;
+  color: var(--accent);
+}
+
+.cita-person-block:has(.cita-person-meli) { border-left-color: var(--accent); }
+
+.cita-person-sara {
+  background: #ff6b9d22;
+  color: #ff6b9d;
+}
+
+.cita-person-block:has(.cita-person-sara) { border-left-color: #ff6b9d; }
 
 .medida-add-form input[type="date"],
 .medida-add-form input[type="number"],
@@ -2369,19 +2421,7 @@ body {
   margin-bottom: 16px;
 }
 
-.rutina-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 14px;
-}
-
-.rutina-info { flex: 1; min-width: 0; }
-.rutina-name { font-size: 13px; font-weight: 700; color: var(--text); }
-.rutina-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+.rutina-meta-inline { font-weight: 500; color: var(--text-sub); font-size: 12px; }
 .rutina-youtube { flex-shrink: 0; color: var(--accent); display: flex; }
 
 /* Fila de "Mi Word" / "Mi Excel" — se repite en varias secciones de Salud */
@@ -2409,7 +2449,8 @@ body {
 }
 
 .med-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); }
-.med-streak { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--text-sub); }
+.med-streak { flex-shrink: 0; display: flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 700; color: var(--text-sub); }
+.med-streak i { width: 13px; height: 13px; color: var(--pandin); }
 
 .med-slots {
   display: flex;

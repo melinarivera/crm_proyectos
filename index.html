@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=3.7" />
+  <link rel="stylesheet" href="style.css?v=3.8" />
   <script>
     (function() {
       var saved = localStorage.getItem('theme');
@@ -62,6 +62,9 @@
       </button>
       <button class="nav-item" data-view="citas" onclick="showView('citas')">
         <i data-lucide="stethoscope" class="nav-icon"></i><span>Citas médicas</span>
+      </button>
+      <button class="nav-item" data-view="ciclo" onclick="showView('ciclo')">
+        <i data-lucide="droplet" class="nav-icon"></i><span>Ciclo menstrual</span>
       </button>
       <button class="nav-item" data-view="diario" onclick="showView('diario')">
         <i data-lucide="book-heart" class="nav-icon"></i><span>Diario</span>
@@ -116,8 +119,8 @@
         <button class="btn-notif" id="btn-theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
           <i data-lucide="moon" style="width:16px;height:16px;"></i>
         </button>
-        <button class="btn-add" id="btn-add-global" onclick="openModal()">
-          <i data-lucide="plus" style="width:16px;height:16px;"></i> Nueva Tarea
+        <button class="btn-add" id="btn-add-global" onclick="quickAddNota()">
+          <i data-lucide="plus" style="width:16px;height:16px;"></i> Nota Rápida
         </button>
         <button class="btn-notif" onclick="signOutUser()" title="Cerrar sesión" style="opacity:0.5;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
           <i data-lucide="log-out" style="width:15px;height:15px;"></i>
@@ -183,11 +186,8 @@
     <!-- EJERCICIO / RUTINA -->
     <section class="view active" id="view-ejercicio">
       <div class="view-header">
-        <span class="view-emoji">🏃</span>
-        <div>
-          <h2>Ejercicio / Rutina</h2>
-          <p class="view-sub">Marcá lo de hoy y sostené la racha.</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="dumbbell"></i></span>
+        <p class="view-sub">Marcá lo de hoy y sostené la racha.</p>
       </div>
       <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('ejercicio');">
         <input type="text" id="habit-title-input-ejercicio" placeholder="Ej: Trampolín fitness, Pesas, Caminar..." maxlength="60" />
@@ -220,11 +220,8 @@
     <!-- BIENESTAR -->
     <section class="view" id="view-bienestar">
       <div class="view-header">
-        <span class="view-emoji">🧘</span>
-        <div>
-          <h2>Bienestar</h2>
-          <p class="view-sub">Reiki, Kundalini, meditación — marcá lo de hoy y sostené la racha.</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="sparkles"></i></span>
+        <p class="view-sub">Reiki, Kundalini, meditación — marcá lo de hoy y sostené la racha.</p>
       </div>
       <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('bienestar');">
         <input type="text" id="habit-title-input-bienestar" placeholder="Ej: Reiki, Kundalini, Meditación 10 min..." maxlength="60" />
@@ -245,11 +242,8 @@
     <!-- MEDICACIÓN (mañana / noche) -->
     <section class="view" id="view-medicacion">
       <div class="view-header">
-        <span class="view-emoji">💊</span>
-        <div>
-          <h2>Medicación</h2>
-          <p class="view-sub">Marcá mañana y noche por separado — cada una queda registrada por día.</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="pill"></i></span>
+        <p class="view-sub">Marcá mañana y noche por separado — cada una queda registrada por día.</p>
       </div>
       <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('medicacion');">
         <input type="text" id="habit-title-input-medicacion" placeholder="Ej: Vitamina D, Antibiótico..." maxlength="60" />
@@ -270,11 +264,8 @@
     <!-- TENSIÓN ARTERIAL -->
     <section class="view" id="view-tension">
       <div class="view-header">
-        <span class="view-emoji">🩺</span>
-        <div>
-          <h2>Tensión arterial</h2>
-          <p class="view-sub">Registro de sistólica/diastólica por fecha.</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="activity"></i></span>
+        <p class="view-sub">Registro de sistólica/diastólica por fecha.</p>
       </div>
       <form class="medida-add-form" onsubmit="event.preventDefault(); addTension();">
         <input type="date" id="tension-date" />
@@ -299,15 +290,12 @@
     <!-- CITAS MÉDICAS -->
     <section class="view" id="view-citas">
       <div class="view-header">
-        <span class="view-emoji">📅</span>
-        <div>
-          <h2>Citas médicas</h2>
-          <p class="view-sub">Turnos con médicos y análisis.</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="stethoscope"></i></span>
+        <p class="view-sub">Turnos con médicos y análisis.</p>
       </div>
 
       <div class="cita-person-block">
-        <h4 class="timeline-allday-title">Meli</h4>
+        <h4 class="cita-person-title cita-person-meli">Meli</h4>
         <form class="medida-add-form" onsubmit="event.preventDefault(); addCita('meli');">
           <input type="date" id="cita-date-meli" />
           <input type="time" id="cita-time-meli" />
@@ -320,7 +308,7 @@
       </div>
 
       <div class="cita-person-block">
-        <h4 class="timeline-allday-title">Sara</h4>
+        <h4 class="cita-person-title cita-person-sara">Sara</h4>
         <form class="medida-add-form" onsubmit="event.preventDefault(); addCita('sara');">
           <input type="date" id="cita-date-sara" />
           <input type="time" id="cita-time-sara" />
@@ -342,22 +330,51 @@
       </div>
     </section>
 
+    <!-- CICLO MENSTRUAL -->
+    <section class="view" id="view-ciclo">
+      <div class="view-header">
+        <span class="view-emoji"><i data-lucide="droplet"></i></span>
+        <p class="view-sub">Registro de días de período, para consultar cuando haga falta.</p>
+      </div>
+
+      <div class="cita-person-block">
+        <h4 class="cita-person-title cita-person-meli">Meli</h4>
+        <form class="medida-add-form" onsubmit="event.preventDefault(); addCiclo('meli');">
+          <input type="date" id="ciclo-start-meli" title="Fecha de inicio" />
+          <input type="date" id="ciclo-end-meli" title="Fecha de fin (opcional)" />
+          <input type="text" id="ciclo-note-meli" placeholder="Notas" maxlength="120" />
+          <input type="hidden" id="editing-ciclo-id-meli" value="">
+          <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+        </form>
+        <div class="medida-list" id="ciclo-list-meli"></div>
+      </div>
+
+      <div class="cita-person-block">
+        <h4 class="cita-person-title cita-person-sara">Sara</h4>
+        <form class="medida-add-form" onsubmit="event.preventDefault(); addCiclo('sara');">
+          <input type="date" id="ciclo-start-sara" title="Fecha de inicio" />
+          <input type="date" id="ciclo-end-sara" title="Fecha de fin (opcional)" />
+          <input type="text" id="ciclo-note-sara" placeholder="Notas" maxlength="120" />
+          <input type="hidden" id="editing-ciclo-id-sara" value="">
+          <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+        </form>
+        <div class="medida-list" id="ciclo-list-sara"></div>
+      </div>
+    </section>
+
     <!-- DIARIO -->
     <section class="view" id="view-diario">
       <div class="view-header">
-        <span class="view-emoji">📔</span>
-        <div>
-          <h2>Diario</h2>
-          <p class="view-sub">¿Cómo te sentiste hoy?</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="book-heart"></i></span>
+        <p class="view-sub">¿Cómo te sentiste hoy?</p>
       </div>
       <form class="diario-add-form" onsubmit="event.preventDefault(); addDiarioEntry();">
         <div class="diario-mood-picker" id="diario-mood-picker">
-          <button type="button" class="diario-mood-btn" data-diario-mood="genial" onclick="selectDiarioMood('genial')" title="Genial">😄</button>
-          <button type="button" class="diario-mood-btn active" data-diario-mood="bien" onclick="selectDiarioMood('bien')" title="Bien">🙂</button>
-          <button type="button" class="diario-mood-btn" data-diario-mood="regular" onclick="selectDiarioMood('regular')" title="Regular">😐</button>
-          <button type="button" class="diario-mood-btn" data-diario-mood="mal" onclick="selectDiarioMood('mal')" title="Mal">😔</button>
-          <button type="button" class="diario-mood-btn" data-diario-mood="terrible" onclick="selectDiarioMood('terrible')" title="Terrible">😣</button>
+          <button type="button" class="diario-mood-btn" data-diario-mood="genial" onclick="selectDiarioMood('genial')" title="Genial"><i data-lucide="laugh"></i></button>
+          <button type="button" class="diario-mood-btn active" data-diario-mood="bien" onclick="selectDiarioMood('bien')" title="Bien"><i data-lucide="smile"></i></button>
+          <button type="button" class="diario-mood-btn" data-diario-mood="regular" onclick="selectDiarioMood('regular')" title="Regular"><i data-lucide="meh"></i></button>
+          <button type="button" class="diario-mood-btn" data-diario-mood="mal" onclick="selectDiarioMood('mal')" title="Mal"><i data-lucide="frown"></i></button>
+          <button type="button" class="diario-mood-btn" data-diario-mood="terrible" onclick="selectDiarioMood('terrible')" title="Terrible"><i data-lucide="angry"></i></button>
         </div>
         <textarea id="diario-input" rows="3" placeholder="¿Cómo te sentiste hoy?"></textarea>
         <input type="hidden" id="editing-diario-id" value="">
@@ -381,11 +398,8 @@
     <!-- MEDIDAS Y PESO -->
     <section class="view" id="view-medidas">
       <div class="view-header">
-        <span class="view-emoji">⚖️</span>
-        <div>
-          <h2>Medidas y peso</h2>
-          <p class="view-sub">Tu evolución, con la diferencia contra el registro anterior.</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="scale"></i></span>
+        <p class="view-sub">Tu evolución, con la diferencia contra el registro anterior.</p>
       </div>
       <form class="medida-add-form" onsubmit="event.preventDefault(); addMedida();">
         <input type="date" id="medida-date" />
@@ -409,11 +423,8 @@
     <!-- HIDRATACIÓN -->
     <section class="view" id="view-hidratacion">
       <div class="view-header">
-        <span class="view-emoji">💧</span>
-        <div>
-          <h2>Hidratación</h2>
-          <p class="view-sub">Registrá cuántos vasos de agua tomaste hoy.</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="droplets"></i></span>
+        <p class="view-sub">Registrá cuántos vasos de agua tomaste hoy.</p>
       </div>
       <div class="hydration-card">
         <div class="hydration-count" id="hidratacion-count">0 / 8 vasos</div>
@@ -430,11 +441,8 @@
     <!-- SUEÑO -->
     <section class="view" id="view-sueno">
       <div class="view-header">
-        <span class="view-emoji">😴</span>
-        <div>
-          <h2>Sueño</h2>
-          <p class="view-sub">Cuántas horas dormiste cada noche.</p>
-        </div>
+        <span class="view-emoji"><i data-lucide="moon"></i></span>
+        <p class="view-sub">Cuántas horas dormiste cada noche.</p>
       </div>
       <form class="medida-add-form" onsubmit="event.preventDefault(); addSueno();">
         <input type="date" id="sueno-date" />
@@ -1142,7 +1150,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="app-v2.js?v=3.22"></script>
+  <script src="app-v2.js?v=3.23"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
