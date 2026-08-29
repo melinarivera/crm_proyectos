@@ -2449,6 +2449,17 @@ body {
 }
 
 .med-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); }
+
+/* Nombres más vistosos: mismo tratamiento en degradé que el logo (.logo-text) */
+.title-vistoso {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 .med-streak { flex-shrink: 0; display: flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 700; color: var(--text-sub); }
 .med-streak i { width: 13px; height: 13px; color: var(--pandin); }
 

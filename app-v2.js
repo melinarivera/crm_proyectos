@@ -3608,11 +3608,18 @@ function renderHabits(type) {
   if (!list) return;
 
   const filtered = habits.filter(h => h.type === type);
+  // Bienestar se ordena alfabéticamente; Ejercicio queda en el orden en que se
+  // fueron agregando (no pidieron ordenarlo, y "más usado" ahí no aplica igual
+  // que en Medicación porque ya tiene su propio check + racha por ítem).
+  if (type === 'bienestar') {
+    filtered.sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }));
+  }
   if (filtered.length === 0) {
     list.innerHTML = '<p class="empty-state">Todavía no agregaste nada acá. Sumá el primero arriba.</p>';
     return;
   }
 
+  const titleClass = type === 'bienestar' ? 'habit-title title-vistoso' : 'habit-title';
   const todayStr = toLocalDateStr(new Date());
   list.innerHTML = filtered.map(h => {
     const done = (h.completedDates || []).includes(todayStr);
@@ -3623,7 +3630,7 @@ function renderHabits(type) {
           <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
         </button>
         <div class="habit-info">
-          <div class="habit-title">${h.title}</div>
+          <div class="${titleClass}">${h.title}</div>
           <div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
@@ -3713,7 +3720,11 @@ function renderMedicationHabits() {
   const list = document.getElementById('habit-list-medicacion');
   if (!list) return;
 
-  const meds = habits.filter(h => h.type === 'medicacion');
+  // Ordenadas por uso real (total de tomas registradas alguna vez), no por
+  // streak ni alfabético — la que más se toma queda arriba.
+  const meds = habits.filter(h => h.type === 'medicacion')
+    .slice()
+    .sort((a, b) => (b.completedSlots || []).length - (a.completedSlots || []).length);
   if (meds.length === 0) {
     list.innerHTML = '<p class="empty-state">Todavía no agregaste ninguna medicación.</p>';
     return;
@@ -3734,7 +3745,7 @@ function renderMedicationHabits() {
     return `
       <div class="med-card">
         <div class="med-card-top">
-          <div class="med-title">${h.title}</div>
+          <div class="med-title title-vistoso">${h.title}</div>
           <div class="med-streak" title="Racha (las 4 tomas)">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
           <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
         </div>
