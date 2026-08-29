@@ -3058,3 +3058,45 @@ body {
   .planner-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ===== SALUD: FORMULARIOS EN MOBILE =====
+ * Puesto al final del archivo a propósito: varias reglas de los formularios
+ * (ej. ".habit-add-form input[type=\"text\"]" con min-width:200px, o
+ * ".rutina-add-form input[type=\"url\"]" con min-width:160px) son más
+ * específicas que un simple ".form input", así que un override anterior en
+ * el archivo perdía la cascada sin importar el orden de los @media. Estando
+ * al final, y con selectores igual de específicos, esto sí gana. Esta era
+ * la causa real del desborde horizontal en mobile (inputs que no podían
+ * angostarse por debajo de su min-width, empujando todo fuera de pantalla). */
+@media (max-width: 600px) {
+  .habit-add-form,
+  .rutina-add-form,
+  .medida-add-form,
+  .diario-add-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .habit-add-form input[type="text"],
+  .rutina-add-form input[type="text"],
+  .rutina-add-form input[type="text"]:first-child,
+  .rutina-add-form input[type="url"],
+  .medida-add-form input[type="date"],
+  .medida-add-form input[type="number"],
+  .medida-add-form input[type="text"],
+  .diario-add-form textarea {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Estos cuatro traen ancho fijo inline (style="width:110px" etc.) — un
+   * estilo inline solo pierde contra una regla externa que use !important. */
+  #rutina-ex-sets,
+  #rutina-ex-reps,
+  #tension-sys,
+  #tension-dia {
+    width: 100% !important;
+  }
+
+  .med-slot-btn { flex: 1 1 100%; min-width: 0; }
+}
+
