@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=4.0" />
+  <link rel="stylesheet" href="style.css?v=4.1" />
   <script>
     (function() {
       var saved = localStorage.getItem('theme');
@@ -244,7 +244,7 @@
     <section class="view" id="view-medicacion">
       <div class="view-header">
         <span class="view-emoji"><i data-lucide="pill"></i></span>
-        <p class="view-sub">Marcá mañana y noche por separado — cada una queda registrada por día.</p>
+        <p class="view-sub">Marcá cada toma por separado — mañana, mediodía, tarde y noche.</p>
       </div>
       <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('medicacion');">
         <input type="text" id="habit-title-input-medicacion" placeholder="Ej: Vitamina D, Antibiótico..." maxlength="60" />
@@ -1151,7 +1151,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-  <script src="app-v2.js?v=3.25"></script>
+  <script src="app-v2.js?v=3.26"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

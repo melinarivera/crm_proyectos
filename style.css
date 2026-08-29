@@ -68,7 +68,7 @@ body {
   overflow-y: auto;
 }
 
-.hamburger-btn { display: none; }
+#btn-hamburger { display: none; }
 .sidebar-backdrop { display: none; }
 
 .sidebar-logo {
@@ -1404,7 +1404,7 @@ body {
     z-index: 290;
   }
 
-  .hamburger-btn { display: flex; }
+  #btn-hamburger { display: flex; }
 
   .main-content { margin-left: 0; width: 100%; padding: calc(20px + env(safe-area-inset-top)) 16px; overflow-x: hidden; }
   .dashboard-cols { grid-template-columns: minmax(0, 1fr); }
@@ -2331,6 +2331,7 @@ body {
 .cita-person-block:has(.cita-person-sara) { border-left-color: #ff6b9d; }
 
 .medida-add-form input[type="date"],
+.medida-add-form input[type="time"],
 .medida-add-form input[type="number"],
 .medida-add-form input[type="text"] {
   padding: 10px 14px;
@@ -2340,6 +2341,12 @@ body {
   color: var(--text);
   font-family: 'Inter', sans-serif;
   font-size: 13px;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] .medida-add-form input[type="date"],
+:root[data-theme="light"] .medida-add-form input[type="time"] {
+  color-scheme: light;
 }
 
 .medida-add-form input[type="number"] { width: 120px; }
@@ -3081,6 +3088,7 @@ body {
   .rutina-add-form input[type="text"]:first-child,
   .rutina-add-form input[type="url"],
   .medida-add-form input[type="date"],
+  .medida-add-form input[type="time"],
   .medida-add-form input[type="number"],
   .medida-add-form input[type="text"],
   .diario-add-form textarea {
