@@ -1432,29 +1432,6 @@ body {
 }
 
 @media (max-width: 600px) {
-  /* Formularios de Salud: en desktop van en fila (flex-wrap ya los hacía
-   * pasar a la línea siguiente si no entraban, pero quedaba desprolijo);
-   * en mobile se apilan en columna, cada campo a lo ancho completo. */
-  .habit-add-form,
-  .rutina-add-form,
-  .medida-add-form,
-  .diario-add-form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .habit-add-form input,
-  .rutina-add-form input,
-  .medida-add-form input,
-  .diario-add-form input,
-  .diario-add-form textarea {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .med-slot-btn { min-width: 0; }
-}
-
-@media (max-width: 600px) {
   .semaforo-selector { flex-direction: column; }
   .nota-input-area { flex-direction: column; }
   .leads-container { grid-template-columns: 1fr; }
