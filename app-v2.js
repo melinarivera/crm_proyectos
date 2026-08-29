@@ -1085,6 +1085,18 @@ function onGlobalSearch(query) {
   refreshIcons();
 }
 
+/** Menú lateral en mobile: pasa de rail de solo íconos (ilegible con 12+ secciones)
+ *  a un cajón que se desliza encima del contenido, con las etiquetas completas. */
+function toggleMobileSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+  document.getElementById('sidebar-backdrop').classList.toggle('active');
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-backdrop').classList.remove('active');
+}
+
 function toggleMobileSearch() {
   const wrapper = document.querySelector('.topbar-search');
   if (!wrapper) return;
@@ -1365,6 +1377,7 @@ function updateDate() {
 // ===== VIEWS =====
 function showView(view) {
   currentView = view;
+  closeMobileSidebar();
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   

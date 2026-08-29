@@ -42,6 +42,9 @@
     <p id="login-error" style="color:#ff4d6d;font-family:Inter,sans-serif;font-size:13px;display:none;text-align:center;max-width:280px;line-height:1.5;background:rgba(255,77,109,0.1);padding:10px 16px;border-radius:10px;border:1px solid rgba(255,77,109,0.25);"></p>
   </div>
 
+  <!-- Fondo oscuro detrás del menú lateral cuando se abre en mobile -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
@@ -87,9 +90,6 @@
       </button>
     </nav>
     <div class="sidebar-date" id="sidebar-date"></div>
-    <button class="btn-refresh-app" id="btn-enable-notifs" onclick="requestNotificationPermission()">
-      <i data-lucide="bell-ring" style="width:14px;height:14px;"></i> <span>Activar notificaciones</span>
-    </button>
     <button class="btn-refresh-app" onclick="exportFullBackup()">
       <i data-lucide="database-backup" style="width:14px;height:14px;"></i> Respaldo completo
     </button>
@@ -103,6 +103,9 @@
     <!-- HEADER -->
     <header class="topbar">
       <div class="topbar-left">
+        <button class="btn-notif hamburger-btn" id="btn-hamburger" onclick="toggleMobileSidebar()" title="Menú">
+          <i data-lucide="menu" style="width:18px;height:18px;"></i>
+        </button>
         <h1 class="page-title" id="page-title">MeliVit</h1>
       </div>
       <div class="topbar-search">
@@ -114,14 +117,11 @@
         <button class="btn-notif btn-mobile-search" id="btn-mobile-search" onclick="toggleMobileSearch()" title="Buscar">
           <i data-lucide="search" style="width:16px;height:16px;"></i>
         </button>
-        <button class="btn-notif" id="btn-whatsapp" onclick="openWhatsApp()" oncontextmenu="changeWhatsApp();return false;" title="Clic: abrir WhatsApp · Clic derecho: cambiar enlace">
-          <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
-        </button>
         <button class="btn-notif" id="btn-theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
           <i data-lucide="moon" style="width:16px;height:16px;"></i>
         </button>
-        <button class="btn-add" id="btn-add-global" onclick="quickAddNota()">
-          <i data-lucide="plus" style="width:16px;height:16px;"></i> Nota Rápida
+        <button class="btn-add" id="btn-add-global" onclick="quickAddNota()" title="Nota Rápida">
+          <i data-lucide="plus" style="width:16px;height:16px;"></i> <span class="btn-add-global-label">Nota Rápida</span>
         </button>
         <button class="btn-notif" onclick="signOutUser()" title="Cerrar sesión" style="opacity:0.5;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
           <i data-lucide="log-out" style="width:15px;height:15px;"></i>
