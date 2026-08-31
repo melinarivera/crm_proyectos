@@ -2447,6 +2447,96 @@ body {
 
 .medida-card:hover .medida-actions { opacity: 1; }
 
+/* --- Citas médicas: tarjeta con más jerarquía visual (insignia de fecha,
+   ícono por tipo y color por persona) en vez del renglón gris plano --- */
+.cita-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 44px 14px 14px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.cita-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+.cita-card .medida-actions { position: absolute; top: 10px; right: 10px; margin-left: 0; }
+
+.cita-card-date {
+  flex-shrink: 0;
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  background: var(--bg2);
+  line-height: 1;
+}
+
+.cita-card-day { font-size: 19px; font-weight: 800; color: var(--text); }
+.cita-card-month { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-sub); }
+
+.cita-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+
+.cita-card-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+.cita-card-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cita-card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+
+.cita-card-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-sub);
+  background: var(--bg2);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.cita-card-past-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-sub);
+  background: var(--bg2);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.cita-card-note {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-sub);
+  white-space: normal;
+}
+
+.cita-card.is-past { opacity: 0.6; }
+
+.cita-card-meli { border-left-color: var(--accent); }
+.cita-card-meli .cita-card-icon { background: #3b6fe022; color: var(--accent); }
+
+.cita-card-sara { border-left-color: #ff6b9d; }
+.cita-card-sara .cita-card-icon { background: #ff6b9d22; color: #ff6b9d; }
+
 /* --- Mi rutina de ejercicio --- */
 .rutina-section {
   margin-top: 28px;

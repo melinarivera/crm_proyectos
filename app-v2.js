@@ -4481,19 +4481,48 @@ async function deleteCita(id) {
   showSyncIndicator('ok');
 }
 
+const CITA_MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+/** Ícono según palabras clave del motivo, para poder distinguir el tipo de cita
+ *  de un vistazo en vez de leer todo el texto. */
+function citaIcon(title) {
+  const t = (title || '').toLowerCase();
+  if (/analític|análisis|sangre|laborator/.test(t)) return 'flask-conical';
+  if (/dentist/.test(t)) return 'smile';
+  if (/neurolog|psiqu|psicolog/.test(t)) return 'brain';
+  if (/enfermer|vacuna/.test(t)) return 'syringe';
+  return 'stethoscope';
+}
+
 function citaCardHTML(c) {
   const todayStr = toLocalDateStr(new Date());
   const isPast = c.date && c.date < todayStr;
-  const dateLabel = c.date ? c.date.split('-').reverse().join('/') : '';
+  const person = c.person === 'sara' ? 'sara' : 'meli';
+  let day = '', month = '';
+  if (c.date) {
+    const [, m, d] = c.date.split('-');
+    day = d;
+    month = CITA_MESES[parseInt(m, 10) - 1] || '';
+  }
   return `
-    <div class="medida-card ${isPast ? 'is-past' : ''}">
+    <div class="cita-card cita-card-${person} ${isPast ? 'is-past' : ''}">
       <div class="medida-actions">
         <button class="nota-btn" onclick="editCita('${c.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
         <button class="nota-btn del" onclick="deleteCita('${c.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
       </div>
-      <div class="medida-date">${dateLabel}${c.time ? ' · ' + c.time : ''}</div>
-      <div class="medida-weight" style="font-size:14px;">${c.title}</div>
-      ${c.note ? `<div class="medida-note">${c.note}</div>` : ''}
+      <div class="cita-card-date">
+        <span class="cita-card-day">${day}</span>
+        <span class="cita-card-month">${month}</span>
+      </div>
+      <div class="cita-card-body">
+        <div class="cita-card-title-row">
+          <span class="cita-card-icon"><i data-lucide="${citaIcon(c.title)}" style="width:14px;height:14px;"></i></span>
+          <span class="cita-card-title">${c.title}</span>
+          ${c.time ? `<span class="cita-card-time">${c.time}</span>` : ''}
+          ${isPast ? `<span class="cita-card-past-tag">Pasada</span>` : ''}
+        </div>
+        ${c.note ? `<div class="cita-card-note">${c.note}</div>` : ''}
+      </div>
     </div>
   `;
 }
