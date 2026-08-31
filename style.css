@@ -3,15 +3,15 @@
 
 :root {
   --bg: #08090d;
-  --bg2: #0f1015;
-  --bg3: #15161d;
-  --card: #1b1c24;
-  --card2: #23242f;
-  --border: #31333f;
+  --bg2: #14151b;
+  --bg3: #1c1d25;
+  --card: #292a36;
+  --card2: #333445;
+  --border: #3c3e4c;
   --pandin: #ff9a3c;
   --otra: #ffd166;
-  --accent: #8b7cff;
-  --accent2: #d67bff;
+  --accent: #4d82ff;
+  --accent2: #38b6ff;
   --text: #f5f5fa;
   --text-sub: #9a99a8;
   --rojo: #ff4d6d;
@@ -25,15 +25,15 @@
 }
 
 :root[data-theme="light"] {
-  --bg: #f4f4fa;
-  --bg2: #ffffff;
-  --bg3: #ececf7;
+  --bg: #edeef1;
+  --bg2: #f7f8f9;
+  --bg3: #eef0f3;
   --card: #ffffff;
-  --card2: #f1f0fb;
-  --border: #e2e1f0;
-  --text: #1a1a35;
-  --text-sub: #55536e;
-  --shadow: 0 8px 32px rgba(139,124,255,0.10);
+  --card2: #f4f5f7;
+  --border: #dde0e4;
+  --text: #17181d;
+  --text-sub: #63666d;
+  --shadow: 0 8px 32px rgba(77,130,255,0.10);
 }
 
 :root[data-theme="light"] .sidebar-logo,
@@ -128,7 +128,7 @@ body {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
+  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
   color: var(--text);
   border: 1px solid var(--border);
 }
@@ -228,12 +228,12 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 20px rgba(139,124,255,0.4);
+  box-shadow: 0 4px 20px rgba(77,130,255,0.4);
 }
 
 .btn-add:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(139,124,255,0.6);
+  box-shadow: 0 6px 28px rgba(77,130,255,0.6);
 }
 
 /* ===== TOPBAR RIGHT LAYOUT ===== */
@@ -366,7 +366,7 @@ body {
   transform: translateY(-2px);
   border-color: var(--accent);
   color: var(--text);
-  box-shadow: 0 4px 16px rgba(139,124,255,0.3);
+  box-shadow: 0 4px 16px rgba(77,130,255,0.3);
 }
 
 /* ===== RACHA DE TAREAS COMPLETADAS ===== */
@@ -583,7 +583,7 @@ body {
   height: 44px;
   flex-shrink: 0;
   border-radius: 14px;
-  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
+  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -918,7 +918,7 @@ body {
 .nota-card:hover {
   transform: translateY(-3px);
   border-color: var(--accent2);
-  box-shadow: 0 6px 28px rgba(214,123,255,0.2);
+  box-shadow: 0 6px 28px rgba(56,182,255,0.2);
 }
 
 .nota-text {
@@ -1551,7 +1551,7 @@ body {
 }
 
 .calendar-cell.is-selected {
-  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
+  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
 }
 
 .calendar-day-num {
@@ -2217,7 +2217,7 @@ body {
 
 .diario-mood-btn.active {
   border-color: var(--accent);
-  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
+  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
   color: var(--accent);
   transform: scale(1.08);
 }
@@ -2624,7 +2624,7 @@ body {
 }
 
 .account-card-total {
-  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
+  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
   border-color: var(--accent);
 }
 
