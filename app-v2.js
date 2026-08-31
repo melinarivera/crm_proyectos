@@ -3595,20 +3595,25 @@ function computeHabitStreak(habit) {
   return streak;
 }
 
-/** Calendario de los últimos 30 días con el número del día, mismo estilo que el
- *  historial mañana/noche de Medicación (medMonthHistoryHTML) pero con un solo
- *  punto por día en vez de dos. */
+/** Calendario del mes en curso (del día 1 al último), con el nombre del mes
+ *  arriba — mismo estilo que el historial mañana/noche de Medicación
+ *  (medMonthHistoryHTML) pero con un solo punto por día en vez de cuatro. */
 function habitMonthCalendarHTML(habit) {
   const dates = new Set(habit.completedDates || []);
-  let html = '';
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = toLocalDateStr(d);
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const monthLabel = today.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayNum = today.getDate();
+
+  let html = `<div class="habit-month-label">${monthLabel}</div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = toLocalDateStr(new Date(year, month, day));
     const done = dates.has(dateStr);
     html += `
-      <div class="habit-day-col ${i === 0 ? 'is-today' : ''}" title="${dateStr}">
-        <span class="habit-day-label">${d.getDate()}</span>
+      <div class="habit-day-col ${day === todayNum ? 'is-today' : ''}" title="${dateStr}">
+        <span class="habit-day-label">${day}</span>
         <span class="habit-day-dot ${done ? 'done' : ''}"></span>
       </div>
     `;
@@ -3707,21 +3712,26 @@ function computeMedStreak(habit) {
   return streak;
 }
 
-/** Historial de los últimos 30 días con cuatro puntos por día (mañana/mediodía/
- *  tarde/noche), para poder consultar de un vistazo si se tomó o no un día
- *  puntual. Muestra el número del día porque a escala de un mes es lo que
- *  realmente ayuda a ubicar una fecha puntual. */
+/** Historial del mes en curso (del día 1 al último) con cuatro puntos por día
+ *  (mañana/mediodía/tarde/noche), para poder consultar de un vistazo si se
+ *  tomó o no un día puntual. Muestra el número del día y el mes porque a esa
+ *  escala es lo que realmente ayuda a ubicar una fecha puntual. */
 function medMonthHistoryHTML(habit) {
   const slots = new Set(habit.completedSlots || []);
-  let html = '';
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = toLocalDateStr(d);
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const monthLabel = today.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayNum = today.getDate();
+
+  let html = `<div class="med-month-label">${monthLabel}</div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = toLocalDateStr(new Date(year, month, day));
     const dots = MED_SLOTS.map(s => `<span class="med-slot-dot ${medSlotDone(slots, dateStr, s) ? 'done' : ''}"></span>`).join('');
     html += `
-      <div class="med-day-col ${i === 0 ? 'is-today' : ''}" title="${dateStr}">
-        <span class="med-day-label">${d.getDate()}</span>
+      <div class="med-day-col ${day === todayNum ? 'is-today' : ''}" title="${dateStr}">
+        <span class="med-day-label">${day}</span>
         ${dots}
       </div>
     `;
