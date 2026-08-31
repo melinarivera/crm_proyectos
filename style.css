@@ -2,22 +2,22 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0d0d1a;
-  --bg2: #13132b;
-  --bg3: #1a1a35;
-  --card: #1e1e3f;
-  --card2: #252550;
-  --border: #2e2e60;
+  --bg: #08090d;
+  --bg2: #0f1015;
+  --bg3: #15161d;
+  --card: #1b1c24;
+  --card2: #23242f;
+  --border: #31333f;
   --pandin: #ff9a3c;
   --otra: #ffd166;
-  --accent: #7c6aff;
-  --accent2: #c46bff;
-  --text: #f0eeff;
-  --text-sub: #d4cfff;
+  --accent: #8b7cff;
+  --accent2: #d67bff;
+  --text: #f5f5fa;
+  --text-sub: #9a99a8;
   --rojo: #ff4d6d;
   --amarillo: #ffd166;
   --verde: #06d6a0;
-  --shadow: 0 8px 32px rgba(124,106,255,0.15);
+  --shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 20px rgba(0,0,0,0.5);
 
   /* Colores por categoría, usados solo en el Timeline (no afectan Dashboard/tags existentes) */
   --cat-salud:   #06d6a0;
@@ -33,7 +33,7 @@
   --border: #e2e1f0;
   --text: #1a1a35;
   --text-sub: #55536e;
-  --shadow: 0 8px 32px rgba(124,106,255,0.10);
+  --shadow: 0 8px 32px rgba(139,124,255,0.10);
 }
 
 :root[data-theme="light"] .sidebar-logo,
@@ -128,7 +128,7 @@ body {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
   color: var(--text);
   border: 1px solid var(--border);
 }
@@ -228,12 +228,12 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 20px rgba(124,106,255,0.4);
+  box-shadow: 0 4px 20px rgba(139,124,255,0.4);
 }
 
 .btn-add:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(124,106,255,0.6);
+  box-shadow: 0 6px 28px rgba(139,124,255,0.6);
 }
 
 /* ===== TOPBAR RIGHT LAYOUT ===== */
@@ -366,7 +366,7 @@ body {
   transform: translateY(-2px);
   border-color: var(--accent);
   color: var(--text);
-  box-shadow: 0 4px 16px rgba(124,106,255,0.3);
+  box-shadow: 0 4px 16px rgba(139,124,255,0.3);
 }
 
 /* ===== RACHA DE TAREAS COMPLETADAS ===== */
@@ -583,7 +583,7 @@ body {
   height: 44px;
   flex-shrink: 0;
   border-radius: 14px;
-  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -918,7 +918,7 @@ body {
 .nota-card:hover {
   transform: translateY(-3px);
   border-color: var(--accent2);
-  box-shadow: 0 6px 28px rgba(196,107,255,0.2);
+  box-shadow: 0 6px 28px rgba(214,123,255,0.2);
 }
 
 .nota-text {
@@ -1205,10 +1205,10 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(124,106,255,0.4);
+  box-shadow: 0 4px 16px rgba(139,124,255,0.4);
 }
 
-.btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(124,106,255,0.6); }
+.btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(139,124,255,0.6); }
 
 /* ===== LEADS ===== */
 .leads-header {
@@ -1551,7 +1551,7 @@ body {
 }
 
 .calendar-cell.is-selected {
-  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
 }
 
 .calendar-day-num {
@@ -2217,7 +2217,7 @@ body {
 
 .diario-mood-btn.active {
   border-color: var(--accent);
-  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
   color: var(--accent);
   transform: scale(1.08);
 }
@@ -2317,7 +2317,7 @@ body {
 }
 
 .cita-person-meli {
-  background: #7c6aff22;
+  background: #8b7cff22;
   color: var(--accent);
 }
 
@@ -2624,7 +2624,7 @@ body {
 }
 
 .account-card-total {
-  background: linear-gradient(135deg, #7c6aff22, #c46bff22);
+  background: linear-gradient(135deg, #8b7cff22, #d67bff22);
   border-color: var(--accent);
 }
 
@@ -2734,7 +2734,7 @@ body {
 
 .money-type-btn.gasto.active-money-type { border-color: var(--rojo); background: #ff4d6d18; color: var(--rojo); }
 .money-type-btn.ingreso.active-money-type { border-color: var(--verde); background: #06d6a018; color: var(--verde); }
-.money-type-btn.transferencia.active-money-type { border-color: var(--accent); background: #7c6aff18; color: var(--accent); }
+.money-type-btn.transferencia.active-money-type { border-color: var(--accent); background: #8b7cff18; color: var(--accent); }
 
 .money-form-row {
   display: grid;
@@ -2870,7 +2870,7 @@ body {
 
 .transaction-icon.ingreso { background: #06d6a022; color: var(--verde); }
 .transaction-icon.gasto   { background: #ff4d6d22; color: var(--rojo); }
-.transaction-icon.transferencia { background: #7c6aff22; color: var(--accent); }
+.transaction-icon.transferencia { background: #8b7cff22; color: var(--accent); }
 
 .transaction-info {
   flex: 1;
