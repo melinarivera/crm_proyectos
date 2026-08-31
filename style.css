@@ -1205,10 +1205,10 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(139,124,255,0.4);
+  box-shadow: 0 4px 16px rgba(77,130,255,0.4);
 }
 
-.btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(139,124,255,0.6); }
+.btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(77,130,255,0.6); }
 
 /* ===== LEADS ===== */
 .leads-header {
@@ -2317,7 +2317,7 @@ body {
 }
 
 .cita-person-meli {
-  background: #8b7cff22;
+  background: #4d82ff22;
   color: var(--accent);
 }
 
@@ -2734,7 +2734,7 @@ body {
 
 .money-type-btn.gasto.active-money-type { border-color: var(--rojo); background: #ff4d6d18; color: var(--rojo); }
 .money-type-btn.ingreso.active-money-type { border-color: var(--verde); background: #06d6a018; color: var(--verde); }
-.money-type-btn.transferencia.active-money-type { border-color: var(--accent); background: #8b7cff18; color: var(--accent); }
+.money-type-btn.transferencia.active-money-type { border-color: var(--accent); background: #4d82ff18; color: var(--accent); }
 
 .money-form-row {
   display: grid;
@@ -2870,7 +2870,7 @@ body {
 
 .transaction-icon.ingreso { background: #06d6a022; color: var(--verde); }
 .transaction-icon.gasto   { background: #ff4d6d22; color: var(--rojo); }
-.transaction-icon.transferencia { background: #8b7cff22; color: var(--accent); }
+.transaction-icon.transferencia { background: #4d82ff22; color: var(--accent); }
 
 .transaction-info {
   flex: 1;
