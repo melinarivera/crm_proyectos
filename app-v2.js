@@ -3632,7 +3632,7 @@ function renderHabits(type) {
     return;
   }
 
-  const titleClass = type === 'bienestar' ? 'habit-title title-vistoso' : 'habit-title';
+  const titleClass = 'habit-title title-vistoso';
   const todayStr = toLocalDateStr(new Date());
   list.innerHTML = filtered.map(h => {
     const done = (h.completedDates || []).includes(todayStr);
@@ -4113,7 +4113,7 @@ function renderRutina() {
           <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
         </button>
         <div class="habit-info">
-          <div class="habit-title">${e.name}${meta ? `<span class="rutina-meta-inline"> · ${meta}</span>` : ''}</div>
+          <div class="habit-title title-vistoso">${e.name}${meta ? `<span class="rutina-meta-inline"> · ${meta}</span>` : ''}</div>
           <div class="habit-month-cal">${habitMonthCalendarHTML(e)}</div>
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>

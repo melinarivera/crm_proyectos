@@ -2108,7 +2108,12 @@ body {
   margin-bottom: 6px;
 }
 
-.habit-card.done .habit-title { color: var(--text-sub); text-decoration: line-through; }
+.habit-card.done .habit-title {
+  background: none;
+  -webkit-text-fill-color: var(--text-sub);
+  color: var(--text-sub);
+  text-decoration: line-through;
+}
 
 .habit-month-cal {
   display: flex;
@@ -2456,7 +2461,7 @@ body {
   margin-bottom: 16px;
 }
 
-.rutina-meta-inline { font-weight: 500; color: var(--text-sub); font-size: 12px; }
+.rutina-meta-inline { font-weight: 500; color: var(--text-sub); -webkit-text-fill-color: var(--text-sub); font-size: 12px; }
 .rutina-youtube { flex-shrink: 0; color: var(--accent); display: flex; }
 
 /* Fila de "Mi Word" / "Mi Excel" — se repite en varias secciones de Salud */
