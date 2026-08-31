@@ -10,8 +10,8 @@
   --border: #3c3e4c;
   --pandin: #ff9a3c;
   --otra: #ffd166;
-  --accent: #4d82ff;
-  --accent2: #38b6ff;
+  --accent: #3b6fe0;
+  --accent2: #3b82f6;
   --text: #f5f5fa;
   --text-sub: #9a99a8;
   --rojo: #ff4d6d;
@@ -33,7 +33,7 @@
   --border: #dde0e4;
   --text: #17181d;
   --text-sub: #63666d;
-  --shadow: 0 8px 32px rgba(77,130,255,0.10);
+  --shadow: 0 8px 32px rgba(59,111,224,0.10);
 }
 
 :root[data-theme="light"] .sidebar-logo,
@@ -128,7 +128,7 @@ body {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
+  background: linear-gradient(135deg, #3b6fe022, #3b82f622);
   color: var(--text);
   border: 1px solid var(--border);
 }
@@ -228,12 +228,12 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 20px rgba(77,130,255,0.4);
+  box-shadow: 0 4px 20px rgba(59,111,224,0.4);
 }
 
 .btn-add:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(77,130,255,0.6);
+  box-shadow: 0 6px 28px rgba(59,111,224,0.6);
 }
 
 /* ===== TOPBAR RIGHT LAYOUT ===== */
@@ -366,7 +366,7 @@ body {
   transform: translateY(-2px);
   border-color: var(--accent);
   color: var(--text);
-  box-shadow: 0 4px 16px rgba(77,130,255,0.3);
+  box-shadow: 0 4px 16px rgba(59,111,224,0.3);
 }
 
 /* ===== RACHA DE TAREAS COMPLETADAS ===== */
@@ -583,7 +583,7 @@ body {
   height: 44px;
   flex-shrink: 0;
   border-radius: 14px;
-  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
+  background: linear-gradient(135deg, #3b6fe022, #3b82f622);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -918,7 +918,7 @@ body {
 .nota-card:hover {
   transform: translateY(-3px);
   border-color: var(--accent2);
-  box-shadow: 0 6px 28px rgba(56,182,255,0.2);
+  box-shadow: 0 6px 28px rgba(59,130,246,0.2);
 }
 
 .nota-text {
@@ -1205,10 +1205,10 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(77,130,255,0.4);
+  box-shadow: 0 4px 16px rgba(59,111,224,0.4);
 }
 
-.btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(77,130,255,0.6); }
+.btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(59,111,224,0.6); }
 
 /* ===== LEADS ===== */
 .leads-header {
@@ -1551,7 +1551,7 @@ body {
 }
 
 .calendar-cell.is-selected {
-  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
+  background: linear-gradient(135deg, #3b6fe022, #3b82f622);
 }
 
 .calendar-day-num {
@@ -2222,7 +2222,7 @@ body {
 
 .diario-mood-btn.active {
   border-color: var(--accent);
-  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
+  background: linear-gradient(135deg, #3b6fe022, #3b82f622);
   color: var(--accent);
   transform: scale(1.08);
 }
@@ -2322,7 +2322,7 @@ body {
 }
 
 .cita-person-meli {
-  background: #4d82ff22;
+  background: #3b6fe022;
   color: var(--accent);
 }
 
@@ -2629,7 +2629,7 @@ body {
 }
 
 .account-card-total {
-  background: linear-gradient(135deg, #4d82ff22, #38b6ff22);
+  background: linear-gradient(135deg, #3b6fe022, #3b82f622);
   border-color: var(--accent);
 }
 
@@ -2739,7 +2739,7 @@ body {
 
 .money-type-btn.gasto.active-money-type { border-color: var(--rojo); background: #ff4d6d18; color: var(--rojo); }
 .money-type-btn.ingreso.active-money-type { border-color: var(--verde); background: #06d6a018; color: var(--verde); }
-.money-type-btn.transferencia.active-money-type { border-color: var(--accent); background: #4d82ff18; color: var(--accent); }
+.money-type-btn.transferencia.active-money-type { border-color: var(--accent); background: #3b6fe018; color: var(--accent); }
 
 .money-form-row {
   display: grid;
@@ -2875,7 +2875,7 @@ body {
 
 .transaction-icon.ingreso { background: #06d6a022; color: var(--verde); }
 .transaction-icon.gasto   { background: #ff4d6d22; color: var(--rojo); }
-.transaction-icon.transferencia { background: #4d82ff22; color: var(--accent); }
+.transaction-icon.transferencia { background: #3b6fe022; color: var(--accent); }
 
 .transaction-info {
   flex: 1;
@@ -3051,9 +3051,9 @@ body {
 
 .field-group input:focus,
 .field-group textarea:focus {
-  border-color: #4d82ff;
+  border-color: #3b6fe0;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(77,130,255,0.1);
+  box-shadow: 0 0 0 3px rgba(59,111,224,0.1);
 }
 
 .field-files {
