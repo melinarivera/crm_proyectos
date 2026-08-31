@@ -3044,11 +3044,11 @@ body {
   transition: all 0.2s;
 }
 
-.field-group input:focus, 
+.field-group input:focus,
 .field-group textarea:focus {
-  border-color: #7c6aff;
+  border-color: #4d82ff;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(124,106,255,0.1);
+  box-shadow: 0 0 0 3px rgba(77,130,255,0.1);
 }
 
 .field-files {
