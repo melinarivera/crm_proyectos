@@ -3925,17 +3925,19 @@ function renderMedicationHabits() {
         </button>
       `;
     }).join('');
+    const expanded = expandedCalendarIds.has(h.id);
     return `
       <div class="med-card">
         <div class="med-card-top">
           <div class="med-title title-vistoso">${h.title}</div>
           <div class="med-streak" title="Racha (todas las tomas del día)">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+          ${calendarExpandBtnHTML(h.id, 'medicacion')}
           <button class="task-btn" onclick="toggleMedScheduleEditor('${h.id}')" title="Editar horario"><i data-lucide="settings-2" style="width:14px;height:14px;"></i></button>
           <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
         </div>
         ${medEditingScheduleId === h.id ? medSlotPickerHTML(h) : ''}
         <div class="med-slots">${slotsHTML}</div>
-        <div class="med-history">${medMonthHistoryHTML(h)}</div>
+        ${expanded ? `<div class="med-history">${medMonthHistoryHTML(h)}</div>` : ''}
       </div>
     `;
   }).join('');
