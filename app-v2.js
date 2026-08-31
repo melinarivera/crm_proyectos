@@ -3661,6 +3661,28 @@ function habitMonthCalendarHTML(habit) {
   return html;
 }
 
+// Qué tarjetas tienen el calendario del mes desplegado — colapsado por
+// defecto para que la lista no se haga larguísima a medida que se suman
+// hábitos, ejercicios y medicamentos. Estado de UI puro, no se guarda.
+let expandedCalendarIds = new Set();
+
+function toggleCalendarExpanded(id, kind) {
+  if (expandedCalendarIds.has(id)) expandedCalendarIds.delete(id);
+  else expandedCalendarIds.add(id);
+  if (kind === 'medicacion') renderMedicationHabits();
+  else if (kind === 'rutina') renderRutina();
+  else renderHabits(kind);
+}
+
+function calendarExpandBtnHTML(id, kind) {
+  const expanded = expandedCalendarIds.has(id);
+  return `
+    <button class="task-btn habit-expand-btn" onclick="toggleCalendarExpanded('${id}', '${kind}')" title="${expanded ? 'Ocultar calendario del mes' : 'Ver calendario del mes'}">
+      <i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" style="width:14px;height:14px;"></i>
+    </button>
+  `;
+}
+
 function renderHabits(type) {
   const list = document.getElementById('habit-list-' + type);
   if (!list) return;
@@ -3682,6 +3704,7 @@ function renderHabits(type) {
   list.innerHTML = filtered.map(h => {
     const done = (h.completedDates || []).includes(todayStr);
     const streak = computeHabitStreak(h);
+    const expanded = expandedCalendarIds.has(h.id);
     return `
       <div class="habit-card ${done ? 'done' : ''}">
         <button class="habit-check" onclick="toggleHabitToday('${h.id}')" title="${done ? 'Desmarcar hoy' : 'Marcar como hecho hoy'}">
@@ -3689,9 +3712,10 @@ function renderHabits(type) {
         </button>
         <div class="habit-info">
           <div class="${titleClass}">${h.title}</div>
-          <div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>
+          ${expanded ? `<div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>` : ''}
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+        ${calendarExpandBtnHTML(h.id, type)}
         <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
       </div>
     `;
@@ -4253,6 +4277,7 @@ function renderRutina() {
     const meta = [e.sets && `${e.sets} series`, e.reps && `${e.reps} repeticiones`].filter(Boolean).join(' · ');
     const done = (e.completedDates || []).includes(todayStr);
     const streak = computeHabitStreak(e);
+    const expanded = expandedCalendarIds.has(e.id);
     return `
       <div class="habit-card ${done ? 'done' : ''}">
         <button class="habit-check" onclick="toggleRutinaExerciseToday('${e.id}')" title="${done ? 'Desmarcar hoy' : 'Marcar como hecho hoy'}">
@@ -4260,9 +4285,10 @@ function renderRutina() {
         </button>
         <div class="habit-info">
           <div class="habit-title title-vistoso">${e.name}${meta ? `<span class="rutina-meta-inline"> · ${meta}</span>` : ''}</div>
-          <div class="habit-month-cal">${habitMonthCalendarHTML(e)}</div>
+          ${expanded ? `<div class="habit-month-cal">${habitMonthCalendarHTML(e)}</div>` : ''}
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+        ${calendarExpandBtnHTML(e.id, 'rutina')}
         ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
         <button class="task-btn habit-delete" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
       </div>
