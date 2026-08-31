@@ -2067,13 +2067,21 @@ body {
 
 .habit-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px 16px;
   transition: border-color 0.15s ease;
+}
+
+/* Con el calendario en grilla del mes completo la tarjeta puede quedar
+   bastante alta — alineamos el check y los botones de la derecha arriba en
+   vez de centrados verticalmente, si no quedan flotando a mitad de tarjeta. */
+.habit-card > .habit-streak,
+.habit-card > .task-btn {
+  margin-top: 2px;
 }
 
 .habit-card.done { border-color: var(--verde); }
