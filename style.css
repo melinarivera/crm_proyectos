@@ -2116,13 +2116,13 @@ body {
 }
 
 .habit-month-cal {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 6px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px 4px;
 }
 
 .habit-month-label {
-  flex: 1 0 100%;
+  grid-column: 1 / -1;
   font-size: 11px;
   font-weight: 700;
   color: var(--text-sub);
@@ -2130,13 +2130,20 @@ body {
   margin-bottom: 2px;
 }
 
+.habit-weekday-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-sub);
+  opacity: 0.55;
+  text-align: center;
+}
+
 .habit-day-col {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 16px;
-  flex-shrink: 0;
+  min-height: 22px;
 }
 
 .habit-day-col.is-today .habit-day-label { color: var(--accent); }
@@ -2545,13 +2552,13 @@ body {
 }
 
 .med-history {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 6px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px 4px;
 }
 
 .med-month-label {
-  flex: 1 0 100%;
+  grid-column: 1 / -1;
   font-size: 11px;
   font-weight: 700;
   color: var(--text-sub);
@@ -2559,14 +2566,20 @@ body {
   margin-bottom: 2px;
 }
 
+.med-weekday-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-sub);
+  opacity: 0.55;
+  text-align: center;
+}
+
 .med-day-col {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 16px;
-  flex-shrink: 0;
-  flex: 1;
+  min-height: 22px;
 }
 
 .med-day-col.is-today .med-day-label { color: var(--accent); }

@@ -3595,9 +3595,21 @@ function computeHabitStreak(habit) {
   return streak;
 }
 
-/** Calendario del mes en curso (del día 1 al último), con el nombre del mes
- *  arriba — mismo estilo que el historial mañana/noche de Medicación
- *  (medMonthHistoryHTML) pero con un solo punto por día en vez de cuatro. */
+/** Letras de los días de la semana, lunes primero — compartidas por los
+ *  calendarios en grilla de hábitos y medicación. */
+const WEEKDAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+/** Cuántas celdas vacías van antes del día 1 para que caiga en su columna
+ *  real de la semana (grilla de lunes a domingo). */
+function firstWeekdayOffset(year, month) {
+  return (new Date(year, month, 1).getDay() + 6) % 7;
+}
+
+/** Calendario del mes en curso en grilla de 7 columnas (lunes a domingo), con
+ *  el nombre del mes arriba — mismo estilo que el historial mañana/noche de
+ *  Medicación (medMonthHistoryHTML) pero con un solo punto por día en vez de
+ *  cuatro. La grilla (en vez de una tira corrida) deja ver de un vistazo si
+ *  los saltos caen siempre el mismo día de la semana. */
 function habitMonthCalendarHTML(habit) {
   const dates = new Set(habit.completedDates || []);
   const today = new Date();
@@ -3608,6 +3620,8 @@ function habitMonthCalendarHTML(habit) {
   const todayNum = today.getDate();
 
   let html = `<div class="habit-month-label">${monthLabel}</div>`;
+  html += WEEKDAY_LETTERS.map(l => `<span class="habit-weekday-label">${l}</span>`).join('');
+  html += `<div class="habit-day-col"></div>`.repeat(firstWeekdayOffset(year, month));
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = toLocalDateStr(new Date(year, month, day));
     const done = dates.has(dateStr);
@@ -3712,10 +3726,10 @@ function computeMedStreak(habit) {
   return streak;
 }
 
-/** Historial del mes en curso (del día 1 al último) con cuatro puntos por día
- *  (mañana/mediodía/tarde/noche), para poder consultar de un vistazo si se
- *  tomó o no un día puntual. Muestra el número del día y el mes porque a esa
- *  escala es lo que realmente ayuda a ubicar una fecha puntual. */
+/** Historial del mes en curso en grilla de 7 columnas (lunes a domingo) con
+ *  cuatro puntos por día (mañana/mediodía/tarde/noche), para poder consultar
+ *  de un vistazo si se tomó o no un día puntual y si las tomas saltadas caen
+ *  siempre el mismo día de la semana. */
 function medMonthHistoryHTML(habit) {
   const slots = new Set(habit.completedSlots || []);
   const today = new Date();
@@ -3726,6 +3740,8 @@ function medMonthHistoryHTML(habit) {
   const todayNum = today.getDate();
 
   let html = `<div class="med-month-label">${monthLabel}</div>`;
+  html += WEEKDAY_LETTERS.map(l => `<span class="med-weekday-label">${l}</span>`).join('');
+  html += `<div class="med-day-col"></div>`.repeat(firstWeekdayOffset(year, month));
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = toLocalDateStr(new Date(year, month, day));
     const dots = MED_SLOTS.map(s => `<span class="med-slot-dot ${medSlotDone(slots, dateStr, s) ? 'done' : ''}"></span>`).join('');
