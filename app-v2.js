@@ -3527,6 +3527,16 @@ function renderBudgetList() {
 // Cada hábito guarda su `type` para que cada página del menú solo muestre y
 // agregue los suyos. Sin emoji elegible por hábito — cada página ya tiene su
 // propio ícono de librería en el menú, no hace falta elegir uno por ítem.
+/** Prende/apaga los checkboxes de franja de un selector de horario cuando se
+ *  marca "Libre demanda" — un medicamento no puede ser las dos cosas a la vez. */
+function toggleMedLibreUI(pickerId, libreCheckbox) {
+  const picker = document.getElementById(pickerId);
+  if (!picker) return;
+  picker.querySelectorAll('.med-slot-check-input').forEach(cb => {
+    cb.disabled = libreCheckbox.checked;
+  });
+}
+
 async function addHabit(type) {
   const input = document.getElementById('habit-title-input-' + type);
   if (!input) return;
@@ -3534,12 +3544,28 @@ async function addHabit(type) {
   if (!title) return;
 
   const id = 'habit-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-  const next = [...habits, { id, type, title, completedDates: [], completedSlots: [] }];
+  const entry = { id, type, title, completedDates: [], completedSlots: [] };
+
+  let medPicker = null;
+  if (type === 'medicacion') {
+    medPicker = document.getElementById('med-slot-picker-new');
+    const libre = document.getElementById('med-libre-new').checked;
+    entry.medFreeDemand = libre;
+    entry.medSlots = libre ? [] : Array.from(medPicker.querySelectorAll('.med-slot-check-input:checked')).map(cb => cb.value);
+    // Si desmarcó las 4 sin activar "libre demanda", asumimos que quiso decir "todas" en vez de un medicamento sin ninguna franja.
+    if (!libre && entry.medSlots.length === 0) entry.medSlots = MED_SLOTS.map(s => s.key);
+  }
+
+  const next = [...habits, entry];
 
   showSyncIndicator('syncing');
   try {
     await db.collection('config').doc('habits').set({ items: next });
     input.value = '';
+    if (medPicker) {
+      medPicker.querySelectorAll('.med-slot-check-input').forEach(cb => { cb.checked = true; cb.disabled = false; });
+      document.getElementById('med-libre-new').checked = false;
+    }
     showSyncIndicator('ok');
   } catch (err) {
     showSyncIndicator('error', err.message);
@@ -3710,11 +3736,26 @@ function medSlotDone(slotsSet, dateStr, slotDef) {
   return slotDef.legacy ? slotsSet.has(`${dateStr}-${slotDef.legacy}`) : false;
 }
 
-/** Racha de días con las 4 tomas hechas, terminando hoy o ayer si hoy todavía
- *  está incompleto (mismo criterio que computeHabitStreak). */
+/** Franjas que le tocan a este medicamento en particular. Sin `medSlots`
+ *  guardado (medicamentos cargados antes de que esto existiera) se asume que
+ *  usa las 4, para no cambiarle el comportamiento a lo ya guardado. */
+function medActiveSlots(habit) {
+  if (!habit.medSlots || habit.medSlots.length === 0) return MED_SLOTS;
+  return MED_SLOTS.filter(s => habit.medSlots.includes(s.key));
+}
+
+/** Cuánto se usó un medicamento, para ordenar la lista — cuenta tomas por
+ *  franja o, si es libre demanda, días marcados. */
+function medUsageCount(habit) {
+  return habit.medFreeDemand ? (habit.completedDates || []).length : (habit.completedSlots || []).length;
+}
+
+/** Racha de días con todas sus tomas hechas, terminando hoy o ayer si hoy
+ *  todavía está incompleto (mismo criterio que computeHabitStreak). */
 function computeMedStreak(habit) {
   const slots = new Set(habit.completedSlots || []);
-  const allDone = d => MED_SLOTS.every(s => medSlotDone(slots, d, s));
+  const activeSlots = medActiveSlots(habit);
+  const allDone = d => activeSlots.every(s => medSlotDone(slots, d, s));
   const cursor = new Date();
   if (!allDone(toLocalDateStr(cursor))) cursor.setDate(cursor.getDate() - 1);
 
@@ -3726,12 +3767,13 @@ function computeMedStreak(habit) {
   return streak;
 }
 
-/** Historial del mes en curso en grilla de 7 columnas (lunes a domingo) con
- *  cuatro puntos por día (mañana/mediodía/tarde/noche), para poder consultar
- *  de un vistazo si se tomó o no un día puntual y si las tomas saltadas caen
- *  siempre el mismo día de la semana. */
+/** Historial del mes en curso en grilla de 7 columnas (lunes a domingo), con
+ *  un punto por cada franja que le toca a ESTE medicamento (no siempre las 4),
+ *  para poder consultar de un vistazo si se tomó o no un día puntual y si las
+ *  tomas saltadas caen siempre el mismo día de la semana. */
 function medMonthHistoryHTML(habit) {
   const slots = new Set(habit.completedSlots || []);
+  const activeSlots = medActiveSlots(habit);
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
@@ -3744,7 +3786,7 @@ function medMonthHistoryHTML(habit) {
   html += `<div class="med-day-col"></div>`.repeat(firstWeekdayOffset(year, month));
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = toLocalDateStr(new Date(year, month, day));
-    const dots = MED_SLOTS.map(s => `<span class="med-slot-dot ${medSlotDone(slots, dateStr, s) ? 'done' : ''}"></span>`).join('');
+    const dots = activeSlots.map(s => `<span class="med-slot-dot ${medSlotDone(slots, dateStr, s) ? 'done' : ''}"></span>`).join('');
     html += `
       <div class="med-day-col ${day === todayNum ? 'is-today' : ''}" title="${dateStr}">
         <span class="med-day-label">${day}</span>
@@ -3755,6 +3797,60 @@ function medMonthHistoryHTML(habit) {
   return html;
 }
 
+// Qué medicamento tiene el editor de horario abierto ahora mismo (uno solo a
+// la vez). Es estado puramente de UI, no se guarda — por eso renderMedicationHabits
+// hay que llamarlo a mano al abrir/cerrar en vez de esperar al snapshot de Firestore.
+let medEditingScheduleId = null;
+
+function toggleMedScheduleEditor(id) {
+  medEditingScheduleId = (medEditingScheduleId === id) ? null : id;
+  renderMedicationHabits();
+}
+
+/** Selector de franjas + "libre demanda" para editar el horario de un
+ *  medicamento ya cargado. Mismo patrón que el selector del alta, pero con
+ *  el estado actual del medicamento pre-marcado. */
+function medSlotPickerHTML(habit) {
+  const scopeId = `med-slot-picker-${habit.id}`;
+  const activeKeys = new Set(medActiveSlots(habit).map(s => s.key));
+  const isFree = !!habit.medFreeDemand;
+  const checksHTML = MED_SLOTS.map(s => `
+    <label class="med-slot-check">
+      <input type="checkbox" class="med-slot-check-input" value="${s.key}" ${activeKeys.has(s.key) ? 'checked' : ''} ${isFree ? 'disabled' : ''}> ${s.label}
+    </label>
+  `).join('');
+  return `
+    <div class="med-slot-picker med-slot-picker-edit" id="${scopeId}">
+      ${checksHTML}
+      <label class="med-slot-check med-slot-check-libre">
+        <input type="checkbox" id="med-libre-${habit.id}" ${isFree ? 'checked' : ''} onchange="toggleMedLibreUI('${scopeId}', this)"> Libre demanda
+      </label>
+      <button type="button" class="med-schedule-save" onclick="saveMedSchedule('${habit.id}')">Guardar horario</button>
+    </div>
+  `;
+}
+
+async function saveMedSchedule(id) {
+  const scopeId = `med-slot-picker-${id}`;
+  const picker = document.getElementById(scopeId);
+  if (!picker) return;
+
+  const libre = document.getElementById(`med-libre-${id}`).checked;
+  let medSlots = libre ? [] : Array.from(picker.querySelectorAll('.med-slot-check-input:checked')).map(cb => cb.value);
+  if (!libre && medSlots.length === 0) medSlots = MED_SLOTS.map(s => s.key);
+
+  const next = habits.map(h => h.id === id ? { ...h, medFreeDemand: libre, medSlots } : h);
+  medEditingScheduleId = null;
+
+  showSyncIndicator('syncing');
+  try {
+    await db.collection('config').doc('habits').set({ items: next });
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
 function renderMedicationHabits() {
   const list = document.getElementById('habit-list-medicacion');
   if (!list) return;
@@ -3763,7 +3859,7 @@ function renderMedicationHabits() {
   // streak ni alfabético — la que más se toma queda arriba.
   const meds = habits.filter(h => h.type === 'medicacion')
     .slice()
-    .sort((a, b) => (b.completedSlots || []).length - (a.completedSlots || []).length);
+    .sort((a, b) => medUsageCount(b) - medUsageCount(a));
   if (meds.length === 0) {
     list.innerHTML = '<p class="empty-state">Todavía no agregaste ninguna medicación.</p>';
     return;
@@ -3771,9 +3867,31 @@ function renderMedicationHabits() {
 
   const todayStr = toLocalDateStr(new Date());
   list.innerHTML = meds.map(h => {
+    // Libre demanda: sin franjas fijas, un solo check diario — igual que
+    // Ejercicio/Bienestar, para no mostrar 4 botones que no aplican.
+    if (h.medFreeDemand) {
+      const done = (h.completedDates || []).includes(todayStr);
+      const streak = computeHabitStreak(h);
+      return `
+        <div class="med-card habit-card ${done ? 'done' : ''}">
+          <button class="habit-check" onclick="toggleHabitToday('${h.id}')" title="${done ? 'Desmarcar hoy' : 'Marcar como tomado hoy'}">
+            <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
+          </button>
+          <div class="habit-info">
+            <div class="med-title title-vistoso">${h.title}<span class="med-freedemand-tag">Libre demanda</span></div>
+            ${medEditingScheduleId === h.id ? medSlotPickerHTML(h) : ''}
+            <div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>
+          </div>
+          <div class="habit-streak" title="Racha">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+          <button class="task-btn" onclick="toggleMedScheduleEditor('${h.id}')" title="Editar horario"><i data-lucide="settings-2" style="width:14px;height:14px;"></i></button>
+          <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+        </div>
+      `;
+    }
+
     const slots = new Set(h.completedSlots || []);
     const streak = computeMedStreak(h);
-    const slotsHTML = MED_SLOTS.map(s => {
+    const slotsHTML = medActiveSlots(h).map(s => {
       const done = medSlotDone(slots, todayStr, s);
       return `
         <button class="med-slot-btn ${done ? 'done' : ''}" onclick="toggleMedSlot('${h.id}', '${s.key}')">
@@ -3785,9 +3903,11 @@ function renderMedicationHabits() {
       <div class="med-card">
         <div class="med-card-top">
           <div class="med-title title-vistoso">${h.title}</div>
-          <div class="med-streak" title="Racha (las 4 tomas)">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+          <div class="med-streak" title="Racha (todas las tomas del día)">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+          <button class="task-btn" onclick="toggleMedScheduleEditor('${h.id}')" title="Editar horario"><i data-lucide="settings-2" style="width:14px;height:14px;"></i></button>
           <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
         </div>
+        ${medEditingScheduleId === h.id ? medSlotPickerHTML(h) : ''}
         <div class="med-slots">${slotsHTML}</div>
         <div class="med-history">${medMonthHistoryHTML(h)}</div>
       </div>

@@ -2551,6 +2551,65 @@ body {
   color: var(--verde);
 }
 
+/* --- Selector de horario (alta y edición de medicamentos) --- */
+.med-slot-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+}
+
+.med-slot-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.med-slot-check-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.med-slot-check-libre {
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.med-schedule-save {
+  margin-left: auto;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.med-freedemand-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(59,111,224,0.16);
+  -webkit-text-fill-color: var(--accent);
+}
+
 .med-history {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

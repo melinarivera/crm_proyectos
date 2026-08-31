@@ -248,6 +248,15 @@
       </div>
       <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('medicacion');">
         <input type="text" id="habit-title-input-medicacion" placeholder="Ej: Vitamina D, Antibiótico..." maxlength="60" />
+        <div class="med-slot-picker" id="med-slot-picker-new">
+          <label class="med-slot-check"><input type="checkbox" class="med-slot-check-input" value="MANANA" checked> Mañana</label>
+          <label class="med-slot-check"><input type="checkbox" class="med-slot-check-input" value="MEDIODIA" checked> Mediodía</label>
+          <label class="med-slot-check"><input type="checkbox" class="med-slot-check-input" value="TARDE" checked> Tarde</label>
+          <label class="med-slot-check"><input type="checkbox" class="med-slot-check-input" value="NOCHE" checked> Noche</label>
+          <label class="med-slot-check med-slot-check-libre">
+            <input type="checkbox" id="med-libre-new" onchange="toggleMedLibreUI('med-slot-picker-new', this)"> Libre demanda
+          </label>
+        </div>
         <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
       </form>
       <div class="habit-list" id="habit-list-medicacion"></div>
