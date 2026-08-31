@@ -3896,6 +3896,7 @@ function renderMedicationHabits() {
     if (h.medFreeDemand) {
       const done = (h.completedDates || []).includes(todayStr);
       const streak = computeHabitStreak(h);
+      const expanded = expandedCalendarIds.has(h.id);
       return `
         <div class="med-card habit-card ${done ? 'done' : ''}">
           <button class="habit-check" onclick="toggleHabitToday('${h.id}')" title="${done ? 'Desmarcar hoy' : 'Marcar como tomado hoy'}">
@@ -3904,9 +3905,10 @@ function renderMedicationHabits() {
           <div class="habit-info">
             <div class="med-title title-vistoso">${h.title}<span class="med-freedemand-tag">Libre demanda</span></div>
             ${medEditingScheduleId === h.id ? medSlotPickerHTML(h) : ''}
-            <div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>
+            ${expanded ? `<div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>` : ''}
           </div>
           <div class="habit-streak" title="Racha">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+          ${calendarExpandBtnHTML(h.id, 'medicacion')}
           <button class="task-btn" onclick="toggleMedScheduleEditor('${h.id}')" title="Editar horario"><i data-lucide="settings-2" style="width:14px;height:14px;"></i></button>
           <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
         </div>
