@@ -3547,8 +3547,11 @@ async function addHabit(type) {
   const entry = { id, type, title, completedDates: [], completedSlots: [] };
 
   let medPicker = null;
+  let doseInput = null;
   if (type === 'medicacion') {
     medPicker = document.getElementById('med-slot-picker-new');
+    doseInput = document.getElementById('habit-dose-input-medicacion');
+    entry.dose = doseInput ? doseInput.value.trim() : '';
     const libre = document.getElementById('med-libre-new').checked;
     entry.medFreeDemand = libre;
     entry.medSlots = libre ? [] : Array.from(medPicker.querySelectorAll('.med-slot-check-input:checked')).map(cb => cb.value);
@@ -3562,6 +3565,7 @@ async function addHabit(type) {
   try {
     await db.collection('config').doc('habits').set({ items: next });
     input.value = '';
+    if (doseInput) doseInput.value = '';
     if (medPicker) {
       medPicker.querySelectorAll('.med-slot-check-input').forEach(cb => { cb.checked = true; cb.disabled = false; });
       document.getElementById('med-libre-new').checked = false;
@@ -3821,8 +3825,8 @@ function medMonthHistoryHTML(habit) {
   return html;
 }
 
-// Qué medicamento tiene el editor de horario abierto ahora mismo (uno solo a
-// la vez). Es estado puramente de UI, no se guarda — por eso renderMedicationHabits
+// Qué medicamento tiene el editor abierto ahora mismo (uno solo a la vez).
+// Es estado puramente de UI, no se guarda — por eso renderMedicationHabits
 // hay que llamarlo a mano al abrir/cerrar en vez de esperar al snapshot de Firestore.
 let medEditingScheduleId = null;
 
@@ -3831,10 +3835,13 @@ function toggleMedScheduleEditor(id) {
   renderMedicationHabits();
 }
 
-/** Selector de franjas + "libre demanda" para editar el horario de un
- *  medicamento ya cargado. Mismo patrón que el selector del alta, pero con
- *  el estado actual del medicamento pre-marcado. */
-function medSlotPickerHTML(habit) {
+/** Nombre, dosis y selector de franjas + "libre demanda" para editar un
+ *  medicamento ya cargado. Mismo patrón de franjas que el selector del alta,
+ *  con el estado actual del medicamento pre-marcado. Nombre y dosis se
+ *  completan después de insertar el HTML (ver renderMedicationHabits) en vez
+ *  de interpolarlos en el atributo `value`, para no romper el markup si el
+ *  texto guardado trae comillas. */
+function medEditFormHTML(habit) {
   const scopeId = `med-slot-picker-${habit.id}`;
   const activeKeys = new Set(medActiveSlots(habit).map(s => s.key));
   const isFree = !!habit.medFreeDemand;
@@ -3844,26 +3851,38 @@ function medSlotPickerHTML(habit) {
     </label>
   `).join('');
   return `
-    <div class="med-slot-picker med-slot-picker-edit" id="${scopeId}">
-      ${checksHTML}
-      <label class="med-slot-check med-slot-check-libre">
-        <input type="checkbox" id="med-libre-${habit.id}" ${isFree ? 'checked' : ''} onchange="toggleMedLibreUI('${scopeId}', this)"> Libre demanda
-      </label>
-      <button type="button" class="med-schedule-save" onclick="saveMedSchedule('${habit.id}')">Guardar horario</button>
+    <div class="med-edit-form">
+      <div class="med-edit-row">
+        <input type="text" class="med-edit-title" id="med-edit-title-${habit.id}" placeholder="Nombre del medicamento" maxlength="60" />
+        <input type="text" class="med-edit-dose" id="med-edit-dose-${habit.id}" placeholder="Dosis (ej: 10 mg, 1 comprimido)" maxlength="40" />
+      </div>
+      <div class="med-slot-picker med-slot-picker-edit" id="${scopeId}">
+        ${checksHTML}
+        <label class="med-slot-check med-slot-check-libre">
+          <input type="checkbox" id="med-libre-${habit.id}" ${isFree ? 'checked' : ''} onchange="toggleMedLibreUI('${scopeId}', this)"> Libre demanda
+        </label>
+        <button type="button" class="med-schedule-save" onclick="saveMedEdit('${habit.id}')">Guardar cambios</button>
+      </div>
     </div>
   `;
 }
 
-async function saveMedSchedule(id) {
+async function saveMedEdit(id) {
   const scopeId = `med-slot-picker-${id}`;
   const picker = document.getElementById(scopeId);
   if (!picker) return;
+
+  const titleEl = document.getElementById(`med-edit-title-${id}`);
+  const doseEl = document.getElementById(`med-edit-dose-${id}`);
+  const title = titleEl.value.trim();
+  if (!title) { alert('El nombre del medicamento no puede quedar vacío.'); return; }
+  const dose = doseEl.value.trim();
 
   const libre = document.getElementById(`med-libre-${id}`).checked;
   let medSlots = libre ? [] : Array.from(picker.querySelectorAll('.med-slot-check-input:checked')).map(cb => cb.value);
   if (!libre && medSlots.length === 0) medSlots = MED_SLOTS.map(s => s.key);
 
-  const next = habits.map(h => h.id === id ? { ...h, medFreeDemand: libre, medSlots } : h);
+  const next = habits.map(h => h.id === id ? { ...h, title, dose, medFreeDemand: libre, medSlots } : h);
   medEditingScheduleId = null;
 
   showSyncIndicator('syncing');
@@ -3903,13 +3922,13 @@ function renderMedicationHabits() {
             <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
           </button>
           <div class="habit-info">
-            <div class="med-title title-vistoso">${h.title}<span class="med-freedemand-tag">Libre demanda</span></div>
-            ${medEditingScheduleId === h.id ? medSlotPickerHTML(h) : ''}
+            <div class="med-title title-vistoso">${h.title}${h.dose ? `<span class="med-dose-tag">${h.dose}</span>` : ''}<span class="med-freedemand-tag">Libre demanda</span></div>
+            ${medEditingScheduleId === h.id ? medEditFormHTML(h) : ''}
             ${expanded ? `<div class="habit-month-cal">${habitMonthCalendarHTML(h)}</div>` : ''}
           </div>
           <div class="habit-streak" title="Racha">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
           ${calendarExpandBtnHTML(h.id, 'medicacion')}
-          <button class="task-btn" onclick="toggleMedScheduleEditor('${h.id}')" title="Editar horario"><i data-lucide="settings-2" style="width:14px;height:14px;"></i></button>
+          <button class="task-btn" onclick="toggleMedScheduleEditor('${h.id}')" title="Editar medicamento"><i data-lucide="settings-2" style="width:14px;height:14px;"></i></button>
           <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
         </div>
       `;
@@ -3929,18 +3948,29 @@ function renderMedicationHabits() {
     return `
       <div class="med-card">
         <div class="med-card-top">
-          <div class="med-title title-vistoso">${h.title}</div>
+          <div class="med-title title-vistoso">${h.title}${h.dose ? `<span class="med-dose-tag">${h.dose}</span>` : ''}</div>
           <div class="med-streak" title="Racha (todas las tomas del día)">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
           ${calendarExpandBtnHTML(h.id, 'medicacion')}
-          <button class="task-btn" onclick="toggleMedScheduleEditor('${h.id}')" title="Editar horario"><i data-lucide="settings-2" style="width:14px;height:14px;"></i></button>
+          <button class="task-btn" onclick="toggleMedScheduleEditor('${h.id}')" title="Editar medicamento"><i data-lucide="settings-2" style="width:14px;height:14px;"></i></button>
           <button class="task-btn habit-delete" onclick="deleteHabit('${h.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
         </div>
-        ${medEditingScheduleId === h.id ? medSlotPickerHTML(h) : ''}
+        ${medEditingScheduleId === h.id ? medEditFormHTML(h) : ''}
         <div class="med-slots">${slotsHTML}</div>
         ${expanded ? `<div class="med-history">${medMonthHistoryHTML(h)}</div>` : ''}
       </div>
     `;
   }).join('');
+
+  if (medEditingScheduleId) {
+    const editing = meds.find(m => m.id === medEditingScheduleId);
+    if (editing) {
+      const titleEl = document.getElementById(`med-edit-title-${editing.id}`);
+      const doseEl = document.getElementById(`med-edit-dose-${editing.id}`);
+      if (titleEl) titleEl.value = editing.title;
+      if (doseEl) doseEl.value = editing.dose || '';
+    }
+  }
+
   refreshIcons();
 }
 

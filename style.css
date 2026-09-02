@@ -2059,6 +2059,11 @@ body {
   font-size: 13px;
 }
 
+.habit-add-form input.habit-dose-input {
+  flex: 0 1 200px;
+  min-width: 160px;
+}
+
 .habit-list {
   display: flex;
   flex-direction: column;
@@ -2647,6 +2652,47 @@ body {
   border-color: var(--verde);
   background: #06d6a01a;
   color: var(--verde);
+}
+
+/* --- Edición de medicamentos (nombre, dosis y horario) --- */
+.med-edit-form {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.med-edit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.med-edit-row input[type="text"] {
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.med-edit-title { flex: 1 1 220px; }
+.med-edit-dose { flex: 0 1 200px; }
+
+.med-dose-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-sub);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  -webkit-text-fill-color: var(--text-sub);
 }
 
 /* --- Selector de horario (alta y edición de medicamentos) --- */
