@@ -903,7 +903,7 @@ body {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 18px;
+  padding: 18px 60px 18px 18px;
   position: relative;
   transition: all 0.2s;
   animation: popIn 0.3s ease;
@@ -2284,7 +2284,7 @@ body {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 16px 18px;
+  padding: 16px 62px 16px 18px;
   display: flex;
   align-items: flex-start;
   gap: 12px;
