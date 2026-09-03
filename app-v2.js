@@ -4549,7 +4549,6 @@ function citaCardHTML(c) {
           <span class="cita-card-icon"><i data-lucide="${citaIcon(c.title)}" style="width:14px;height:14px;"></i></span>
           <span class="cita-card-title">${c.title}</span>
           ${c.time ? `<span class="cita-card-time">${c.time}</span>` : ''}
-          ${isPast ? `<span class="cita-card-past-tag">Pasada</span>` : ''}
         </div>
         ${c.note ? `<div class="cita-card-note">${c.note}</div>` : ''}
       </div>
@@ -4557,18 +4556,52 @@ function citaCardHTML(c) {
   `;
 }
 
-/** Orden ascendente (la más próxima primero); las que ya pasaron quedan atenuadas
- *  en vez de desaparecer, para poder seguir consultándolas. Las citas guardadas
- *  antes de separar por persona no tienen `person` — quedan del lado de Meli. */
+/** Las que ya pasaron van en una sección "Anteriores" aparte y colapsada, en vez
+ *  de mezclarse atenuadas entre las próximas — así no hay que distinguirlas a
+ *  simple vista, y siguen disponibles para consultar con un clic. Las citas
+ *  guardadas antes de separar por persona no tienen `person` — quedan del lado
+ *  de Meli. */
+let expandedCitasPast = new Set();
+
+function toggleCitasPast(person) {
+  if (expandedCitasPast.has(person)) expandedCitasPast.delete(person);
+  else expandedCitasPast.add(person);
+  renderCitas();
+}
+
 function renderCitas() {
+  const todayStr = toLocalDateStr(new Date());
+
   ['meli', 'sara'].forEach(person => {
     const list = document.getElementById('cita-list-' + person);
     if (!list) return;
 
     const filtered = citas.filter(c => (c.person === 'sara' ? 'sara' : 'meli') === person);
-    list.innerHTML = filtered.length === 0
-      ? '<p class="empty-state">Sin citas registradas.</p>'
-      : filtered.map(citaCardHTML).join('');
+    if (filtered.length === 0) {
+      list.innerHTML = '<p class="empty-state">Sin citas registradas.</p>';
+      return;
+    }
+
+    const upcoming = filtered.filter(c => !(c.date && c.date < todayStr));
+    const past = filtered.filter(c => c.date && c.date < todayStr).reverse();
+
+    const upcomingHTML = upcoming.length
+      ? upcoming.map(citaCardHTML).join('')
+      : '<p class="empty-state">Sin próximas citas.</p>';
+
+    let pastHTML = '';
+    if (past.length) {
+      const expanded = expandedCitasPast.has(person);
+      pastHTML = `
+        <button class="cita-past-toggle" onclick="toggleCitasPast('${person}')">
+          <i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" style="width:14px;height:14px;"></i>
+          Anteriores (${past.length})
+        </button>
+        ${expanded ? `<div class="cita-past-list">${past.map(citaCardHTML).join('')}</div>` : ''}
+      `;
+    }
+
+    list.innerHTML = upcomingHTML + pastHTML;
   });
   refreshIcons();
 }
