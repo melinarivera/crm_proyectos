@@ -4248,24 +4248,59 @@ let rutina = { exercises: [] };
 
 async function addRutinaExercise() {
   const nameEl = document.getElementById('rutina-ex-name');
+  const groupEl = document.getElementById('rutina-ex-group');
   const setsEl = document.getElementById('rutina-ex-sets');
   const repsEl = document.getElementById('rutina-ex-reps');
   const ytEl = document.getElementById('rutina-ex-youtube');
+  const editingId = document.getElementById('editing-rutina-ex-id').value;
   const name = nameEl.value.trim();
   if (!name) return;
 
-  const id = 'ex-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-  const exercise = { id, name, sets: setsEl.value.trim(), reps: repsEl.value.trim(), youtube: ytEl.value.trim(), completedDates: [] };
-  const next = { ...rutina, exercises: [...(rutina.exercises || []), exercise] };
+  const fields = { name, group: groupEl.value, sets: setsEl.value.trim(), reps: repsEl.value.trim(), youtube: ytEl.value.trim() };
+  let next;
+  if (editingId) {
+    next = { ...rutina, exercises: (rutina.exercises || []).map(e => e.id === editingId ? { ...e, ...fields } : e) };
+  } else {
+    const id = 'ex-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+    const exercise = { id, ...fields, completedDates: [] };
+    next = { ...rutina, exercises: [...(rutina.exercises || []), exercise] };
+  }
 
   showSyncIndicator('syncing');
   try {
     await db.collection('config').doc('rutina').set(next);
-    nameEl.value = ''; setsEl.value = ''; repsEl.value = ''; ytEl.value = '';
+    resetRutinaForm();
     showSyncIndicator('ok');
   } catch (err) {
     showSyncIndicator('error', err.message);
   }
+}
+
+function editRutinaExercise(id) {
+  const e = (rutina.exercises || []).find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('editing-rutina-ex-id').value = id;
+  document.getElementById('rutina-ex-name').value = e.name || '';
+  document.getElementById('rutina-ex-group').value = e.group || '';
+  document.getElementById('rutina-ex-sets').value = e.sets || '';
+  document.getElementById('rutina-ex-reps').value = e.reps || '';
+  document.getElementById('rutina-ex-youtube').value = e.youtube || '';
+  document.getElementById('btn-save-rutina').innerHTML = '<i data-lucide="check" style="width:15px;height:15px;"></i> Actualizar';
+  document.getElementById('btn-cancel-rutina').style.display = 'inline-block';
+  document.getElementById('rutina-ex-name').focus();
+  refreshIcons();
+}
+
+function resetRutinaForm() {
+  document.getElementById('editing-rutina-ex-id').value = '';
+  document.getElementById('rutina-ex-name').value = '';
+  document.getElementById('rutina-ex-group').value = '';
+  document.getElementById('rutina-ex-sets').value = '';
+  document.getElementById('rutina-ex-reps').value = '';
+  document.getElementById('rutina-ex-youtube').value = '';
+  document.getElementById('btn-save-rutina').innerHTML = '<i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar';
+  document.getElementById('btn-cancel-rutina').style.display = 'none';
+  refreshIcons();
 }
 
 async function deleteRutinaExercise(id) {
@@ -4315,7 +4350,8 @@ function renderRutina() {
   }
 
   const todayStr = toLocalDateStr(new Date());
-  list.innerHTML = exercises.map(e => {
+  const grouped = [...exercises].sort((a, b) => (a.group || '').localeCompare(b.group || ''));
+  list.innerHTML = grouped.map(e => {
     const meta = [e.sets && `${e.sets} series`, e.reps && `${e.reps} repeticiones`].filter(Boolean).join(' · ');
     const done = (e.completedDates || []).includes(todayStr);
     const streak = computeHabitStreak(e);
@@ -4326,12 +4362,13 @@ function renderRutina() {
           <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
         </button>
         <div class="habit-info">
-          <div class="habit-title title-vistoso">${e.name}${meta ? `<span class="rutina-meta-inline"> · ${meta}</span>` : ''}</div>
+          <div class="habit-title title-vistoso">${e.group ? `<span class="rutina-group-tag">${e.group}</span> ` : ''}${e.name}${meta ? `<span class="rutina-meta-inline"> · ${meta}</span>` : ''}</div>
           ${expanded ? `<div class="habit-month-cal">${habitMonthCalendarHTML(e)}</div>` : ''}
         </div>
         <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
         ${calendarExpandBtnHTML(e.id, 'rutina')}
         ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
+        <button class="task-btn" onclick="editRutinaExercise('${e.id}')" title="Editar"><i data-lucide="edit-3" style="width:14px;height:14px;"></i></button>
         <button class="task-btn habit-delete" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
       </div>
     `;

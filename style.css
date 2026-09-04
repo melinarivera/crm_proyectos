@@ -2577,7 +2577,8 @@ body {
   margin-bottom: 16px;
 }
 
-.rutina-add-form input {
+.rutina-add-form input,
+.rutina-add-form select {
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -2599,6 +2600,80 @@ body {
 
 .rutina-meta-inline { font-weight: 500; color: var(--text-sub); -webkit-text-fill-color: var(--text-sub); font-size: 12px; }
 .rutina-youtube { flex-shrink: 0; color: var(--accent); display: flex; }
+
+.rutina-group-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--accent);
+  background: var(--bg2);
+  padding: 2px 7px;
+  border-radius: 20px;
+  vertical-align: middle;
+}
+
+/* --- Plan de entrenamiento: referencia fija (progresión, calendario semanal
+   y notas por semana), colapsada por default para no tapar la lista de tildar. --- */
+.rutina-plan {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.rutina-plan summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+.rutina-plan[open] summary { margin-bottom: 12px; }
+
+.rutina-plan-note {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--text-sub);
+  margin: 10px 0;
+}
+
+.rutina-plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+}
+
+.rutina-plan-table th,
+.rutina-plan-table td {
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rutina-plan-table th {
+  color: var(--text-sub);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.rutina-plan-table tbody tr:last-child td { border-bottom: none; }
+
+.rutina-week-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-sub);
+}
+
+.rutina-week-notes strong { color: var(--text); }
 
 /* Fila de "Mi Word" / "Mi Excel" — se repite en varias secciones de Salud */
 .section-links-row {

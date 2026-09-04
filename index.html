@@ -197,13 +197,61 @@
       <div class="habit-list" id="habit-list-ejercicio"></div>
 
       <div class="rutina-section">
+        <h4 class="timeline-allday-title">Plan de entrenamiento</h4>
+        <details class="rutina-plan">
+          <summary>Ver progresión semana a semana</summary>
+          <p class="rutina-plan-note">Tempo: 1 tiempo subiendo, 2 bajando, controlado. Regla de oro: terminá cada sesión pensando "podría haber hecho una serie más" — si acabás arrastrándote, te pasaste.</p>
+
+          <table class="rutina-plan-table">
+            <thead><tr><th>Bloque</th><th>Vueltas</th><th>Reps</th><th>Descanso</th><th>Cardio</th></tr></thead>
+            <tbody>
+              <tr><td>Semanas 1–2</td><td>2</td><td>12</td><td>90 seg</td><td>Caminar, 3 días</td></tr>
+              <tr><td>Semanas 3–4</td><td>2</td><td>12</td><td>90 seg</td><td>Cama elástica (nuevo)</td></tr>
+              <tr><td>Semanas 5–6</td><td>3</td><td>12</td><td>90 seg</td><td>4 días</td></tr>
+              <tr><td>Semanas 7–8</td><td>3</td><td>12, más peso</td><td>90 seg</td><td>4 días</td></tr>
+              <tr><td>Semana 9+</td><td>3 series</td><td>8–10, peso alto</td><td>90 seg</td><td>Mantener</td></tr>
+            </tbody>
+          </table>
+
+          <table class="rutina-plan-table">
+            <thead><tr><th>Día</th><th>Sesión</th></tr></thead>
+            <tbody>
+              <tr><td>Lunes</td><td>Tren inferior</td></tr>
+              <tr><td>Martes</td><td>Core + movilidad</td></tr>
+              <tr><td>Miércoles</td><td>Tren superior</td></tr>
+              <tr><td>Jueves</td><td>Core + movilidad</td></tr>
+              <tr><td>Viernes</td><td>Tren inferior</td></tr>
+              <tr><td>Sábado</td><td>Cardio suave o descanso</td></tr>
+              <tr><td>Domingo</td><td>Descanso</td></tr>
+            </tbody>
+          </table>
+
+          <div class="rutina-week-notes">
+            <div><strong>Semana 1 · aprender los movimientos</strong> — Sin mancuernas o con las más ligeras que tengas. Nada de cama elástica todavía.</div>
+            <div><strong>Semana 2</strong> — Todo igual que la semana 1. Único cambio: si los movimientos ya salen sin pensar, mancuernas ligeras en sentadilla, desplantes y remo. Seguí sin cama elástica — el cuerpo todavía está aprendiendo a absorber carga. Cardio: caminar 20 min, 3 días.</div>
+            <div><strong>Semana 3 · entra la cama elástica</strong> — Circuitos iguales: 2 vueltas, 12 reps. Cardio y rebote 3 días: 10 min caminando + 5–10 min de cama elástica. Rebote suave, sin saltos grandes, los pies apenas despegan. Si al día siguiente hay rodillas o tobillos resentidos, quedate en 5 minutos otra semana.</div>
+            <div><strong>Semana 4 · fin del primer bloque</strong> — Circuitos: 2 vueltas, pero subí el peso donde las últimas repeticiones ya no cuesten. Cardio y rebote: 3 días, 10 min caminata + 10 min cama elástica. Antes de pasar a la semana 5: ¿dormís bien, tenés ganas de ir? Si sí, adelante. Si no, repetí la semana 4.</div>
+            <div><strong>Semanas 5 y 6 · sube el volumen</strong> — 3 vueltas en lugar de 2 · repeticiones: 12 · plancha: 30 segundos · descanso: 90 seg entre vueltas. Cardio y rebote: 4 días, 25 minutos, cama elástica hasta 15 min por sesión.</div>
+            <div><strong>Semanas 7 y 8</strong> — 3 vueltas con más peso · repeticiones: 12 (si salen 15 fáciles, el peso es corto) · cardio: 4 días, 25–30 min, cama elástica 15–20 min. Regla de progresión: subí el peso, no las repeticiones. Cuando 12 se te queden cortas, la mancuerna siguiente y volvé a 10.</div>
+            <div><strong>Semana 9 en adelante</strong> — Cambia el enfoque: en lugar de circuito, series de 3 × 8–10 repeticiones con peso alto y 90 segundos de descanso. Mismos ejercicios, mismos videos, solo cambia el formato. A los 47, la carga alta con repeticiones moderadas es lo que más protege la densidad ósea y construye músculo. Mantené el cardio y la cama elástica como en la semana 8.</div>
+          </div>
+        </details>
+
         <h4 class="timeline-allday-title">Mi rutina (series, repeticiones y videos)</h4>
         <form class="rutina-add-form" onsubmit="event.preventDefault(); addRutinaExercise();">
           <input type="text" id="rutina-ex-name" placeholder="Ejercicio: ej. Sentadillas" />
-          <input type="text" id="rutina-ex-sets" placeholder="Series" style="width:80px;" />
+          <select id="rutina-ex-group">
+            <option value="">Sin grupo</option>
+            <option value="Tren inferior">Tren inferior</option>
+            <option value="Tren superior">Tren superior</option>
+            <option value="Core">Core</option>
+          </select>
+          <input type="text" id="rutina-ex-sets" placeholder="Series/vueltas" style="width:100px;" />
           <input type="text" id="rutina-ex-reps" placeholder="Repeticiones" style="width:110px;" />
           <input type="url" id="rutina-ex-youtube" placeholder="Enlace de YouTube (opcional)" />
-          <button type="submit" class="btn-add"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
+          <input type="hidden" id="editing-rutina-ex-id" value="">
+          <button type="button" class="btn-cancel" id="btn-cancel-rutina" style="display:none;" onclick="resetRutinaForm()">Cancelar</button>
+          <button type="submit" class="btn-add" id="btn-save-rutina"><i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar</button>
         </form>
         <div class="rutina-list" id="rutina-list"></div>
 
