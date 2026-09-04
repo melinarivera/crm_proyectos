@@ -2601,6 +2601,39 @@ body {
 .rutina-meta-inline { font-weight: 500; color: var(--text-sub); -webkit-text-fill-color: var(--text-sub); font-size: 12px; }
 .rutina-youtube { flex-shrink: 0; color: var(--accent); display: flex; }
 
+.rutina-days-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rutina-days-label { font-size: 12px; font-weight: 600; color: var(--text-sub); }
+
+.rutina-days-field .repeat-day-picker { margin-top: 0; }
+
+.rutina-days-field .repeat-day-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+
+.rutina-day-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.rutina-list > .rutina-day-heading:first-child {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: none;
+}
+
 .rutina-group-tag {
   display: inline-block;
   font-size: 10px;

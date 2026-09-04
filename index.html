@@ -246,8 +246,56 @@
             <option value="Tren superior">Tren superior</option>
             <option value="Core">Core</option>
           </select>
-          <input type="text" id="rutina-ex-sets" placeholder="Series/vueltas" style="width:100px;" />
-          <input type="text" id="rutina-ex-reps" placeholder="Repeticiones" style="width:110px;" />
+
+          <select id="rutina-ex-sets" onchange="onRutinaFieldSelectChange('sets')">
+            <option value="">Series</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="otro">Otro…</option>
+          </select>
+          <input type="text" id="rutina-ex-sets-custom" placeholder="Series (personalizado)" style="width:140px;display:none;" />
+
+          <select id="rutina-ex-reps" onchange="onRutinaFieldSelectChange('reps')">
+            <option value="">Repeticiones</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+            <option value="30">30</option>
+            <option value="otro">Otro…</option>
+          </select>
+          <input type="text" id="rutina-ex-reps-custom" placeholder="Reps (personalizado)" style="width:150px;display:none;" />
+
+          <select id="rutina-ex-descanso">
+            <option value="">Descanso</option>
+            <option value="30">30 seg</option>
+            <option value="60">60 seg</option>
+            <option value="90">90 seg</option>
+            <option value="120">120 seg</option>
+          </select>
+
+          <input type="number" id="rutina-ex-order" placeholder="Orden" min="1" style="width:80px;" title="Orden en el que se realiza dentro del día" />
+
+          <div class="rutina-days-field">
+            <span class="rutina-days-label">Días</span>
+            <div id="rutina-days-picker" class="repeat-day-picker">
+              <button type="button" class="repeat-day-btn" data-day="1" onclick="toggleRutinaDay(1, this)">L</button>
+              <button type="button" class="repeat-day-btn" data-day="2" onclick="toggleRutinaDay(2, this)">M</button>
+              <button type="button" class="repeat-day-btn" data-day="3" onclick="toggleRutinaDay(3, this)">X</button>
+              <button type="button" class="repeat-day-btn" data-day="4" onclick="toggleRutinaDay(4, this)">J</button>
+              <button type="button" class="repeat-day-btn" data-day="5" onclick="toggleRutinaDay(5, this)">V</button>
+              <button type="button" class="repeat-day-btn" data-day="6" onclick="toggleRutinaDay(6, this)">S</button>
+              <button type="button" class="repeat-day-btn" data-day="0" onclick="toggleRutinaDay(0, this)">D</button>
+            </div>
+            <input type="hidden" id="rutina-ex-days" value="">
+          </div>
+
           <input type="url" id="rutina-ex-youtube" placeholder="Enlace de YouTube (opcional)" />
           <input type="hidden" id="editing-rutina-ex-id" value="">
           <button type="button" class="btn-cancel" id="btn-cancel-rutina" style="display:none;" onclick="resetRutinaForm()">Cancelar</button>

@@ -4246,17 +4246,79 @@ function renderSueno() {
 // Un solo doc de config, mismo patrón que budgets/habits. ---
 let rutina = { exercises: [] };
 
+// Mismo criterio de día-de-semana que toggleRepeatDay (0=Domingo..6=Sábado, JS Date#getDay()),
+// pero ordenado Lunes-primero para que la lista de "Mi rutina" se lea como la semana real.
+const RUTINA_DIAS_ORDEN = [1, 2, 3, 4, 5, 6, 0];
+const RUTINA_DIAS_LABELS = { 0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
+const RUTINA_SETS_PRESETS = ['1', '2', '3', '4', '5'];
+const RUTINA_REPS_PRESETS = ['6', '8', '10', '12', '15', '20', '25', '30'];
+
+function toggleRutinaDay(day, btn) {
+  btn.classList.toggle('active');
+  const hidden = document.getElementById('rutina-ex-days');
+  const days = new Set(hidden.value ? hidden.value.split(',').map(Number) : []);
+  if (days.has(day)) days.delete(day); else days.add(day);
+  hidden.value = [...days].join(',');
+}
+
+/** Los selects de series/repeticiones ofrecen los valores típicos para no tener que
+ *  escribirlos, pero "Otro…" destapa un campo de texto para los casos que no encajan
+ *  (ej. "8–10" en semanas 7-8, o "20 seg" en la plancha). */
+function onRutinaFieldSelectChange(field) {
+  const select = document.getElementById(`rutina-ex-${field}`);
+  const custom = document.getElementById(`rutina-ex-${field}-custom`);
+  const isOtro = select.value === 'otro';
+  custom.style.display = isOtro ? 'inline-block' : 'none';
+  if (!isOtro) custom.value = '';
+}
+
+function readRutinaSelectOrCustom(field) {
+  const select = document.getElementById(`rutina-ex-${field}`).value;
+  if (select === 'otro') return document.getElementById(`rutina-ex-${field}-custom`).value.trim();
+  return select;
+}
+
+/** Marca en el select el valor guardado si es uno de los presets; si no (viejo dato
+ *  en texto libre, tipo "20 seg"), cae en "Otro…" y lo muestra en el campo de al lado. */
+function setRutinaSelectOrCustom(field, value, presets) {
+  const select = document.getElementById(`rutina-ex-${field}`);
+  const custom = document.getElementById(`rutina-ex-${field}-custom`);
+  if (!value) {
+    select.value = '';
+    custom.style.display = 'none';
+    custom.value = '';
+  } else if (presets.includes(String(value))) {
+    select.value = String(value);
+    custom.style.display = 'none';
+    custom.value = '';
+  } else {
+    select.value = 'otro';
+    custom.style.display = 'inline-block';
+    custom.value = value;
+  }
+}
+
 async function addRutinaExercise() {
   const nameEl = document.getElementById('rutina-ex-name');
   const groupEl = document.getElementById('rutina-ex-group');
-  const setsEl = document.getElementById('rutina-ex-sets');
-  const repsEl = document.getElementById('rutina-ex-reps');
+  const descansoEl = document.getElementById('rutina-ex-descanso');
+  const orderEl = document.getElementById('rutina-ex-order');
+  const daysEl = document.getElementById('rutina-ex-days');
   const ytEl = document.getElementById('rutina-ex-youtube');
   const editingId = document.getElementById('editing-rutina-ex-id').value;
   const name = nameEl.value.trim();
   if (!name) return;
 
-  const fields = { name, group: groupEl.value, sets: setsEl.value.trim(), reps: repsEl.value.trim(), youtube: ytEl.value.trim() };
+  const fields = {
+    name,
+    group: groupEl.value,
+    sets: readRutinaSelectOrCustom('sets'),
+    reps: readRutinaSelectOrCustom('reps'),
+    descanso: descansoEl.value,
+    order: orderEl.value ? Number(orderEl.value) : null,
+    days: daysEl.value ? daysEl.value.split(',').map(Number) : [],
+    youtube: ytEl.value.trim()
+  };
   let next;
   if (editingId) {
     next = { ...rutina, exercises: (rutina.exercises || []).map(e => e.id === editingId ? { ...e, ...fields } : e) };
@@ -4282,9 +4344,18 @@ function editRutinaExercise(id) {
   document.getElementById('editing-rutina-ex-id').value = id;
   document.getElementById('rutina-ex-name').value = e.name || '';
   document.getElementById('rutina-ex-group').value = e.group || '';
-  document.getElementById('rutina-ex-sets').value = e.sets || '';
-  document.getElementById('rutina-ex-reps').value = e.reps || '';
+  setRutinaSelectOrCustom('sets', e.sets, RUTINA_SETS_PRESETS);
+  setRutinaSelectOrCustom('reps', e.reps, RUTINA_REPS_PRESETS);
+  document.getElementById('rutina-ex-descanso').value = e.descanso || '';
+  document.getElementById('rutina-ex-order').value = e.order || '';
   document.getElementById('rutina-ex-youtube').value = e.youtube || '';
+
+  const days = new Set(e.days || []);
+  document.querySelectorAll('#rutina-days-picker .repeat-day-btn').forEach(btn => {
+    btn.classList.toggle('active', days.has(Number(btn.dataset.day)));
+  });
+  document.getElementById('rutina-ex-days').value = [...days].join(',');
+
   document.getElementById('btn-save-rutina').innerHTML = '<i data-lucide="check" style="width:15px;height:15px;"></i> Actualizar';
   document.getElementById('btn-cancel-rutina').style.display = 'inline-block';
   document.getElementById('rutina-ex-name').focus();
@@ -4295,9 +4366,13 @@ function resetRutinaForm() {
   document.getElementById('editing-rutina-ex-id').value = '';
   document.getElementById('rutina-ex-name').value = '';
   document.getElementById('rutina-ex-group').value = '';
-  document.getElementById('rutina-ex-sets').value = '';
-  document.getElementById('rutina-ex-reps').value = '';
+  setRutinaSelectOrCustom('sets', '', RUTINA_SETS_PRESETS);
+  setRutinaSelectOrCustom('reps', '', RUTINA_REPS_PRESETS);
+  document.getElementById('rutina-ex-descanso').value = '';
+  document.getElementById('rutina-ex-order').value = '';
   document.getElementById('rutina-ex-youtube').value = '';
+  document.querySelectorAll('#rutina-days-picker .repeat-day-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('rutina-ex-days').value = '';
   document.getElementById('btn-save-rutina').innerHTML = '<i data-lucide="plus" style="width:16px;height:16px;"></i> Agregar';
   document.getElementById('btn-cancel-rutina').style.display = 'none';
   refreshIcons();
@@ -4338,6 +4413,41 @@ async function toggleRutinaExerciseToday(id) {
   }
 }
 
+/** Tarjeta de un ejercicio de la rutina. El check de "hecho hoy" queda siempre a la
+ *  vista (no depende de desplegar el calendario ni de abrir el grupo del día) para
+ *  poder tildar de un vistazo. */
+function rutinaExerciseCardHTML(e, todayStr) {
+  const meta = [
+    e.sets && `${e.sets} series`,
+    e.reps && `${e.reps} repeticiones`,
+    e.descanso && `${e.descanso}s descanso`
+  ].filter(Boolean).join(' · ');
+  const done = (e.completedDates || []).includes(todayStr);
+  const streak = computeHabitStreak(e);
+  const expanded = expandedCalendarIds.has(e.id);
+  return `
+    <div class="habit-card ${done ? 'done' : ''}">
+      <button class="habit-check" onclick="toggleRutinaExerciseToday('${e.id}')" title="${done ? 'Desmarcar hoy' : 'Marcar como hecho hoy'}">
+        <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
+      </button>
+      <div class="habit-info">
+        <div class="habit-title title-vistoso">${e.group ? `<span class="rutina-group-tag">${e.group}</span> ` : ''}${e.name}${meta ? `<span class="rutina-meta-inline"> · ${meta}</span>` : ''}</div>
+        ${expanded ? `<div class="habit-month-cal">${habitMonthCalendarHTML(e)}</div>` : ''}
+      </div>
+      <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
+      ${calendarExpandBtnHTML(e.id, 'rutina')}
+      ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
+      <button class="task-btn" onclick="editRutinaExercise('${e.id}')" title="Editar"><i data-lucide="edit-3" style="width:14px;height:14px;"></i></button>
+      <button class="task-btn habit-delete" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
+    </div>
+  `;
+}
+
+/** Agrupada por día (Lunes a Domingo) y, dentro de cada día, por el orden de
+ *  realización — así se lee igual que el circuito de la rutina en papel. Un
+ *  ejercicio con varios días asignados (ej. tren inferior lunes y viernes)
+ *  aparece repetido en cada uno de sus días. Los encabezados de día NO son
+ *  desplegables: el check de "hecho hoy" siempre queda a mano. */
 function renderRutina() {
   const list = document.getElementById('rutina-list');
   if (!list) return;
@@ -4350,29 +4460,23 @@ function renderRutina() {
   }
 
   const todayStr = toLocalDateStr(new Date());
-  const grouped = [...exercises].sort((a, b) => (a.group || '').localeCompare(b.group || ''));
-  list.innerHTML = grouped.map(e => {
-    const meta = [e.sets && `${e.sets} series`, e.reps && `${e.reps} repeticiones`].filter(Boolean).join(' · ');
-    const done = (e.completedDates || []).includes(todayStr);
-    const streak = computeHabitStreak(e);
-    const expanded = expandedCalendarIds.has(e.id);
-    return `
-      <div class="habit-card ${done ? 'done' : ''}">
-        <button class="habit-check" onclick="toggleRutinaExerciseToday('${e.id}')" title="${done ? 'Desmarcar hoy' : 'Marcar como hecho hoy'}">
-          <i data-lucide="${done ? 'check-circle-2' : 'circle'}"></i>
-        </button>
-        <div class="habit-info">
-          <div class="habit-title title-vistoso">${e.group ? `<span class="rutina-group-tag">${e.group}</span> ` : ''}${e.name}${meta ? `<span class="rutina-meta-inline"> · ${meta}</span>` : ''}</div>
-          ${expanded ? `<div class="habit-month-cal">${habitMonthCalendarHTML(e)}</div>` : ''}
-        </div>
-        <div class="habit-streak" title="Racha actual">${streak > 0 ? `<i data-lucide="flame"></i> ${streak}` : '—'}</div>
-        ${calendarExpandBtnHTML(e.id, 'rutina')}
-        ${e.youtube ? `<a href="${e.youtube}" target="_blank" rel="noopener" class="rutina-youtube" title="Ver video"><i data-lucide="play-circle" style="width:18px;height:18px;"></i></a>` : ''}
-        <button class="task-btn" onclick="editRutinaExercise('${e.id}')" title="Editar"><i data-lucide="edit-3" style="width:14px;height:14px;"></i></button>
-        <button class="task-btn habit-delete" onclick="deleteRutinaExercise('${e.id}')" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px;color:#ff4d6d99;"></i></button>
-      </div>
-    `;
-  }).join('');
+  const byOrder = (a, b) => (a.order ?? 999) - (b.order ?? 999);
+
+  let html = '';
+  RUTINA_DIAS_ORDEN.forEach(day => {
+    const dayExercises = exercises.filter(e => (e.days || []).includes(day)).sort(byOrder);
+    if (dayExercises.length === 0) return;
+    html += `<div class="rutina-day-heading">${RUTINA_DIAS_LABELS[day]}</div>`;
+    html += dayExercises.map(e => rutinaExerciseCardHTML(e, todayStr)).join('');
+  });
+
+  const unassigned = exercises.filter(e => !(e.days && e.days.length)).sort(byOrder);
+  if (unassigned.length) {
+    html += `<div class="rutina-day-heading">Sin día asignado</div>`;
+    html += unassigned.map(e => rutinaExerciseCardHTML(e, todayStr)).join('');
+  }
+
+  list.innerHTML = html;
   refreshIcons();
 }
 
