@@ -3730,9 +3730,8 @@ function renderHabits(type) {
 // --- Medicación: mañana/noche por separado, en vez de un solo check diario.
 // Cada toma queda guardada como 'YYYY-MM-DD-AM' / 'YYYY-MM-DD-PM' en completedSlots,
 // así se puede consultar exactamente qué tomaste y cuándo, no solo "hoy sí/no". ---
-async function toggleMedSlot(id, slot) {
-  const todayStr = toLocalDateStr(new Date());
-  const key = `${todayStr}-${slot}`;
+async function toggleMedSlot(id, slot, dateStr) {
+  const key = `${dateStr || toLocalDateStr(new Date())}-${slot}`;
   const next = habits.map(h => {
     if (h.id !== id) return h;
     const slots = h.completedSlots || [];
@@ -3798,11 +3797,15 @@ function computeMedStreak(habit) {
 /** Historial del mes en curso en grilla de 7 columnas (lunes a domingo), con
  *  un punto por cada franja que le toca a ESTE medicamento (no siempre las 4),
  *  para poder consultar de un vistazo si se tomó o no un día puntual y si las
- *  tomas saltadas caen siempre el mismo día de la semana. */
+ *  tomas saltadas caen siempre el mismo día de la semana. Los puntos de días
+ *  ya pasados (incluido hoy) son clickeables para poder marcar/corregir una
+ *  toma retroactivamente — por ejemplo la de anoche, si ya pasó la medianoche
+ *  cuando se intenta marcarla y "hoy" para los botones de arriba ya cambió. */
 function medMonthHistoryHTML(habit) {
   const slots = new Set(habit.completedSlots || []);
   const activeSlots = medActiveSlots(habit);
   const today = new Date();
+  const todayStr = toLocalDateStr(today);
   const year = today.getFullYear();
   const month = today.getMonth();
   const monthLabel = today.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
@@ -3814,7 +3817,12 @@ function medMonthHistoryHTML(habit) {
   html += `<div class="med-day-col"></div>`.repeat(firstWeekdayOffset(year, month));
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = toLocalDateStr(new Date(year, month, day));
-    const dots = activeSlots.map(s => `<span class="med-slot-dot ${medSlotDone(slots, dateStr, s) ? 'done' : ''}"></span>`).join('');
+    const isFuture = dateStr > todayStr;
+    const dots = activeSlots.map(s => {
+      const done = medSlotDone(slots, dateStr, s);
+      if (isFuture) return `<span class="med-slot-dot ${done ? 'done' : ''}"></span>`;
+      return `<button class="med-slot-dot-btn" onclick="toggleMedSlot('${habit.id}', '${s.key}', '${dateStr}')" title="${done ? 'Desmarcar' : 'Marcar'} ${s.label.toLowerCase()} · ${dateStr}"><span class="med-slot-dot ${done ? 'done' : ''}"></span></button>`;
+    }).join('');
     html += `
       <div class="med-day-col ${day === todayNum ? 'is-today' : ''}" title="${dateStr}">
         <span class="med-day-label">${day}</span>

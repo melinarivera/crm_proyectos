@@ -2815,6 +2815,18 @@ body {
 
 .med-slot-dot.done { background: var(--accent); }
 
+.med-slot-dot-btn {
+  background: transparent;
+  border: none;
+  padding: 3px;
+  display: flex;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.med-slot-dot-btn:hover { background: var(--bg3); }
+.med-slot-dot-btn:hover .med-slot-dot { background: var(--accent2); }
+
 /* --- Tensión arterial --- */
 .tension-value.high { color: var(--rojo); }
 .tension-value.low { color: var(--amarillo); }
