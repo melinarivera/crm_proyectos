@@ -52,29 +52,29 @@
       <span class="logo-text">MeliVit</span>
     </div>
     <nav class="sidebar-nav">
-      <button class="nav-item active" data-view="ejercicio" onclick="showView('ejercicio')">
-        <i data-lucide="dumbbell" class="nav-icon"></i><span>Ejercicio / Rutina</span>
-      </button>
-      <button class="nav-item" data-view="bienestar" onclick="showView('bienestar')">
-        <i data-lucide="sparkles" class="nav-icon"></i><span>Bienestar</span>
-      </button>
-      <button class="nav-item" data-view="medicacion" onclick="showView('medicacion')">
+      <button class="nav-item active" data-view="medicacion" onclick="showView('medicacion')">
         <i data-lucide="pill" class="nav-icon"></i><span>Medicación</span>
-      </button>
-      <button class="nav-item" data-view="tension" onclick="showView('tension')">
-        <i data-lucide="activity" class="nav-icon"></i><span>Tensión arterial</span>
       </button>
       <button class="nav-item" data-view="citas" onclick="showView('citas')">
         <i data-lucide="stethoscope" class="nav-icon"></i><span>Citas médicas</span>
       </button>
-      <button class="nav-item" data-view="ciclo" onclick="showView('ciclo')">
-        <i data-lucide="droplet" class="nav-icon"></i><span>Ciclo menstrual</span>
+      <button class="nav-item" data-view="medidas" onclick="showView('medidas')">
+        <i data-lucide="scale" class="nav-icon"></i><span>Medidas y peso</span>
       </button>
       <button class="nav-item" data-view="diario" onclick="showView('diario')">
         <i data-lucide="book-heart" class="nav-icon"></i><span>Diario</span>
       </button>
-      <button class="nav-item" data-view="medidas" onclick="showView('medidas')">
-        <i data-lucide="scale" class="nav-icon"></i><span>Medidas y peso</span>
+      <button class="nav-item" data-view="bienestar" onclick="showView('bienestar')">
+        <i data-lucide="sparkles" class="nav-icon"></i><span>Bienestar</span>
+      </button>
+      <button class="nav-item" data-view="ejercicio" onclick="showView('ejercicio')">
+        <i data-lucide="dumbbell" class="nav-icon"></i><span>Ejercicio / Rutina</span>
+      </button>
+      <button class="nav-item" data-view="tension" onclick="showView('tension')">
+        <i data-lucide="activity" class="nav-icon"></i><span>Tensión arterial</span>
+      </button>
+      <button class="nav-item" data-view="ciclo" onclick="showView('ciclo')">
+        <i data-lucide="droplet" class="nav-icon"></i><span>Ciclo menstrual</span>
       </button>
       <button class="nav-item" data-view="hidratacion" onclick="showView('hidratacion')">
         <i data-lucide="droplets" class="nav-icon"></i><span>Hidratación</span>
@@ -185,7 +185,7 @@
     </section>
 
     <!-- EJERCICIO / RUTINA -->
-    <section class="view active" id="view-ejercicio">
+    <section class="view" id="view-ejercicio">
       <div class="view-header">
         <span class="view-emoji"><i data-lucide="dumbbell"></i></span>
         <p class="view-sub">Marcá lo de hoy y sostené la racha.</p>
@@ -337,7 +337,7 @@
     </section>
 
     <!-- MEDICACIÓN (mañana / noche) -->
-    <section class="view" id="view-medicacion">
+    <section class="view active" id="view-medicacion">
       <div class="view-header">
         <span class="view-emoji"><i data-lucide="pill"></i></span>
         <p class="view-sub">Marcá cada toma por separado — mañana, mediodía, tarde y noche.</p>

@@ -97,7 +97,7 @@ let globalUrls = {};
 let selectedPrio = 'urgente';
 let selectedNotaPrio = 'medio';
 let selectedDrivePrio = 'medio';
-let currentView = 'ejercicio';
+let currentView = 'medicacion';
 
 // ===== SISTEMA DE ALERTAS IN-APP (sin permisos, funciona en iOS/Mac) =====
 let alertTickInterval = null;
