@@ -92,6 +92,7 @@ let hidratacion = {};
 let sueno = [];
 let tension = [];
 let citas = [];
+let citasBienestar = [];
 let ciclo = [];
 let globalUrls = {};
 let selectedPrio = 'urgente';
@@ -1332,6 +1333,11 @@ function subscribeToFirestore() {
     if (currentView === 'citas') renderCitas();
   });
 
+  db.collection('citasBienestar').orderBy('date', 'asc').onSnapshot(snap => {
+    citasBienestar = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (currentView === 'citasbienestar') renderCitasBienestar();
+  });
+
   db.collection('ciclo').orderBy('startDate', 'desc').onSnapshot(snap => {
     ciclo = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     if (currentView === 'ciclo') renderCiclo();
@@ -1407,6 +1413,7 @@ function showView(view) {
     medicacion:  'Medicación',
     tension:     'Tensión arterial',
     citas:       'Citas médicas',
+    citasbienestar: 'Citas Bienestar',
     ciclo:       'Ciclo menstrual',
     diario:      'Diario',
     medidas:     'Medidas y peso',
@@ -1436,6 +1443,7 @@ function showView(view) {
     renderTension();
   }
   else if (view === 'citas') renderCitas();
+  else if (view === 'citasbienestar') renderCitasBienestar();
   else if (view === 'ciclo') renderCiclo();
   else if (view === 'diario') renderDiario();
   else if (view === 'medidas') {
@@ -4747,6 +4755,152 @@ function renderCitas() {
           Anteriores (${past.length})
         </button>
         ${expanded ? `<div class="cita-past-list">${past.map(citaCardHTML).join('')}</div>` : ''}
+      `;
+    }
+
+    list.innerHTML = upcomingHTML + pastHTML;
+  });
+  refreshIcons();
+}
+
+// --- Citas Bienestar (reiki, belleza, y otras citas para sentirse mejor) ---
+/** Mismo patrón que Citas médicas: colección propia, dos bloques por persona
+ *  (Meli/Sara), sin mezclarse con las citas médicas. */
+async function addCitaBienestar(person) {
+  const dateEl = document.getElementById('citab-date-' + person);
+  const timeEl = document.getElementById('citab-time-' + person);
+  const titleEl = document.getElementById('citab-title-' + person);
+  const noteEl = document.getElementById('citab-note-' + person);
+  const editingId = document.getElementById('editing-citab-id-' + person).value;
+
+  const title = titleEl.value.trim();
+  if (!dateEl.value || !title) { alert('Ingresa al menos la fecha y el motivo de la cita.'); return; }
+
+  const data = { date: dateEl.value, time: timeEl.value, title, note: noteEl.value.trim(), updated: new Date().toISOString() };
+  if (!editingId) data.person = person;
+
+  showSyncIndicator('syncing');
+  try {
+    if (editingId) {
+      await db.collection('citasBienestar').doc(editingId).update(data);
+    } else {
+      data.created = new Date().toISOString();
+      await db.collection('citasBienestar').add(data);
+    }
+    resetCitaBienestarForm(person);
+    showSyncIndicator('ok');
+  } catch (err) {
+    showSyncIndicator('error', err.message);
+  }
+}
+
+function editCitaBienestar(id) {
+  const c = citasBienestar.find(x => x.id === id);
+  if (!c) return;
+  const person = c.person === 'sara' ? 'sara' : 'meli';
+  document.getElementById('editing-citab-id-' + person).value = id;
+  document.getElementById('citab-date-' + person).value = c.date || '';
+  document.getElementById('citab-time-' + person).value = c.time || '';
+  document.getElementById('citab-title-' + person).value = c.title || '';
+  document.getElementById('citab-note-' + person).value = c.note || '';
+}
+
+function resetCitaBienestarForm(person) {
+  document.getElementById('editing-citab-id-' + person).value = '';
+  document.getElementById('citab-date-' + person).value = '';
+  document.getElementById('citab-time-' + person).value = '';
+  document.getElementById('citab-title-' + person).value = '';
+  document.getElementById('citab-note-' + person).value = '';
+}
+
+async function deleteCitaBienestar(id) {
+  if (!confirm('¿Eliminar esta cita?')) return;
+  showSyncIndicator('syncing');
+  await db.collection('citasBienestar').doc(id).delete();
+  showSyncIndicator('ok');
+}
+
+/** Ícono según palabras clave del motivo, para distinguir el tipo de cita de un vistazo. */
+function citaBienestarIcon(title) {
+  const t = (title || '').toLowerCase();
+  if (/reiki|energ/.test(t)) return 'flower-2';
+  if (/masaj/.test(t)) return 'hand';
+  if (/peluquer|pelo|corte/.test(t)) return 'scissors';
+  if (/uñas|manicur|pedicur/.test(t)) return 'sparkles';
+  if (/facial|piel|estétic|belleza/.test(t)) return 'gem';
+  if (/terapi|psicolog|coach/.test(t)) return 'heart-handshake';
+  return 'flower-2';
+}
+
+function citaBienestarCardHTML(c) {
+  const todayStr = toLocalDateStr(new Date());
+  const isPast = c.date && c.date < todayStr;
+  const person = c.person === 'sara' ? 'sara' : 'meli';
+  let day = '', month = '';
+  if (c.date) {
+    const [, m, d] = c.date.split('-');
+    day = d;
+    month = CITA_MESES[parseInt(m, 10) - 1] || '';
+  }
+  return `
+    <div class="cita-card cita-card-${person} ${isPast ? 'is-past' : ''}">
+      <div class="medida-actions">
+        <button class="nota-btn" onclick="editCitaBienestar('${c.id}')" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+        <button class="nota-btn del" onclick="deleteCitaBienestar('${c.id}')" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+      </div>
+      <div class="cita-card-date">
+        <span class="cita-card-day">${day}</span>
+        <span class="cita-card-month">${month}</span>
+      </div>
+      <div class="cita-card-body">
+        <div class="cita-card-title-row">
+          <span class="cita-card-icon"><i data-lucide="${citaBienestarIcon(c.title)}" style="width:14px;height:14px;"></i></span>
+          <span class="cita-card-title">${c.title}</span>
+          ${c.time ? `<span class="cita-card-time">${c.time}</span>` : ''}
+        </div>
+        ${c.note ? `<div class="cita-card-note">${c.note}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+let expandedCitasBienestarPast = new Set();
+
+function toggleCitasBienestarPast(person) {
+  if (expandedCitasBienestarPast.has(person)) expandedCitasBienestarPast.delete(person);
+  else expandedCitasBienestarPast.add(person);
+  renderCitasBienestar();
+}
+
+function renderCitasBienestar() {
+  const todayStr = toLocalDateStr(new Date());
+
+  ['meli', 'sara'].forEach(person => {
+    const list = document.getElementById('citab-list-' + person);
+    if (!list) return;
+
+    const filtered = citasBienestar.filter(c => (c.person === 'sara' ? 'sara' : 'meli') === person);
+    if (filtered.length === 0) {
+      list.innerHTML = '<p class="empty-state">Sin citas registradas.</p>';
+      return;
+    }
+
+    const upcoming = filtered.filter(c => !(c.date && c.date < todayStr));
+    const past = filtered.filter(c => c.date && c.date < todayStr).reverse();
+
+    const upcomingHTML = upcoming.length
+      ? upcoming.map(citaBienestarCardHTML).join('')
+      : '<p class="empty-state">Sin próximas citas.</p>';
+
+    let pastHTML = '';
+    if (past.length) {
+      const expanded = expandedCitasBienestarPast.has(person);
+      pastHTML = `
+        <button class="cita-past-toggle" onclick="toggleCitasBienestarPast('${person}')">
+          <i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" style="width:14px;height:14px;"></i>
+          Anteriores (${past.length})
+        </button>
+        ${expanded ? `<div class="cita-past-list">${past.map(citaBienestarCardHTML).join('')}</div>` : ''}
       `;
     }
 

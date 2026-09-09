@@ -58,6 +58,9 @@
       <button class="nav-item" data-view="citas" onclick="showView('citas')">
         <i data-lucide="stethoscope" class="nav-icon"></i><span>Citas médicas</span>
       </button>
+      <button class="nav-item" data-view="citasbienestar" onclick="showView('citasbienestar')">
+        <i data-lucide="flower-2" class="nav-icon"></i><span>Citas Bienestar</span>
+      </button>
       <button class="nav-item" data-view="medidas" onclick="showView('medidas')">
         <i data-lucide="scale" class="nav-icon"></i><span>Medidas y peso</span>
       </button>
@@ -434,6 +437,40 @@
         <button class="btn-add" onclick="openExternalLink('citasExcelUrl','Excel')" oncontextmenu="changeExternalLink('citasExcelUrl','Excel');return false;" title="Clic: abrir · Clic derecho: cambiar enlace" style="background:var(--card);border:1px solid var(--border);color:var(--text);">
           <i data-lucide="table" style="width:15px;height:15px;"></i> Mi Excel
         </button>
+      </div>
+    </section>
+
+    <!-- CITAS BIENESTAR -->
+    <section class="view" id="view-citasbienestar">
+      <div class="view-header">
+        <span class="view-emoji"><i data-lucide="flower-2"></i></span>
+        <p class="view-sub">Reiki, belleza y otras citas para sentirte mejor.</p>
+      </div>
+
+      <div class="cita-person-block">
+        <h4 class="cita-person-title cita-person-meli">Meli</h4>
+        <form class="medida-add-form" onsubmit="event.preventDefault(); addCitaBienestar('meli');">
+          <input type="date" id="citab-date-meli" />
+          <input type="time" id="citab-time-meli" />
+          <input type="text" id="citab-title-meli" placeholder="Ej: Reiki, Manicura, Masaje" />
+          <input type="text" id="citab-note-meli" placeholder="Notas" maxlength="120" />
+          <input type="hidden" id="editing-citab-id-meli" value="">
+          <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+        </form>
+        <div class="medida-list" id="citab-list-meli"></div>
+      </div>
+
+      <div class="cita-person-block">
+        <h4 class="cita-person-title cita-person-sara">Sara</h4>
+        <form class="medida-add-form" onsubmit="event.preventDefault(); addCitaBienestar('sara');">
+          <input type="date" id="citab-date-sara" />
+          <input type="time" id="citab-time-sara" />
+          <input type="text" id="citab-title-sara" placeholder="Ej: Reiki, Manicura, Masaje" />
+          <input type="text" id="citab-note-sara" placeholder="Notas" maxlength="120" />
+          <input type="hidden" id="editing-citab-id-sara" value="">
+          <button type="submit" class="btn-add"><i data-lucide="save" style="width:15px;height:15px;"></i> Guardar</button>
+        </form>
+        <div class="medida-list" id="citab-list-sara"></div>
       </div>
     </section>
 
