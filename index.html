@@ -61,11 +61,11 @@
       <button class="nav-item" data-view="citasbienestar" onclick="showView('citasbienestar')">
         <i data-lucide="flower-2" class="nav-icon"></i><span>Citas Bienestar</span>
       </button>
+      <button class="nav-item" data-view="ciclo" onclick="showView('ciclo')">
+        <i data-lucide="droplet" class="nav-icon"></i><span>Ciclo menstrual</span>
+      </button>
       <button class="nav-item" data-view="medidas" onclick="showView('medidas')">
         <i data-lucide="scale" class="nav-icon"></i><span>Medidas y peso</span>
-      </button>
-      <button class="nav-item" data-view="diario" onclick="showView('diario')">
-        <i data-lucide="book-heart" class="nav-icon"></i><span>Diario</span>
       </button>
       <button class="nav-item" data-view="bienestar" onclick="showView('bienestar')">
         <i data-lucide="sparkles" class="nav-icon"></i><span>Bienestar</span>
@@ -76,14 +76,14 @@
       <button class="nav-item" data-view="tension" onclick="showView('tension')">
         <i data-lucide="activity" class="nav-icon"></i><span>Tensión arterial</span>
       </button>
-      <button class="nav-item" data-view="ciclo" onclick="showView('ciclo')">
-        <i data-lucide="droplet" class="nav-icon"></i><span>Ciclo menstrual</span>
-      </button>
       <button class="nav-item" data-view="hidratacion" onclick="showView('hidratacion')">
         <i data-lucide="droplets" class="nav-icon"></i><span>Hidratación</span>
       </button>
       <button class="nav-item" data-view="sueno" onclick="showView('sueno')">
         <i data-lucide="moon" class="nav-icon"></i><span>Sueño</span>
+      </button>
+      <button class="nav-item" data-view="diario" onclick="showView('diario')">
+        <i data-lucide="book-heart" class="nav-icon"></i><span>Diario</span>
       </button>
       <button class="nav-item" data-view="drive" onclick="showView('drive')">
         <i data-lucide="hard-drive" class="nav-icon"></i><span>Drive</span>
@@ -343,7 +343,7 @@
     <section class="view active" id="view-medicacion">
       <div class="view-header">
         <span class="view-emoji"><i data-lucide="pill"></i></span>
-        <p class="view-sub">Marcá cada toma por separado — mañana, mediodía, tarde y noche.</p>
+        <p class="view-sub">Marca cada toma por separado — mañana, mediodía, tarde y noche.</p>
       </div>
       <form class="habit-add-form" onsubmit="event.preventDefault(); addHabit('medicacion');">
         <input type="text" id="habit-title-input-medicacion" placeholder="Ej: Vitamina D, Antibiótico..." maxlength="60" />

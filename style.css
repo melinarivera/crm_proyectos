@@ -3472,6 +3472,15 @@ body {
     min-width: 0;
   }
 
+  /* .habit-dose-input trae "flex: 0 1 200px" para tener un ancho acotado
+   * cuando el form es una fila (desktop). En mobile el form pasa a columna
+   * (align-items:stretch arriba) y ese mismo flex-basis de 200px se aplica
+   * al eje principal, que ahora es vertical: el input de dosis quedaba con
+   * ~200px de alto en vez de ancho, una caja enorme para escribir "10 mg". */
+  .habit-add-form input.habit-dose-input {
+    flex: 0 0 auto;
+  }
+
   /* Estos cuatro traen ancho fijo inline (style="width:110px" etc.) — un
    * estilo inline solo pierde contra una regla externa que use !important. */
   #rutina-ex-sets,
