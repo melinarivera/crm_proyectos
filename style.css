@@ -3482,5 +3482,16 @@ body {
   }
 
   .med-slot-btn { flex: 1 1 100%; min-width: 0; }
+
+  /* .medida-card asume una sola fecha corta (ej. "26/09"). El ciclo menstrual
+   * muestra un rango ("26/09 → 30/09") y además puede sumar el badge de
+   * duración de ciclo: en mobile esa fila ya no entra en una sola línea y,
+   * como .main-content tiene overflow-x:hidden, lo que no entra (los botones
+   * de editar/eliminar, empujados al final vía order:99, y la nota) queda
+   * recortado fuera de pantalla en vez de verse. Se envuelve la tarjeta y se
+   * manda la nota a su propia línea para que todo quede visible. */
+  .medida-card { flex-wrap: wrap; row-gap: 6px; }
+  .medida-date, .medida-weight { min-width: 0; }
+  .medida-note { flex-basis: 100%; white-space: normal; }
 }
 
